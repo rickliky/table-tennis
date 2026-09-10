@@ -1,14 +1,14 @@
-const DATA_URL = 'https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec?action=publicData';
-let data = { players: [], matches: [] }, mode = 'all', selectedMonth = 'all', charts = [];
+const API_URL = 'https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec?action=publicData';
+let data = { players: [], matches: [] }, mode = 'all', selectedMonth = 'all', selectedYear = 'all', charts = [];
 let language = localStorage.getItem('lk-language') || 'en';
 const words = {
-  en: { navPlayers:'Players',navMatches:'Matches',navStats:'Statistics',navSessions:'Sessions',eyebrow:'OFFICIAL CLUB DATABASE',heroDescription:'Every point. Every player. One club.',viewResults:'View match results',matchesPlayed:'Matches played',activePlayers:'Active players',latestResult:'Latest result',winsLeader:'Wins leader',sectionStatsKicker:'THE NUMBERS',sectionStats:'Club Statistics',rankingTitle:'Win Rankings',minimumMatches:'Min. 3 matches',sectionMatchesKicker:'LIVE ARCHIVE',sectionMatches:'Latest Results',sectionPlayersKicker:'THE SQUAD',sectionPlayers:'Players',sessionKicker:'TRAINING LOG',sessionTitle:'Session Replay',allResults:'All results',training:'Training',tournament:'Tournament',trainingMonth:'Training month',winsChart:'Most Wins',formatChart:'Match Breakdown',loading:'Loading live data...',updating:'Live data',lastUpdated:'Last updated',officialSite:'Official club website',matches:'matches',players:'players',noSessions:'No training sessions found' },
-  ja: { navPlayers:'選手',navMatches:'試合結果',navStats:'スタッツ',navSessions:'練習日',eyebrow:'公式クラブデータベース',heroDescription:'すべてのポイント。すべての選手。ひとつのクラブ。',viewResults:'試合結果を見る',matchesPlayed:'試合数',activePlayers:'登録選手',latestResult:'最新試合日',winsLeader:'最多勝',sectionStatsKicker:'数字で見る',sectionStats:'クラブスタッツ',rankingTitle:'勝利ランキング',minimumMatches:'最低3試合',sectionMatchesKicker:'試合アーカイブ',sectionMatches:'最新練習・大会結果',sectionPlayersKicker:'選手紹介',sectionPlayers:'選手',sessionKicker:'練習ログ',sessionTitle:'練習日リプレイ',allResults:'すべて',training:'クラブ練習',tournament:'大会',trainingMonth:'練習月',winsChart:'勝利数ランキング',formatChart:'試合内訳',loading:'データを読み込んでいます...',updating:'ライブデータ',lastUpdated:'最終更新',officialSite:'公式クラブサイト',matches:'試合',players:'選手',noSessions:'練習記録がありません' }
+  en: { navPlayers:'Players',navMatches:'Matches',navStats:'Statistics',navSessions:'Sessions',eyebrow:'OFFICIAL CLUB DATABASE',heroDescription:'Every point. Every player. One club.',viewResults:'View match results',matchesPlayed:'Matches played',activePlayers:'Active players',latestResult:'Latest result',winsLeader:'Wins leader',sectionStatsKicker:'THE NUMBERS',sectionStats:'Club Statistics',rankingTitle:'Win Rankings',minimumMatches:'Min. 3 matches',sectionMatchesKicker:'LIVE ARCHIVE',sectionMatches:'Latest Results',sectionPlayersKicker:'THE SQUAD',sectionPlayers:'Players',sessionKicker:'TRAINING LOG',sessionTitle:'Session Replay',allResults:'All results',training:'Training',tournament:'Tournament',trainingYear:'Training year',trainingMonth:'Training month',winsChart:'Most Wins',formatChart:'Match Breakdown',loading:'Loading live data...',updating:'Live data',lastUpdated:'Last updated',officialSite:'Official club website',matches:'matches',players:'players',noSessions:'No training sessions found' },
+  ja: { navPlayers:'選手',navMatches:'試合結果',navStats:'スタッツ',navSessions:'練習日',eyebrow:'公式クラブデータベース',heroDescription:'すべてのポイント。すべての選手。ひとつのクラブ。',viewResults:'試合結果を見る',matchesPlayed:'試合数',activePlayers:'登録選手',latestResult:'最新試合日',winsLeader:'最多勝',sectionStatsKicker:'数字で見る',sectionStats:'クラブスタッツ',rankingTitle:'勝利ランキング',minimumMatches:'最低3試合',sectionMatchesKicker:'試合アーカイブ',sectionMatches:'最新練習・大会結果',sectionPlayersKicker:'選手紹介',sectionPlayers:'選手',sessionKicker:'練習ログ',sessionTitle:'練習日リプレイ',allResults:'すべて',training:'クラブ練習',tournament:'大会',trainingYear:'練習年',trainingMonth:'練習月',winsChart:'勝利数ランキング',formatChart:'試合内訳',loading:'データを読み込んでいます...',updating:'ライブデータ',lastUpdated:'最終更新',officialSite:'公式クラブサイト',matches:'試合',players:'選手',noSessions:'練習記録がありません' }
 };
 const t = key => words[language][key];
 const nameFor = player => language === 'en' && player.englishName ? player.englishName : player.displayName;
 const eventType = match => /club|training|練習/i.test(`${match.event} ${match.division}`) ? 'training' : 'tournament';
-const visibleMatches = () => selectedMonth !== 'all' ? data.matches.filter(match => eventType(match) === 'training' && match.matchDate.startsWith(selectedMonth)) : mode === 'all' ? data.matches : data.matches.filter(match => eventType(match) === mode);
+const visibleMatches = () => { const base = mode === 'all' ? data.matches : data.matches.filter(match => eventType(match) === mode); return base.filter(match => (selectedYear === 'all' || match.matchDate.startsWith(selectedYear)) && (selectedMonth === 'all' || (eventType(match) === 'training' && match.matchDate.startsWith(selectedMonth)))); };
 const playerMap = () => new Map(data.players.map(player => [player.playerId, player]));
 
 function playerStats(matches = visibleMatches()) {
@@ -26,7 +26,7 @@ function playerStats(matches = visibleMatches()) {
 
 function rankPlayers(matches = visibleMatches()) {
   const stats = playerStats(matches);
-  return data.players.map(player => ({ player, stats: stats.get(player.playerId) })).sort((a, b) => b.stats.wins - a.stats.wins || b.stats.setsFor - a.stats.setsFor);
+  return data.players.map(player => ({ player, stats: stats.get(player.playerId) })).sort((a, b) => { const ap = a.stats.wins + a.stats.losses, bp = b.stats.wins + b.stats.losses; const ar = ap ? a.stats.wins / ap : 0, br = bp ? b.stats.wins / bp : 0; return br - ar || bp - ap || b.stats.wins - a.stats.wins; });
 }
 
 function matchCard(match, players) {
@@ -67,6 +67,10 @@ function setupMonths() {
   const months = [...new Set(data.matches.filter(match => eventType(match) === 'training').map(match => match.matchDate.slice(0, 7)))].sort().reverse();
   select.innerHTML = `<option value="all">${t('allResults')}</option>${months.map(month => `<option value="${month}">${month}</option>`).join('')}`;
   select.value = months.includes(selectedMonth) ? selectedMonth : 'all';
+  const years = [...new Set(months.map(month => month.slice(0, 4)))];
+  const yearSelect = document.querySelector('#year-select');
+  yearSelect.innerHTML = `<option value="all">${t('allResults')}</option>${years.map(year => `<option value="${year}">${year}</option>`).join('')}`;
+  yearSelect.value = years.includes(selectedYear) ? selectedYear : 'all';
 }
 
 function renderPlayers(ranked) {
@@ -98,4 +102,5 @@ document.querySelector('#language-toggle').onclick = () => { language = language
 document.querySelector('#player-search').oninput = () => renderPlayers(rankPlayers());
 document.querySelector('#mode-switch').onclick = event => { if (!event.target.dataset.mode) return; mode = event.target.dataset.mode; if (mode !== 'training') selectedMonth = 'all'; document.querySelectorAll('#mode-switch button').forEach(button => button.classList.toggle('active', button === event.target)); render(); };
 document.querySelector('#month-select').onchange = event => { selectedMonth = event.target.value; if (selectedMonth !== 'all') mode = 'training'; document.querySelectorAll('#mode-switch button').forEach(button => button.classList.toggle('active', button.dataset.mode === mode)); render(); };
-fetch(DATA_URL).then(response => response.json()).then(result => { if (!result.ok) throw new Error(); data = result; render(); }).catch(() => document.querySelectorAll('.loading').forEach(element => { element.textContent = 'Unable to load live data.'; }));
+document.querySelector('#year-select').onchange = event => { selectedYear = event.target.value; if (selectedYear !== 'all') mode = 'training'; document.querySelectorAll('#mode-switch button').forEach(button => button.classList.toggle('active', button.dataset.mode === mode)); render(); };
+fetch('./public-data.json').then(response => { if (!response.ok) throw new Error(); return response.json(); }).catch(() => fetch(API_URL).then(response => response.json())).then(result => { if (!result.ok) throw new Error(); data = result; render(); }).catch(() => document.querySelectorAll('.loading').forEach(element => { element.textContent = 'Unable to load live data.'; }));

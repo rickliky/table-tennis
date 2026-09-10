@@ -1,0 +1,26 @@
+name: Refresh public data snapshot
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch approved public sheet data
+        run: curl --fail --location --retry 3 "https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec?action=publicData" --output new-public-data.json
+      - name: Commit only when player or match data changed
+        run: |
+          if [ -f public-data.json ] && diff -q <(jq -S 'del(.lastUpdated)' public-data.json) <(jq -S 'del(.lastUpdated)' new-public-data.json); then exit 0; fi
+          mv new-public-data.json public-data.json
+          git config user.name "little-kings-data-bot"
+          git config user.email "actions@github.com"
+          git add public-data.json
+          git commit -m "Refresh public club data"
+          git push
