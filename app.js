@@ -1,11 +1,101 @@
 const DATA_URL = 'https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec?action=publicData';
-let data = { players: [], matches: [] };
+let data = { players: [], matches: [] }, mode = 'all', selectedMonth = 'all', charts = [];
 let language = localStorage.getItem('lk-language') || 'en';
-const copy = { en: { navPlayers:'Players',navMatches:'Matches',navStats:'Statistics',eyebrow:'OFFICIAL CLUB DATABASE',heroDescription:'Every point. Every player. One club.',viewResults:'View match results',matchesPlayed:'Matches played',activePlayers:'Active players',latestResult:'Latest result',winsLeader:'Wins leader',sectionStatsKicker:'THE NUMBERS',sectionStats:'Club Statistics',rankingTitle:'Win Rankings',minimumMatches:'Min. 3 matches',sectionMatchesKicker:'LIVE ARCHIVE',sectionMatches:'Latest Results',sectionPlayersKicker:'THE SQUAD',sectionPlayers:'Players',loading:'Loading live data...',updating:'Live data',lastUpdated:'Last updated' }, ja: { navPlayers:'選手',navMatches:'試合結果',navStats:'スタッツ',eyebrow:'公式クラブデータベース',heroDescription:'すべてのポイント。すべての選手。ひとつのクラブ。',viewResults:'試合結果を見る',matchesPlayed:'試合数',activePlayers:'登録選手',latestResult:'最新試合日',winsLeader:'最多勝',sectionStatsKicker:'数字で見る',sectionStats:'クラブスタッツ',rankingTitle:'勝利ランキング',minimumMatches:'最低3試合',sectionMatchesKicker:'試合アーカイブ',sectionMatches:'最新結果',sectionPlayersKicker:'選手紹介',sectionPlayers:'選手',loading:'データを読み込んでいます...',updating:'ライブデータ',lastUpdated:'最終更新' } };
-function nameFor(player) { return language === 'en' && player.englishName ? player.englishName : player.displayName; }
-function playerMap() { return new Map(data.players.map(p => [p.playerId, p])); }
-function stats() { const map = new Map(data.players.map(p => [p.playerId,{ wins:0,losses:0,setsFor:0,setsAgainst:0 }])); data.matches.forEach(m => { if (map.has(m.player1Id)) { const x=map.get(m.player1Id); x.setsFor+=m.player1Sets;x.setsAgainst+=m.player2Sets;m.winnerId===m.player1Id?x.wins++:x.losses++; } if(map.has(m.player2Id)){const x=map.get(m.player2Id);x.setsFor+=m.player2Sets;x.setsAgainst+=m.player1Sets;m.winnerId===m.player2Id?x.wins++:x.losses++;} }); return map; }
-function render() { document.documentElement.lang=language; document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=copy[language][el.dataset.i18n]); document.getElementById('language-toggle').textContent=language==='en'?'日本語':'ENGLISH'; document.getElementById('player-search').placeholder=language==='en'?'Search players':'選手を検索'; const playerStats=stats(), players=playerMap(); const ranked=data.players.map(p=>({p,s:playerStats.get(p.playerId)})).sort((a,b)=>b.s.wins-a.s.wins||b.s.setsFor-a.s.setsFor); document.getElementById('match-count').textContent=data.matches.length; document.getElementById('player-count').textContent=data.players.length; const dates=data.matches.map(m=>m.matchDate).filter(Boolean).sort(); document.getElementById('latest-date').textContent=dates.at(-1)||'-'; document.getElementById('win-leader').textContent=ranked[0]?nameFor(ranked[0].p):'-'; document.getElementById('leaderboard').innerHTML=ranked.filter(x=>x.s.wins+x.s.losses>=3).slice(0,8).map((x,i)=>{const total=x.s.wins+x.s.losses;return `<div class="leader-row"><span class="rank">${String(i+1).padStart(2,'0')}</span><strong class="leader-name">${nameFor(x.p)}</strong><span class="record">${x.s.wins}W · ${x.s.losses}L</span><span class="percentage">${Math.round(x.s.wins/total*100)}%</span></div>`}).join('') || '<div class="loading">-</div>'; document.getElementById('match-list').innerHTML=[...data.matches].sort((a,b)=>b.matchDate.localeCompare(a.matchDate)).slice(0,16).map(m=>{const a=players.get(m.player1Id)||{displayName:m.player1Name},b=players.get(m.player2Id)||{displayName:m.player2Name};return `<article class="match-card"><div class="match-meta"><span>${m.matchDate}</span><span>${m.division||m.event||'Little Kings'}</span></div><div class="match-score"><span class="match-player ${m.winnerId===m.player1Id?'winner':''}">${nameFor(a)}</span><strong class="score">${m.player1Sets} - ${m.player2Sets}</strong><span class="match-player ${m.winnerId===m.player2Id?'winner':''}">${nameFor(b)}</span></div></article>`}).join(''); renderPlayers(ranked,playerStats); document.getElementById('last-updated').textContent=`${copy[language].lastUpdated}: ${new Date(data.lastUpdated).toLocaleString(language==='ja'?'ja-JP':'en-GB')}`; }
-function renderPlayers(ranked,statsMap) { const search=document.getElementById('player-search').value.toLowerCase(); document.getElementById('player-grid').innerHTML=ranked.filter(({p})=>nameFor(p).toLowerCase().includes(search)).map(({p})=>{const s=statsMap.get(p.playerId),games=s.wins+s.losses;return `<article class="player-card"><span class="player-id">${p.playerId}</span><h3 class="player-name">${nameFor(p)}</h3><div class="player-detail">${[p.playingHand,p.playingStyle].filter(Boolean).join(' · ')||'LITTLE KINGS'}</div><div class="player-record">${s.wins}W - ${s.losses}L <small>${games?Math.round(s.wins/games*100):0}%</small></div></article>`}).join(''); }
-document.getElementById('language-toggle').addEventListener('click',()=>{language=language==='en'?'ja':'en';localStorage.setItem('lk-language',language);render();}); document.getElementById('player-search').addEventListener('input',()=>renderPlayers(data.players.map(p=>({p,s:stats().get(p.playerId)})).sort((a,b)=>b.s.wins-a.s.wins),stats()));
-fetch(DATA_URL).then(r=>r.json()).then(result=>{if(!result.ok)throw new Error('Feed unavailable');data=result;render();document.getElementById('data-status').textContent=copy[language].updating;}).catch(()=>{document.querySelectorAll('.loading').forEach(el=>el.textContent='Unable to load live data.');});
+const words = {
+  en: { navPlayers:'Players',navMatches:'Matches',navStats:'Statistics',navSessions:'Sessions',eyebrow:'OFFICIAL CLUB DATABASE',heroDescription:'Every point. Every player. One club.',viewResults:'View match results',matchesPlayed:'Matches played',activePlayers:'Active players',latestResult:'Latest result',winsLeader:'Wins leader',sectionStatsKicker:'THE NUMBERS',sectionStats:'Club Statistics',rankingTitle:'Win Rankings',minimumMatches:'Min. 3 matches',sectionMatchesKicker:'LIVE ARCHIVE',sectionMatches:'Latest Results',sectionPlayersKicker:'THE SQUAD',sectionPlayers:'Players',sessionKicker:'TRAINING LOG',sessionTitle:'Session Replay',allResults:'All results',training:'Training',tournament:'Tournament',trainingMonth:'Training month',winsChart:'Most Wins',formatChart:'Match Breakdown',loading:'Loading live data...',updating:'Live data',lastUpdated:'Last updated',officialSite:'Official club website',matches:'matches',players:'players',noSessions:'No training sessions found' },
+  ja: { navPlayers:'選手',navMatches:'試合結果',navStats:'スタッツ',navSessions:'練習日',eyebrow:'公式クラブデータベース',heroDescription:'すべてのポイント。すべての選手。ひとつのクラブ。',viewResults:'試合結果を見る',matchesPlayed:'試合数',activePlayers:'登録選手',latestResult:'最新試合日',winsLeader:'最多勝',sectionStatsKicker:'数字で見る',sectionStats:'クラブスタッツ',rankingTitle:'勝利ランキング',minimumMatches:'最低3試合',sectionMatchesKicker:'試合アーカイブ',sectionMatches:'最新練習・大会結果',sectionPlayersKicker:'選手紹介',sectionPlayers:'選手',sessionKicker:'練習ログ',sessionTitle:'練習日リプレイ',allResults:'すべて',training:'クラブ練習',tournament:'大会',trainingMonth:'練習月',winsChart:'勝利数ランキング',formatChart:'試合内訳',loading:'データを読み込んでいます...',updating:'ライブデータ',lastUpdated:'最終更新',officialSite:'公式クラブサイト',matches:'試合',players:'選手',noSessions:'練習記録がありません' }
+};
+const t = key => words[language][key];
+const nameFor = player => language === 'en' && player.englishName ? player.englishName : player.displayName;
+const eventType = match => /club|training|練習/i.test(`${match.event} ${match.division}`) ? 'training' : 'tournament';
+const visibleMatches = () => selectedMonth !== 'all' ? data.matches.filter(match => eventType(match) === 'training' && match.matchDate.startsWith(selectedMonth)) : mode === 'all' ? data.matches : data.matches.filter(match => eventType(match) === mode);
+const playerMap = () => new Map(data.players.map(player => [player.playerId, player]));
+
+function playerStats(matches = visibleMatches()) {
+  const stats = new Map(data.players.map(player => [player.playerId, { wins: 0, losses: 0, setsFor: 0, setsAgainst: 0 }]));
+  matches.forEach(match => {
+    [[match.player1Id, match.player1Sets, match.player2Sets], [match.player2Id, match.player2Sets, match.player1Sets]].forEach(([id, won, lost]) => {
+      const record = stats.get(id);
+      if (!record) return;
+      record.setsFor += won; record.setsAgainst += lost;
+      if (match.winnerId === id) record.wins++; else record.losses++;
+    });
+  });
+  return stats;
+}
+
+function rankPlayers(matches = visibleMatches()) {
+  const stats = playerStats(matches);
+  return data.players.map(player => ({ player, stats: stats.get(player.playerId) })).sort((a, b) => b.stats.wins - a.stats.wins || b.stats.setsFor - a.stats.setsFor);
+}
+
+function matchCard(match, players) {
+  const first = players.get(match.player1Id) || { displayName: match.player1Name };
+  const second = players.get(match.player2Id) || { displayName: match.player2Name };
+  return `<article class="match-card"><div class="match-meta"><span>${match.matchDate}</span><span class="badge ${eventType(match)}">${t(eventType(match))}</span></div><div class="match-score"><span class="match-player ${match.winnerId === match.player1Id ? 'winner' : ''}">${nameFor(first)}</span><strong class="score">${match.player1Sets} - ${match.player2Sets}</strong><span class="match-player ${match.winnerId === match.player2Id ? 'winner' : ''}">${nameFor(second)}</span></div></article>`;
+}
+
+function renderCharts(ranked) {
+  charts.forEach(chart => chart.destroy());
+  const training = data.matches.filter(match => eventType(match) === 'training').length;
+  const tournament = data.matches.length - training;
+  charts = [
+    new Chart(document.querySelector('#wins-chart'), { type: 'bar', data: { labels: ranked.slice(0, 6).map(entry => nameFor(entry.player)), datasets: [{ data: ranked.slice(0, 6).map(entry => entry.stats.wins), backgroundColor: '#d6a516', borderRadius: 3 }] }, options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#f6f0e2' }, grid: { display: false } }, y: { ticks: { color: '#a5a198', stepSize: 1 }, grid: { color: 'rgba(246,240,226,.1)' } } } } }),
+    new Chart(document.querySelector('#format-chart'), { type: 'doughnut', data: { labels: [t('training'), t('tournament')], datasets: [{ data: [training, tournament], backgroundColor: ['#d6a516', '#68645c'], borderWidth: 0 }] }, options: { plugins: { legend: { labels: { color: '#f6f0e2' } } }, cutout: '68%' } })
+  ];
+}
+
+function renderSession() {
+  const select = document.querySelector('#session-select');
+  const dates = [...new Set(data.matches.filter(match => eventType(match) === 'training').map(match => match.matchDate))].sort().reverse();
+  if (!dates.length) { document.querySelector('#session-summary').textContent = t('noSessions'); return; }
+  select.innerHTML = dates.map(date => `<option value="${date}">${date}</option>`).join('');
+  select.onchange = showSession;
+  showSession();
+}
+
+function showSession() {
+  const date = document.querySelector('#session-select').value;
+  const matches = data.matches.filter(match => match.matchDate === date && eventType(match) === 'training');
+  const participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id])).size;
+  document.querySelector('#session-summary').innerHTML = `<strong>${date}</strong><span>${matches.length} ${t('matches')}</span><span>${participants} ${t('players')}</span>`;
+  document.querySelector('#session-matches').innerHTML = matches.map(match => matchCard(match, playerMap())).join('');
+}
+
+function setupMonths() {
+  const select = document.querySelector('#month-select');
+  const months = [...new Set(data.matches.filter(match => eventType(match) === 'training').map(match => match.matchDate.slice(0, 7)))].sort().reverse();
+  select.innerHTML = `<option value="all">${t('allResults')}</option>${months.map(month => `<option value="${month}">${month}</option>`).join('')}`;
+  select.value = months.includes(selectedMonth) ? selectedMonth : 'all';
+}
+
+function renderPlayers(ranked) {
+  const query = document.querySelector('#player-search').value.toLowerCase();
+  document.querySelector('#player-grid').innerHTML = ranked.filter(entry => nameFor(entry.player).toLowerCase().includes(query)).map(({ player, stats }) => {
+    const total = stats.wins + stats.losses;
+    return `<a class="player-card" href="player.html?id=${player.playerId}"><span class="player-id">${player.playerId}</span><h3 class="player-name">${nameFor(player)}</h3><div class="player-detail">${[player.playingHand, player.playingStyle].filter(Boolean).join(' · ') || 'LITTLE KINGS'}</div><div class="player-record">${stats.wins}W - ${stats.losses}L <small>${total ? Math.round(stats.wins / total * 100) : 0}%</small></div></a>`;
+  }).join('');
+}
+
+function render() {
+  document.documentElement.lang = language;
+  document.querySelectorAll('[data-i18n]').forEach(element => { element.textContent = t(element.dataset.i18n); });
+  document.querySelector('#language-toggle').textContent = language === 'en' ? '日本語' : 'ENGLISH';
+  document.querySelector('#player-search').placeholder = language === 'en' ? 'Search players' : '選手を検索';
+  setupMonths();
+  const matches = visibleMatches(), ranked = rankPlayers(matches), dates = matches.map(match => match.matchDate).filter(Boolean).sort();
+  document.querySelector('#match-count').textContent = matches.length;
+  document.querySelector('#player-count').textContent = data.players.length;
+  document.querySelector('#latest-date').textContent = dates.at(-1) || '-';
+  document.querySelector('#win-leader').textContent = ranked[0] ? nameFor(ranked[0].player) : '-';
+  document.querySelector('#leaderboard').innerHTML = ranked.filter(entry => entry.stats.wins + entry.stats.losses >= 3).slice(0, 8).map(({ player, stats }, index) => `<div class="leader-row"><span class="rank">${String(index + 1).padStart(2, '0')}</span><strong class="leader-name">${nameFor(player)}</strong><span class="record">${stats.wins}W · ${stats.losses}L</span><span class="percentage">${Math.round(stats.wins / (stats.wins + stats.losses) * 100)}%</span></div>`).join('') || '<div class="loading">-</div>';
+  document.querySelector('#match-list').innerHTML = [...matches].sort((a, b) => b.matchDate.localeCompare(a.matchDate)).slice(0, 16).map(match => matchCard(match, playerMap())).join('');
+  renderPlayers(ranked); renderCharts(ranked); renderSession();
+  document.querySelector('#last-updated').textContent = `${t('lastUpdated')}: ${new Date(data.lastUpdated).toLocaleString(language === 'ja' ? 'ja-JP' : 'en-GB')}`;
+}
+
+document.querySelector('#language-toggle').onclick = () => { language = language === 'en' ? 'ja' : 'en'; localStorage.setItem('lk-language', language); render(); };
+document.querySelector('#player-search').oninput = () => renderPlayers(rankPlayers());
+document.querySelector('#mode-switch').onclick = event => { if (!event.target.dataset.mode) return; mode = event.target.dataset.mode; if (mode !== 'training') selectedMonth = 'all'; document.querySelectorAll('#mode-switch button').forEach(button => button.classList.toggle('active', button === event.target)); render(); };
+document.querySelector('#month-select').onchange = event => { selectedMonth = event.target.value; if (selectedMonth !== 'all') mode = 'training'; document.querySelectorAll('#mode-switch button').forEach(button => button.classList.toggle('active', button.dataset.mode === mode)); render(); };
+fetch(DATA_URL).then(response => response.json()).then(result => { if (!result.ok) throw new Error(); data = result; render(); }).catch(() => document.querySelectorAll('.loading').forEach(element => { element.textContent = 'Unable to load live data.'; }));
