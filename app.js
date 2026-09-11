@@ -1,6 +1,6 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec?action=publicData';
 Chart.register({ id: 'valueLabels', afterDatasetsDraw(chart) { const { ctx } = chart; ctx.save(); ctx.fillStyle = '#f6f0e2'; ctx.font = '700 11px Barlow Condensed'; ctx.textAlign = 'center'; chart.data.datasets.forEach((dataset, datasetIndex) => chart.getDatasetMeta(datasetIndex).data.forEach((element, index) => { const value = dataset.data[index]; if (value === null || value === undefined) return; const point = element.tooltipPosition(); const isBar = chart.getDatasetMeta(datasetIndex).type === 'bar'; const label = chart.canvas.id === 'wins-chart' ? `${value}%` : Math.abs(value); ctx.fillText(label, point.x, isBar ? (value < 0 ? point.y + 13 : point.y - 7) : point.y - 8); })); ctx.restore(); } });
-let data = { players: [], matches: [] }, selectedMonth = 'all', selectedYear = 'all', selectedSummaryYear = '', selectedSession = '', calendarMonth = '', charts = [];
+let data = { players: [], matches: [] }, selectedMonth = 'all', selectedYear = 'all', selectedSummaryYear = '', selectedSession = '', calendarMonth = '', recentStart = 0, charts = [];
 let language = localStorage.getItem('lk-language') || 'en';
 const words = {
   en: { navPlayers:'Players',navMatches:'Matches',navStats:'Statistics',navSessions:'Sessions',eyebrow:'CLUB TRAINING MATCH GAME LOG',heroDescription:'Every point. Every player. One club.',viewResults:'View match results',matchesPlayed:'Matches played',activePlayers:'Active players',latestResult:'Latest result',winsLeader:'Wins leader',sectionStatsKicker:'THE NUMBERS',sectionStats:'Club Training Statistics',rankingTitle:'Win Rankings',minimumMatches:'Min. 3 matches',sectionMatchesKicker:'CLUB TRAINING GAME LOG',sectionMatches:'Training Match Results',sectionPlayersKicker:'THE SQUAD',sectionPlayers:'Players',sessionKicker:'TRAINING LOG',sessionTitle:'Session Replay',allResults:'All results',training:'Training',tournament:'Tournament',trainingYear:'Training year',trainingMonth:'Training month',winsChart:'Win Rate Leaders',formatChart:'Score Breakdown',groupKicker:'SQUAD BREAKDOWN',groupTitle:'Group Statistics',categoryStats:'Player Category',genderStats:'Gender',threeMonthKicker:'RECENT FORM',threeMonthTitle:'Leaderboards for the Last 3 Months',monthLeader:'Month leader',yearLeader:'Year leader',gamesPlayed:'games played',participated:'participated',unassigned:'Unassigned',loading:'Loading live data...',updating:'Live data',lastUpdated:'Last updated',officialSite:'Official club website',matches:'matches',players:'players',noSessions:'No training sessions found' },
@@ -9,6 +9,7 @@ const words = {
 const t = key => words[language][key];
 const nameFor = player => language === 'en' && player.englishName ? player.englishName : player.displayName;
 const playerLink = player => `<a class="player-link" href="player.html?id=${player.playerId}">${nameFor(player)}</a>`;
+const eligibility = matches => { const top = rankPlayers(matches)[0]?.stats; const minimum = Math.max(3, Math.ceil(((top?.wins || 0) + (top?.losses || 0)) * .2)); return { minimum, text: language === 'en' ? `Eligibility: at least ${minimum} matches (20% of the period leader's games; minimum 3).` : `対象: 期間最多試合数の20%以上、かつ最低${minimum}試合。` }; };
 const eventType = match => /club|training|練習/i.test(`${match.event} ${match.division}`) ? 'training' : 'tournament';
 const visibleMatches = () => data.matches.filter(match => eventType(match) === 'training' && (selectedYear === 'all' || match.matchDate.startsWith(selectedYear)) && (selectedMonth === 'all' || match.matchDate.startsWith(selectedMonth)));
 const playerMap = () => new Map(data.players.map(player => [player.playerId, player]));
@@ -39,8 +40,11 @@ function matchCard(match, players) {
 
 function renderCharts(ranked) {
   charts.forEach(chart => chart.destroy());
+  const allTimeEligibility = eligibility(visibleMatches());
+  const eligible = ranked.filter(entry => entry.stats.wins + entry.stats.losses >= allTimeEligibility.minimum);
+  document.querySelector('#wins-eligibility').textContent = allTimeEligibility.text;
   charts = [
-    new Chart(document.querySelector('#wins-chart'), { type: 'bar', data: { labels: ranked.filter(entry => entry.stats.wins + entry.stats.losses >= 3).slice(0, 6).map(entry => [nameFor(entry.player), `${entry.stats.wins + entry.stats.losses}G · ${entry.stats.wins}W-${entry.stats.losses}L`]), datasets: [{ data: ranked.filter(entry => entry.stats.wins + entry.stats.losses >= 3).slice(0, 6).map(entry => Math.round(entry.stats.wins / (entry.stats.wins + entry.stats.losses) * 100)), backgroundColor: '#d6a516', borderRadius: 3 }] }, options: { plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => `${context.raw}% win rate` } } }, scales: { x: { ticks: { color: '#f6f0e2' }, grid: { display: false } }, y: { max: 100, ticks: { color: '#a5a198', callback: value => `${value}%` }, grid: { color: 'rgba(246,240,226,.1)' } } } } })
+    new Chart(document.querySelector('#wins-chart'), { type: 'bar', data: { labels: eligible.slice(0, 6).map(entry => [nameFor(entry.player), `${entry.stats.wins + entry.stats.losses}G · ${entry.stats.wins}W-${entry.stats.losses}L`]), datasets: [{ data: eligible.slice(0, 6).map(entry => Math.round(entry.stats.wins / (entry.stats.wins + entry.stats.losses) * 100)), backgroundColor: '#d6a516', borderRadius: 3 }] }, options: { plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => `${context.raw}% win rate` } } }, scales: { x: { ticks: { color: '#f6f0e2' }, grid: { display: false } }, y: { max: 100, ticks: { color: '#a5a198', callback: value => `${value}%` }, grid: { color: 'rgba(246,240,226,.1)' } } } } })
   ];
 }
 
@@ -121,27 +125,31 @@ function renderGroupStats(matches) {
 }
 
 function renderThreeMonthSummary() {
-  const months = [...new Set(data.matches.filter(match => eventType(match) === 'training').map(match => match.matchDate.slice(0, 7)))].sort().slice(-3).reverse();
+  const allMonths = [...new Set(data.matches.filter(match => eventType(match) === 'training').map(match => match.matchDate.slice(0, 7)))].sort().reverse();
+  recentStart = Math.min(recentStart, Math.max(0, allMonths.length - 3));
+  const months = allMonths.slice(recentStart, recentStart + 3);
+  document.querySelector('#recent-prev').disabled = recentStart >= allMonths.length - 3;
+  document.querySelector('#recent-next').disabled = recentStart === 0;
   const report = months.map(month => {
     const matches = data.matches.filter(match => eventType(match) === 'training' && match.matchDate.startsWith(month));
     const participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id]));
-    const rankings = rankPlayers(matches).filter(entry => entry.stats.wins + entry.stats.losses);
+    const periodEligibility = eligibility(matches), rankings = rankPlayers(matches).filter(entry => entry.stats.wins + entry.stats.losses >= periodEligibility.minimum);
     const groups = new Map();
     rankings.forEach(entry => { const category = entry.player.schoolLevel || t('unassigned'); if (!groups.has(category)) groups.set(category, []); groups.get(category).push(entry); });
     const leaders = [...groups.entries()].map(([category, entries]) => `<section class="category-podium"><h4>${category}</h4>${entries.slice(0, 3).map((entry, index) => { const games = entry.stats.wins + entry.stats.losses; return `<div><i>${index + 1}</i><b>${playerLink(entry.player)}</b><span>${Math.round(entry.stats.wins / games * 100)}% · ${games}G · ${entry.stats.wins}W-${entry.stats.losses}L</span><aside class="record-bar"><i style="width:${entry.stats.wins / games * 100}%"></i><b style="width:${entry.stats.losses / games * 100}%"></b></aside></div>`; }).join('')}</section>`).join('');
-    return { month, matches, participants, leader: rankings[0], leaders };
+    return { month, matches, participants, leader: rankings[0], leaders, eligibility: periodEligibility };
   });
-  document.querySelector('#three-month-summary').innerHTML = `<div class="three-month-cards">${report.map(item => `<article><header><p>${item.month}</p><strong>${item.matches.length}<small>${t('matches')}</small></strong><span>${item.participants.size} ${t('players')} ${t('participated')}</span></header><div class="monthly-leader"><b>${t('monthLeader')}</b><h3>${item.leader ? playerLink(item.leader.player) : '-'}</h3><span>${item.leader ? `${Math.round(item.leader.stats.wins / (item.leader.stats.wins + item.leader.stats.losses) * 100)}% · ${item.leader.stats.wins + item.leader.stats.losses} ${t('gamesPlayed')}` : '-'}</span></div><div class="podiums">${item.leaders}</div></article>`).join('')}</div>`;
+  document.querySelector('#three-month-summary').innerHTML = `<div class="three-month-cards">${report.map(item => `<article><header><p>${item.month}</p><strong>${item.matches.length}<small>${t('matches')}</small></strong><span>${item.participants.size} ${t('players')} ${t('participated')}</span><small class="eligibility">${item.eligibility.text}</small></header><div class="monthly-leader"><b>${t('monthLeader')}</b><h3>${item.leader ? playerLink(item.leader.player) : '-'}</h3><span>${item.leader ? `${Math.round(item.leader.stats.wins / (item.leader.stats.wins + item.leader.stats.losses) * 100)}% · ${item.leader.stats.wins + item.leader.stats.losses} ${t('gamesPlayed')}` : '-'}</span></div><div class="podiums">${item.leaders}</div></article>`).join('')}</div>`;
 }
 
 function renderYearlySummary() {
   const matches = data.matches.filter(match => eventType(match) === 'training' && match.matchDate.startsWith(selectedSummaryYear));
   const participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id]));
-  const rankings = rankPlayers(matches).filter(entry => entry.stats.wins + entry.stats.losses);
+  const periodEligibility = eligibility(matches), rankings = rankPlayers(matches).filter(entry => entry.stats.wins + entry.stats.losses >= periodEligibility.minimum);
   const categories = new Map();
   rankings.forEach(entry => { const category = entry.player.schoolLevel || t('unassigned'); if (!categories.has(category)) categories.set(category, []); categories.get(category).push(entry); });
   const podiums = [...categories.entries()].map(([category, entries]) => `<section class="category-podium"><h4>${category}</h4>${entries.slice(0, 3).map((entry, index) => { const games = entry.stats.wins + entry.stats.losses; return `<div><i>${index + 1}</i><b>${playerLink(entry.player)}</b><span>${Math.round(entry.stats.wins / games * 100)}% · ${games}G · ${entry.stats.wins}W-${entry.stats.losses}L</span><aside class="record-bar"><i style="width:${entry.stats.wins / games * 100}%"></i><b style="width:${entry.stats.losses / games * 100}%"></b></aside></div>`; }).join('')}</section>`).join('');
-  document.querySelector('#yearly-summary').innerHTML = `<article><header><p>${selectedSummaryYear || '-'}</p><strong>${matches.length}<small>${t('matches')}</small></strong><span>${participants.size} ${t('players')} ${t('participated')}</span></header><div class="monthly-leader"><b>${t('yearLeader')}</b><h3>${rankings[0] ? playerLink(rankings[0].player) : '-'}</h3><span>${rankings[0] ? `${Math.round(rankings[0].stats.wins / (rankings[0].stats.wins + rankings[0].stats.losses) * 100)}% · ${rankings[0].stats.wins + rankings[0].stats.losses} ${t('gamesPlayed')}` : '-'}</span></div><div class="podiums">${podiums}</div></article>`;
+  document.querySelector('#yearly-summary').innerHTML = `<article><header><p>${selectedSummaryYear || '-'}</p><strong>${matches.length}<small>${t('matches')}</small></strong><span>${participants.size} ${t('players')} ${t('participated')}</span><small class="eligibility">${periodEligibility.text}</small></header><div class="monthly-leader"><b>${t('yearLeader')}</b><h3>${rankings[0] ? playerLink(rankings[0].player) : '-'}</h3><span>${rankings[0] ? `${Math.round(rankings[0].stats.wins / (rankings[0].stats.wins + rankings[0].stats.losses) * 100)}% · ${rankings[0].stats.wins + rankings[0].stats.losses} ${t('gamesPlayed')}` : '-'}</span></div><div class="podiums">${podiums}</div></article>`;
 }
 
 function openHeadToHead(matchId) {
@@ -175,5 +183,7 @@ document.querySelector('#player-search').oninput = () => renderPlayers(rankPlaye
 document.querySelector('#month-select').onchange = event => { selectedMonth = event.target.value; render(); };
 document.querySelector('#year-select').onchange = event => { selectedYear = event.target.value; render(); };
 document.querySelector('#yearly-select').onchange = event => { selectedSummaryYear = event.target.value; renderYearlySummary(); };
+document.querySelector('#recent-prev').onclick = () => { recentStart++; renderThreeMonthSummary(); };
+document.querySelector('#recent-next').onclick = () => { recentStart--; renderThreeMonthSummary(); };
 document.addEventListener('click', event => { const card = event.target.closest('.match-card'); if (card?.dataset.matchId) openHeadToHead(card.dataset.matchId); if (event.target.closest('.modal-close')) document.querySelector('#head-to-head').close(); });
 fetch('./public-data.json').then(response => { if (!response.ok) throw new Error(); return response.json(); }).catch(() => fetch(API_URL).then(response => response.json())).then(result => { if (!result.ok) throw new Error(); data = result; render(); }).catch(() => document.querySelectorAll('.loading').forEach(element => { element.textContent = 'Unable to load live data.'; }));
