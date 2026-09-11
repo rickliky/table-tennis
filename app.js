@@ -7,7 +7,7 @@ const words = {
   ja: { navPlayers:'選手',navMatches:'試合結果',navStats:'スタッツ',navSessions:'練習日',eyebrow:'クラブ練習試合ゲームログ',heroDescription:'すべてのポイント。すべての選手。ひとつのクラブ。',viewResults:'試合結果を見る',matchesPlayed:'試合数',activePlayers:'登録選手',latestResult:'最新試合日',winsLeader:'最多勝',sectionStatsKicker:'数字で見る',sectionStats:'クラブ練習スタッツ',rankingTitle:'勝利ランキング',minimumMatches:'最低3試合',sectionMatchesKicker:'クラブ練習ゲームログ',sectionMatches:'練習試合結果',sectionPlayersKicker:'選手紹介',sectionPlayers:'選手',sessionKicker:'練習ログ',sessionTitle:'練習日リプレイ',allResults:'すべて',training:'クラブ練習',tournament:'大会',trainingYear:'練習年',trainingMonth:'練習月',winsChart:'勝率ランキング',formatChart:'スコア内訳',groupKicker:'グループ別',groupTitle:'グループスタッツ',categoryStats:'区分別',genderStats:'性別',threeMonthKicker:'直近の成績',threeMonthTitle:'月間リーダーボード',monthLeader:'月間リーダー',yearLeader:'年間リーダー',gamesPlayed:'試合',participated:'参加',unassigned:'未設定',loading:'データを読み込んでいます...',updating:'ライブデータ',lastUpdated:'最終更新',officialSite:'公式クラブサイト',matches:'試合',players:'選手',noSessions:'練習記録がありません' }
 };
 const t = key => words[language][key];
-const nameFor = player => language === 'en' && player.englishName ? player.englishName : player.displayName;
+const nameFor = player => player.displayName;
 const playerLink = player => `<a class="player-link" href="player.html?id=${player.playerId}">${nameFor(player)}</a>`;
 const eligibility = matches => { const gameDays = new Set(matches.map(match => match.matchDate)).size, minimum = gameDays * 2; return { minimum, gameDays, text: language === 'en' ? `Eligibility: at least ${minimum} matches (2 per ${gameDays} match days).` : `対象: ${gameDays}試合日 x 2 = 最低${minimum}試合。` }; };
 const categoryOrder = ['小学生', '中学生', '高校生', '一般'];
