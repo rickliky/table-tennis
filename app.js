@@ -189,6 +189,8 @@ function render() {
 }
 
 document.querySelector('#language-toggle').onclick = () => { language = language === 'en' ? 'ja' : 'en'; localStorage.setItem('lk-language', language); render(); };
+document.querySelector('#menu-toggle').onclick = event => { const menu = document.querySelector('nav'); const open = menu.classList.toggle('open'); event.currentTarget.setAttribute('aria-expanded', open); };
+document.querySelector('nav').onclick = event => { if (event.target.matches('a')) { document.querySelector('nav').classList.remove('open'); document.querySelector('#menu-toggle').setAttribute('aria-expanded', 'false'); } };
 document.querySelector('#player-search').oninput = () => renderPlayers(rankPlayers());
 document.querySelector('#month-select').onchange = event => { selectedMonth = event.target.value; render(); };
 document.querySelector('#year-select').onchange = event => { selectedYear = event.target.value; render(); };
