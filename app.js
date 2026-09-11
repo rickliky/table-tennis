@@ -115,21 +115,27 @@ function renderGroupStats(matches) {
 
 function renderThreeMonthSummary() {
   const months = [...new Set(data.matches.map(match => match.matchDate.slice(0, 7)))].sort().slice(-3);
-  const matches = data.matches.filter(match => months.includes(match.matchDate.slice(0, 7)));
-  const participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id]));
-  const byCategory = new Map();
-  const stats = playerStats(matches);
-  data.players.filter(player => participants.has(player.playerId)).forEach(player => { const key = player.schoolLevel || t('unassigned'); if (!byCategory.has(key)) byCategory.set(key, []); byCategory.get(key).push({ player, stats: stats.get(player.playerId) }); });
-  const leaders = [...byCategory.entries()].map(([category, entries]) => `${category}: ${entries.filter(entry => entry.stats.wins + entry.stats.losses).sort((a,b) => (b.stats.wins/(b.stats.wins+b.stats.losses)) - (a.stats.wins/(a.stats.wins+a.stats.losses))).slice(0,3).map(entry => nameFor(entry.player)).join(', ') || '-'}`);
-  document.querySelector('#three-month-summary').innerHTML = `<article><strong>${matches.length}</strong><span>${t('matches')}</span></article><article><strong>${participants.size}</strong><span>${t('players')}</span></article><article class="three-leaders"><strong>TOP 3</strong><span>${leaders.join('<br>')}</span></article>`;
+  const report = months.map(month => {
+    const matches = data.matches.filter(match => match.matchDate.startsWith(month));
+    const participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id]));
+    const rankings = rankPlayers(matches).filter(entry => entry.stats.wins + entry.stats.losses);
+    const groups = new Map();
+    rankings.forEach(entry => { const category = entry.player.schoolLevel || t('unassigned'); if (!groups.has(category)) groups.set(category, []); groups.get(category).push(entry); });
+    const leaders = [...groups.entries()].map(([category, entries]) => `<li><b>${category}</b><span>${entries.slice(0, 3).map(entry => `${nameFor(entry.player)} ${Math.round(entry.stats.wins / (entry.stats.wins + entry.stats.losses) * 100)}%`).join(' · ')}</span></li>`).join('');
+    return { month, matches, participants, leader: rankings[0], leaders };
+  });
+  document.querySelector('#three-month-summary').innerHTML = `<div class="three-month-cards">${report.map(item => `<article><p>${item.month}</p><strong>${item.matches.length}</strong><span>${t('matches')} · ${item.participants.size} ${t('players')}</span><h3>${item.leader ? nameFor(item.leader.player) : '-'}</h3><small>${item.leader ? Math.round(item.leader.stats.wins / (item.leader.stats.wins + item.leader.stats.losses) * 100) : 0}% WIN RATE</small><ul>${item.leaders}</ul></article>`).join('')}</div><article class="three-month-chart"><canvas id="three-month-chart"></canvas></article>`;
+  charts.push(new Chart(document.querySelector('#three-month-chart'), { type: 'bar', data: { labels: report.map(item => item.month), datasets: [{ label: t('matches'), data: report.map(item => item.matches.length), backgroundColor: '#d6a516', borderRadius: 4 }, { label: t('players'), data: report.map(item => item.participants.size), backgroundColor: '#6e6a62', borderRadius: 4 }] }, options: { plugins: { legend: { labels: { color: '#f6f0e2' } } }, scales: { x: { ticks: { color: '#f6f0e2' }, grid: { display: false } }, y: { ticks: { color: '#a5a198', stepSize: 1 }, grid: { color: 'rgba(246,240,226,.1)' } } } } }));
 }
 
 function openHeadToHead(matchId) {
   const match = data.matches.find(item => item.matchId === matchId); if (!match) return;
   const map = playerMap(), first = map.get(match.player1Id), second = map.get(match.player2Id);
-  const history = data.matches.filter(item => (item.player1Id === match.player1Id && item.player2Id === match.player2Id) || (item.player1Id === match.player2Id && item.player2Id === match.player1Id)).sort((a,b) => b.matchDate.localeCompare(a.matchDate));
+  const history = data.matches.filter(item => (item.player1Id === match.player1Id && item.player2Id === match.player2Id) || (item.player1Id === match.player2Id && item.player2Id === match.player1Id)).sort((a,b) => a.matchDate.localeCompare(b.matchDate));
   const firstWins = history.filter(item => item.winnerId === match.player1Id).length;
-  document.querySelector('#head-to-head-content').innerHTML = `<p class="eyebrow">HEAD TO HEAD</p><h2>${nameFor(first)} <em>${firstWins} - ${history.length - firstWins}</em> ${nameFor(second)}</h2><p class="h2h-meta">${history.length} historic matches · ${match.matchDate}</p><div class="h2h-history">${history.map(item => `<div><span>${item.matchDate}</span><strong>${item.player1Name} ${item.player1Sets}-${item.player2Sets} ${item.player2Name}</strong></div>`).join('')}</div>`;
+  document.querySelector('#head-to-head-content').innerHTML = `<p class="eyebrow">HEAD TO HEAD</p><h2>${nameFor(first)} <em>${firstWins} - ${history.length - firstWins}</em> ${nameFor(second)}</h2><p class="h2h-meta">${history.length} historic matches · ${match.matchDate}</p><div class="h2h-chart"><canvas id="h2h-chart"></canvas></div><div class="h2h-history">${[...history].reverse().map(item => `<div><span>${item.matchDate}</span><strong>${item.player1Name} ${item.player1Sets}-${item.player2Sets} ${item.player2Name}</strong></div>`).join('')}</div>`;
+  let running = 0; const trend = history.map(item => { running += item.winnerId === match.player1Id ? 1 : -1; return running; });
+  new Chart(document.querySelector('#h2h-chart'), { type: 'line', data: { labels: history.map(item => item.matchDate), datasets: [{ label: `${nameFor(first)} lead`, data: trend, borderColor: '#d6a516', backgroundColor: 'rgba(214,165,22,.18)', fill: true, tension: .3, pointBackgroundColor: '#f6f0e2' }] }, options: { plugins: { legend: { labels: { color: '#f6f0e2' } } }, scales: { x: { ticks: { color: '#a5a198' }, grid: { display: false } }, y: { ticks: { color: '#a5a198', stepSize: 1 }, grid: { color: 'rgba(246,240,226,.1)' } } } } });
   document.querySelector('#head-to-head').showModal();
 }
 
