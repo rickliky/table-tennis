@@ -15,7 +15,8 @@ const minimumText = minimum => language === 'en' ? `min. ${minimum}` : `最低${
 const categoryOrder = ['小学生', '中学生', '高校生', '一般'];
 const sortCategories = entries => entries.sort(([left], [right]) => { const index = category => category === t('unassigned') || category === 'Unassigned' ? 98 : categoryOrder.includes(category) ? categoryOrder.indexOf(category) : 97; return index(left) - index(right) || left.localeCompare(right, 'ja'); });
 const categoryLeaders = () => language === 'en' ? 'Category leaders' : 'カテゴリ首位';
-const phrase = key => ({ matchDays: language === 'en' ? 'match days' : '試合日', yearKicker: language === 'en' ? 'YEAR IN REVIEW' : '年間成績', yearTitle: language === 'en' ? 'Yearly Leaderboard' : '年間リーダーボード', selectYear: language === 'en' ? 'Select year' : '年を選択', trainingLog: language === 'en' ? 'CLUB TRAINING MATCH GAME LOG' : 'クラブ練習試合ゲームログ', matchDayVolume: language === 'en' ? 'Match-Day Volume' : '試合日別試合数', menu: language === 'en' ? 'MENU' : 'メニュー', h2h: language === 'en' ? 'HEAD TO HEAD' : '直接対決', h2hTimeline: language === 'en' ? 'Newest to oldest · Win / Draw / Loss timeline' : '新しい順 · 勝ち / 引分 / 負け タイムライン', win: language === 'en' ? 'WIN' : '勝ち', loss: language === 'en' ? 'LOSS' : '負け', draw: language === 'en' ? 'DRAW' : '引分' })[key];
+const rankIcon = index => ['🥇', '🥈', '🥉'][index] || `${index + 1}`;
+const phrase = key => ({ matchDays: language === 'en' ? 'match days' : '試合日', since: language === 'en' ? 'Since' : '集計開始', yearKicker: language === 'en' ? 'YEAR IN REVIEW' : '年間成績', yearTitle: language === 'en' ? 'Yearly Leaderboard' : '年間リーダーボード', selectYear: language === 'en' ? 'Select year' : '年を選択', trainingLog: language === 'en' ? 'CLUB TRAINING MATCH GAME LOG' : 'クラブ練習試合ゲームログ', matchDayVolume: language === 'en' ? 'Match-Day Volume' : '試合日別試合数', menu: language === 'en' ? 'MENU' : 'メニュー', h2h: language === 'en' ? 'HEAD TO HEAD' : '直接対決', h2hTimeline: language === 'en' ? 'Newest to oldest · Win / Draw / Loss timeline' : '新しい順 · 勝ち / 引分 / 負け タイムライン', win: language === 'en' ? 'WIN' : '勝ち', loss: language === 'en' ? 'LOSS' : '負け', draw: language === 'en' ? 'DRAW' : '引分' })[key];
 const eventType = match => /club|training|練習/i.test(`${match.event} ${match.division}`) ? 'training' : 'tournament';
 const visibleMatches = () => data.matches.filter(match => eventType(match) === 'training' && (selectedYear === 'all' || match.matchDate.startsWith(selectedYear)) && (selectedMonth === 'all' || match.matchDate.startsWith(selectedMonth)));
 const playerMap = () => new Map(data.players.map(player => [player.playerId, player]));
@@ -44,15 +45,6 @@ function matchCard(match, players) {
   return `<button class="match-card" data-match-id="${match.matchId}"><div class="match-meta"><span>${match.matchDate}</span><span class="badge ${eventType(match)}">${t(eventType(match))}</span></div><div class="match-score"><span class="match-player ${match.winnerId === match.player1Id ? 'winner' : ''}">${nameFor(first)}</span><strong class="score">${match.player1Sets} <i>:</i> ${match.player2Sets}</strong><span class="match-player ${match.winnerId === match.player2Id ? 'winner' : ''}">${nameFor(second)}</span></div><div class="match-context"><span>${match.event || 'Little Kings'}</span><b>${!isComplete(match) ? t('incomplete') : `${match.format || 'Singles'} · ${match.resultStatus || 'Recorded'}`}</b></div></button>`;
 }
 
-function renderCharts(ranked) {
-  charts.forEach(chart => chart.destroy());
-  const allTimeEligibility = eligibility(visibleMatches());
-  const eligible = ranked.filter(entry => entry.stats.wins + entry.stats.losses >= eligibility(visibleMatches(), entry.player.playerId).minimum);
-  document.querySelector('#wins-eligibility').textContent = allTimeEligibility.text;
-  charts = [
-    new Chart(document.querySelector('#wins-chart'), { type: 'bar', data: { labels: eligible.slice(0, 6).map(entry => [nameFor(entry.player), `${entry.stats.wins + entry.stats.losses}G · ${entry.stats.wins}W-${entry.stats.losses}L`]), datasets: [{ data: eligible.slice(0, 6).map(entry => Math.round(entry.stats.wins / (entry.stats.wins + entry.stats.losses) * 100)), backgroundColor: '#d6a516', borderRadius: 3 }] }, options: { plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => `${context.raw}% win rate` } } }, scales: { x: { ticks: { color: '#f6f0e2' }, grid: { display: false } }, y: { max: 100, ticks: { color: '#a5a198', callback: value => `${value}%` }, grid: { color: 'rgba(246,240,226,.1)' } } } } })
-  ];
-}
 
 function renderSession() {
   const dates = [...new Set(data.matches.filter(match => eventType(match) === 'training').map(match => match.matchDate))].sort().reverse();
@@ -102,9 +94,9 @@ function setupMonths() {
   yearSelect.innerHTML = `<option value="all">${t('allResults')}</option>${years.map(year => `<option value="${year}">${year}</option>`).join('')}`;
   yearSelect.value = years.includes(selectedYear) ? selectedYear : 'all';
   const summarySelect = document.querySelector('#yearly-select');
-  if (!selectedSummaryYear || !years.includes(selectedSummaryYear)) selectedSummaryYear = years[0] || '';
-  summarySelect.innerHTML = years.map(year => `<option value="${year}">${year}</option>`).join('');
-  summarySelect.value = selectedSummaryYear;
+  if (!selectedSummaryYear) selectedSummaryYear = 'all'; else if (selectedSummaryYear !== 'all' && !years.includes(selectedSummaryYear)) selectedSummaryYear = years[0] || 'all';
+  summarySelect.innerHTML = `<option value="all">${language === 'en' ? 'All-Time' : '全期間'}</option>${years.map(year => `<option value="${year}">${year}</option>`).join('')}`;
+  summarySelect.value = selectedSummaryYear || 'all';
 }
 
 function renderPlayers(ranked) {
@@ -145,23 +137,23 @@ function renderThreeMonthSummary() {
     const groups = new Map();
     rankings.forEach(entry => { const category = entry.player.schoolLevel || t('unassigned'); if (!groups.has(category)) groups.set(category, []); groups.get(category).push(entry); });
     const categories = sortCategories([...groups.entries()]);
-    const leaders = categories.map(([category, entries]) => `<section class="category-podium"><h4>${category}</h4>${entries.slice(0, 3).map((entry, index) => { const games = entry.stats.wins + entry.stats.losses, minimum = eligibility(matches, entry.player.playerId).minimum; return `<div><i>${index + 1}</i><b>${playerLink(entry.player)}</b><span>${Math.round(entry.stats.wins / games * 100)}% · ${games}G (${minimumText(minimum)}) · ${entry.stats.wins}W-${entry.stats.losses}L</span><aside class="record-bar"><i style="width:${entry.stats.wins / games * 100}%"></i><b style="width:${entry.stats.losses / games * 100}%"></b></aside></div>`; }).join('')}</section>`).join('');
+    const leaders = categories.map(([category, entries]) => `<section class="category-podium"><h4>🏆 ${category}</h4>${entries.slice(0, 3).map((entry, index) => { const games = entry.stats.wins + entry.stats.losses, minimum = eligibility(matches, entry.player.playerId).minimum; return `<div><i>${rankIcon(index)}</i><b>${playerLink(entry.player)}</b><span>${Math.round(entry.stats.wins / games * 100)}% · ${games}G (${minimumText(minimum)}) · ${entry.stats.wins}W-${entry.stats.losses}L</span><aside class="record-bar"><i style="width:${entry.stats.wins / games * 100}%"></i><b style="width:${entry.stats.losses / games * 100}%"></b></aside></div>`; }).join('')}</section>`).join('');
     const champions = categories.map(([category, entries]) => { const entry = entries[0], games = entry.stats.wins + entry.stats.losses; return `<div><span>${category}</span><b>${playerLink(entry.player)}</b><small>${Math.round(entry.stats.wins / games * 100)}% · ${games}G · ${entry.stats.wins}W-${entry.stats.losses}L</small></div>`; }).join('');
     return { month, matches, participants, leaders, champions, eligibility: periodEligibility };
   });
-  document.querySelector('#three-month-summary').innerHTML = `<div class="three-month-cards">${report.map(item => `<article><header><p>${item.month}</p><strong>${item.matches.length}<small>${t('matches')}</small></strong><span>${item.eligibility.gameDays} ${phrase('matchDays')} · ${item.participants.size} ${t('players')} ${t('participated')}</span><small class="eligibility">${item.eligibility.text}</small></header><div class="champion-strip"><b>${categoryLeaders()}</b>${item.champions}</div><div class="podiums">${item.leaders}</div></article>`).join('')}</div>`;
+  document.querySelector('#three-month-summary').innerHTML = `<div class="three-month-cards">${report.map(item => `<article><header><p>${item.month}</p><strong>${item.matches.length}<small>${t('matches')}</small></strong><span>${item.eligibility.gameDays} ${phrase('matchDays')} · ${item.participants.size} ${t('players')} ${t('participated')}</span><small class="eligibility">${item.eligibility.text}</small></header><div class="champion-strip"><b>🏆 ${categoryLeaders()}</b>${item.champions}</div><div class="podiums">${item.leaders}</div></article>`).join('')}</div>`;
 }
 
 function renderYearlySummary() {
-  const matches = data.matches.filter(match => eventType(match) === 'training' && match.matchDate.startsWith(selectedSummaryYear));
+  const matches = data.matches.filter(match => eventType(match) === 'training' && (selectedSummaryYear === 'all' || match.matchDate.startsWith(selectedSummaryYear)));
   const participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id]));
   const periodEligibility = eligibility(matches), rankings = rankPlayers(matches).filter(entry => entry.stats.wins + entry.stats.losses >= eligibility(matches, entry.player.playerId).minimum);
   const categories = new Map();
   rankings.forEach(entry => { const category = entry.player.schoolLevel || t('unassigned'); if (!categories.has(category)) categories.set(category, []); categories.get(category).push(entry); });
   const categoryEntries = sortCategories([...categories.entries()]);
-  const podiums = categoryEntries.map(([category, entries]) => `<section class="category-podium"><h4>${category}</h4>${entries.slice(0, 3).map((entry, index) => { const games = entry.stats.wins + entry.stats.losses, minimum = eligibility(matches, entry.player.playerId).minimum; return `<div><i>${index + 1}</i><b>${playerLink(entry.player)}</b><span>${Math.round(entry.stats.wins / games * 100)}% · ${games}G (${minimumText(minimum)}) · ${entry.stats.wins}W-${entry.stats.losses}L</span><aside class="record-bar"><i style="width:${entry.stats.wins / games * 100}%"></i><b style="width:${entry.stats.losses / games * 100}%"></b></aside></div>`; }).join('')}</section>`).join('');
+  const podiums = categoryEntries.map(([category, entries]) => `<section class="category-podium"><h4>🏆 ${category}</h4>${entries.slice(0, 3).map((entry, index) => { const games = entry.stats.wins + entry.stats.losses, minimum = eligibility(matches, entry.player.playerId).minimum; return `<div><i>${rankIcon(index)}</i><b>${playerLink(entry.player)}</b><span>${Math.round(entry.stats.wins / games * 100)}% · ${games}G (${minimumText(minimum)}) · ${entry.stats.wins}W-${entry.stats.losses}L</span><aside class="record-bar"><i style="width:${entry.stats.wins / games * 100}%"></i><b style="width:${entry.stats.losses / games * 100}%"></b></aside></div>`; }).join('')}</section>`).join('');
   const champions = categoryEntries.map(([category, entries]) => { const entry = entries[0], games = entry.stats.wins + entry.stats.losses; return `<div><span>${category}</span><b>${playerLink(entry.player)}</b><small>${Math.round(entry.stats.wins / games * 100)}% · ${games}G · ${entry.stats.wins}W-${entry.stats.losses}L</small></div>`; }).join('');
-  document.querySelector('#yearly-summary').innerHTML = `<article><header><p>${selectedSummaryYear || '-'}</p><strong>${matches.length}<small>${t('matches')}</small></strong><span>${periodEligibility.gameDays} ${phrase('matchDays')} · ${participants.size} ${t('players')} ${t('participated')}</span><small class="eligibility">${periodEligibility.text}</small></header><div class="champion-strip"><b>${categoryLeaders()}</b>${champions}</div><div class="podiums">${podiums}</div></article>`;
+  document.querySelector('#yearly-summary').innerHTML = `<article><header><p>${selectedSummaryYear === 'all' ? (language === 'en' ? 'ALL-TIME' : '全期間') : selectedSummaryYear || '-'}</p><strong>${matches.filter(isComplete).length}<small>${t('matches')}</small></strong><span>${periodEligibility.gameDays} ${phrase('matchDays')} · ${participants.size} ${t('players')} ${t('participated')}</span><small class="eligibility">${periodEligibility.text}</small></header><div class="champion-strip"><b>🏆 ${categoryLeaders()}</b>${champions}</div><div class="podiums">${podiums}</div></article>`;
 }
 
 function openHeadToHead(matchId) {
@@ -179,15 +171,16 @@ function render() {
   document.documentElement.lang = language;
   document.querySelectorAll('[data-i18n]').forEach(element => { element.textContent = t(element.dataset.i18n); });
   document.querySelector('#language-toggle').textContent = language === 'en' ? '日本語' : 'ENGLISH';
-  document.querySelector('#yearly-kicker').textContent = phrase('yearKicker'); document.querySelector('#yearly-title').textContent = phrase('yearTitle'); document.querySelector('#yearly-select-label').textContent = phrase('selectYear'); document.querySelector('#training-label').textContent = phrase('trainingLog'); document.querySelector('#session-timeline-title').textContent = phrase('matchDayVolume'); document.querySelector('#menu-toggle').textContent = phrase('menu');
+  document.querySelector('#yearly-kicker').textContent = language === 'en' ? 'OVERALL RESULTS' : '総合成績'; document.querySelector('#yearly-title').textContent = language === 'en' ? 'Overall Leaderboard' : '総合リーダーボード'; document.querySelector('#yearly-select-label').textContent = language === 'en' ? 'Select period' : '期間を選択'; document.querySelector('#training-label').textContent = phrase('trainingLog'); document.querySelector('#session-timeline-title').textContent = phrase('matchDayVolume'); document.querySelector('#menu-toggle').textContent = phrase('menu');
   document.querySelector('#player-search').placeholder = language === 'en' ? 'Search players' : '選手を検索';
   setupMonths();
   const matches = visibleMatches(), ranked = rankPlayers(matches), dates = matches.map(match => match.matchDate).filter(Boolean).sort();
-  document.querySelector('#match-count').textContent = matches.length;
+  charts.forEach(chart => chart.destroy()); charts = [];
+  document.querySelector('#match-count').textContent = matches.filter(isComplete).length;
+  document.querySelector('#match-since').textContent = `${phrase('since')} ${dates[0] || '-'}`;
   document.querySelector('#player-count').textContent = data.players.length;
   document.querySelector('#latest-date').textContent = dates.at(-1) || '-';
-  document.querySelector('#win-leader').textContent = ranked[0] ? nameFor(ranked[0].player) : '-';
-  renderPlayers(ranked); renderCharts(ranked); renderGroupStats(matches); renderThreeMonthSummary(); renderYearlySummary(); renderSession();
+  renderPlayers(ranked); renderGroupStats(matches); renderThreeMonthSummary(); renderYearlySummary(); renderSession();
   document.querySelector('#last-updated').textContent = `${t('lastUpdated')}: ${new Date(data.lastUpdated).toLocaleString(language === 'ja' ? 'ja-JP' : 'en-GB')}`;
 }
 
@@ -200,5 +193,5 @@ document.querySelector('#year-select').onchange = event => { selectedYear = even
 document.querySelector('#yearly-select').onchange = event => { selectedSummaryYear = event.target.value; renderYearlySummary(); };
 document.querySelector('#recent-prev').onclick = () => { recentStart++; renderThreeMonthSummary(); };
 document.querySelector('#recent-next').onclick = () => { recentStart--; renderThreeMonthSummary(); };
-document.addEventListener('click', event => { const card = event.target.closest('.match-card'); if (card?.dataset.matchId) openHeadToHead(card.dataset.matchId); if (event.target.closest('.modal-close')) document.querySelector('#head-to-head').close(); });
+document.addEventListener('click', event => { const card = event.target.closest('.match-card'); if (card?.dataset.matchId) { const match = data.matches.find(item => item.matchId === card.dataset.matchId); if (match) location.href = `player.html?id=${match.player1Id}&opponent=${match.player2Id}`; } if (event.target.closest('.modal-close')) document.querySelector('#head-to-head').close(); });
 fetch('./public-data.json').then(response => { if (!response.ok) throw new Error(); return response.json(); }).catch(() => fetch(API_URL).then(response => response.json())).then(result => { if (!result.ok) throw new Error(); data = result; render(); }).catch(() => document.querySelectorAll('.loading').forEach(element => { element.textContent = 'Unable to load live data.'; }));
