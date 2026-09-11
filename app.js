@@ -9,7 +9,8 @@ const words = {
 const t = key => words[language][key];
 const nameFor = player => player.displayName;
 const playerLink = player => `<a class="player-link" href="player.html?id=${player.playerId}">${nameFor(player)}</a>`;
-const eligibility = matches => { const gameDays = new Set(matches.map(match => match.matchDate)).size, minimum = gameDays * 2; return { minimum, gameDays, text: language === 'en' ? `Eligibility: at least ${minimum} matches (2 per ${gameDays} match days).` : `対象: ${gameDays}試合日 x 2 = 最低${minimum}試合。` }; };
+const eligibility = (matches, playerId) => { const dates = [...new Set(matches.map(match => match.matchDate))].sort(); const firstDate = playerId && matches.filter(match => match.player1Id === playerId || match.player2Id === playerId).map(match => match.matchDate).sort()[0]; const gameDays = firstDate ? dates.filter(date => date >= firstDate).length : dates.length, minimum = gameDays * 2; return { minimum, gameDays, text: language === 'en' ? 'Eligibility: at least 2 matches per match day from a player\'s first match.' : '対象: 選手の初出場日以降、試合日ごとに最低2試合。' }; };
+const minimumText = minimum => language === 'en' ? `min. ${minimum}` : `最低${minimum}試合`;
 const categoryOrder = ['小学生', '中学生', '高校生', '一般'];
 const sortCategories = entries => entries.sort(([left], [right]) => { const index = category => category === t('unassigned') || category === 'Unassigned' ? 98 : categoryOrder.includes(category) ? categoryOrder.indexOf(category) : 97; return index(left) - index(right) || left.localeCompare(right, 'ja'); });
 const categoryLeaders = () => language === 'en' ? 'Category leaders' : 'カテゴリ首位';
@@ -45,7 +46,7 @@ function matchCard(match, players) {
 function renderCharts(ranked) {
   charts.forEach(chart => chart.destroy());
   const allTimeEligibility = eligibility(visibleMatches());
-  const eligible = ranked.filter(entry => entry.stats.wins + entry.stats.losses >= allTimeEligibility.minimum);
+  const eligible = ranked.filter(entry => entry.stats.wins + entry.stats.losses >= eligibility(visibleMatches(), entry.player.playerId).minimum);
   document.querySelector('#wins-eligibility').textContent = allTimeEligibility.text;
   charts = [
     new Chart(document.querySelector('#wins-chart'), { type: 'bar', data: { labels: eligible.slice(0, 6).map(entry => [nameFor(entry.player), `${entry.stats.wins + entry.stats.losses}G · ${entry.stats.wins}W-${entry.stats.losses}L`]), datasets: [{ data: eligible.slice(0, 6).map(entry => Math.round(entry.stats.wins / (entry.stats.wins + entry.stats.losses) * 100)), backgroundColor: '#d6a516', borderRadius: 3 }] }, options: { plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => `${context.raw}% win rate` } } }, scales: { x: { ticks: { color: '#f6f0e2' }, grid: { display: false } }, y: { max: 100, ticks: { color: '#a5a198', callback: value => `${value}%` }, grid: { color: 'rgba(246,240,226,.1)' } } } } })
@@ -138,11 +139,11 @@ function renderThreeMonthSummary() {
   const report = months.map(month => {
     const matches = data.matches.filter(match => eventType(match) === 'training' && match.matchDate.startsWith(month));
     const participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id]));
-    const periodEligibility = eligibility(matches), rankings = rankPlayers(matches).filter(entry => entry.stats.wins + entry.stats.losses >= periodEligibility.minimum);
+    const periodEligibility = eligibility(matches), rankings = rankPlayers(matches).filter(entry => entry.stats.wins + entry.stats.losses >= eligibility(matches, entry.player.playerId).minimum);
     const groups = new Map();
     rankings.forEach(entry => { const category = entry.player.schoolLevel || t('unassigned'); if (!groups.has(category)) groups.set(category, []); groups.get(category).push(entry); });
     const categories = sortCategories([...groups.entries()]);
-    const leaders = categories.map(([category, entries]) => `<section class="category-podium"><h4>${category}</h4>${entries.slice(0, 3).map((entry, index) => { const games = entry.stats.wins + entry.stats.losses; return `<div><i>${index + 1}</i><b>${playerLink(entry.player)}</b><span>${Math.round(entry.stats.wins / games * 100)}% · ${games}G · ${entry.stats.wins}W-${entry.stats.losses}L</span><aside class="record-bar"><i style="width:${entry.stats.wins / games * 100}%"></i><b style="width:${entry.stats.losses / games * 100}%"></b></aside></div>`; }).join('')}</section>`).join('');
+    const leaders = categories.map(([category, entries]) => `<section class="category-podium"><h4>${category}</h4>${entries.slice(0, 3).map((entry, index) => { const games = entry.stats.wins + entry.stats.losses, minimum = eligibility(matches, entry.player.playerId).minimum; return `<div><i>${index + 1}</i><b>${playerLink(entry.player)}</b><span>${Math.round(entry.stats.wins / games * 100)}% · ${games}G (${minimumText(minimum)}) · ${entry.stats.wins}W-${entry.stats.losses}L</span><aside class="record-bar"><i style="width:${entry.stats.wins / games * 100}%"></i><b style="width:${entry.stats.losses / games * 100}%"></b></aside></div>`; }).join('')}</section>`).join('');
     const champions = categories.map(([category, entries]) => { const entry = entries[0], games = entry.stats.wins + entry.stats.losses; return `<div><span>${category}</span><b>${playerLink(entry.player)}</b><small>${Math.round(entry.stats.wins / games * 100)}% · ${games}G · ${entry.stats.wins}W-${entry.stats.losses}L</small></div>`; }).join('');
     return { month, matches, participants, leaders, champions, eligibility: periodEligibility };
   });
@@ -152,11 +153,11 @@ function renderThreeMonthSummary() {
 function renderYearlySummary() {
   const matches = data.matches.filter(match => eventType(match) === 'training' && match.matchDate.startsWith(selectedSummaryYear));
   const participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id]));
-  const periodEligibility = eligibility(matches), rankings = rankPlayers(matches).filter(entry => entry.stats.wins + entry.stats.losses >= periodEligibility.minimum);
+  const periodEligibility = eligibility(matches), rankings = rankPlayers(matches).filter(entry => entry.stats.wins + entry.stats.losses >= eligibility(matches, entry.player.playerId).minimum);
   const categories = new Map();
   rankings.forEach(entry => { const category = entry.player.schoolLevel || t('unassigned'); if (!categories.has(category)) categories.set(category, []); categories.get(category).push(entry); });
   const categoryEntries = sortCategories([...categories.entries()]);
-  const podiums = categoryEntries.map(([category, entries]) => `<section class="category-podium"><h4>${category}</h4>${entries.slice(0, 3).map((entry, index) => { const games = entry.stats.wins + entry.stats.losses; return `<div><i>${index + 1}</i><b>${playerLink(entry.player)}</b><span>${Math.round(entry.stats.wins / games * 100)}% · ${games}G · ${entry.stats.wins}W-${entry.stats.losses}L</span><aside class="record-bar"><i style="width:${entry.stats.wins / games * 100}%"></i><b style="width:${entry.stats.losses / games * 100}%"></b></aside></div>`; }).join('')}</section>`).join('');
+  const podiums = categoryEntries.map(([category, entries]) => `<section class="category-podium"><h4>${category}</h4>${entries.slice(0, 3).map((entry, index) => { const games = entry.stats.wins + entry.stats.losses, minimum = eligibility(matches, entry.player.playerId).minimum; return `<div><i>${index + 1}</i><b>${playerLink(entry.player)}</b><span>${Math.round(entry.stats.wins / games * 100)}% · ${games}G (${minimumText(minimum)}) · ${entry.stats.wins}W-${entry.stats.losses}L</span><aside class="record-bar"><i style="width:${entry.stats.wins / games * 100}%"></i><b style="width:${entry.stats.losses / games * 100}%"></b></aside></div>`; }).join('')}</section>`).join('');
   const champions = categoryEntries.map(([category, entries]) => { const entry = entries[0], games = entry.stats.wins + entry.stats.losses; return `<div><span>${category}</span><b>${playerLink(entry.player)}</b><small>${Math.round(entry.stats.wins / games * 100)}% · ${games}G · ${entry.stats.wins}W-${entry.stats.losses}L</small></div>`; }).join('');
   document.querySelector('#yearly-summary').innerHTML = `<article><header><p>${selectedSummaryYear || '-'}</p><strong>${matches.length}<small>${t('matches')}</small></strong><span>${periodEligibility.gameDays} ${phrase('matchDays')} · ${participants.size} ${t('players')} ${t('participated')}</span><small class="eligibility">${periodEligibility.text}</small></header><div class="champion-strip"><b>${categoryLeaders()}</b>${champions}</div><div class="podiums">${podiums}</div></article>`;
 }

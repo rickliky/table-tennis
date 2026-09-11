@@ -13,9 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch approved public sheet data
-        run: curl --fail --location --retry 3 "https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec?action=publicData" --output new-public-data.json
-      - name: Commit only when player or match data changed
+        - name: Fetch approved public sheet data
+          run: curl --fail --location --retry 3 "https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec?action=publicData" --output new-public-data.json
+        - name: Verify cached match history
+          run: jq -e '.ok == true and (.players | type == "array") and (.matches | type == "array") and all(.matches[]; .matchDate and .player1Id and .player2Id)' new-public-data.json > /dev/null
+        - name: Commit only when player or match data changed
         run: |
           if [ -f public-data.json ] && diff -q <(jq -S 'del(.lastUpdated)' public-data.json) <(jq -S 'del(.lastUpdated)' new-public-data.json); then exit 0; fi
           mv new-public-data.json public-data.json
