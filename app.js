@@ -51,6 +51,8 @@ function renderSession() {
   if (!dates.includes(selectedSession)) selectedSession = dates[0];
   if (!calendarMonth) calendarMonth = selectedSession.slice(0, 7);
   renderCalendar(dates);
+  const counts = dates.map(date => data.matches.filter(match => match.matchDate === date && eventType(match) === 'training').length).reverse();
+  charts.push(new Chart(document.querySelector('#session-timeline-chart'), { type: 'line', data: { labels: [...dates].reverse(), datasets: [{ label: t('matches'), data: counts, borderColor: '#d6a516', backgroundColor: 'rgba(214,165,22,.2)', fill: true, tension: .25, pointBackgroundColor: '#f6f0e2' }] }, options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#a5a198', maxRotation: 45 }, grid: { display: false } }, y: { ticks: { color: '#a5a198', stepSize: 1 }, grid: { color: 'rgba(246,240,226,.1)' } } } } }));
   showSession(selectedSession);
 }
 
@@ -98,10 +100,12 @@ function setupMonths() {
 
 function renderPlayers(ranked) {
   const query = document.querySelector('#player-search').value.toLowerCase();
-  document.querySelector('#player-grid').innerHTML = ranked.filter(entry => entry.stats.wins + entry.stats.losses > 0 && nameFor(entry.player).toLowerCase().includes(query)).map(({ player, stats }) => {
+  const groups = new Map();
+  ranked.filter(entry => entry.stats.wins + entry.stats.losses > 0 && nameFor(entry.player).toLowerCase().includes(query)).forEach(entry => { const category = entry.player.schoolLevel || t('unassigned'); if (!groups.has(category)) groups.set(category, []); groups.get(category).push(entry); });
+  document.querySelector('#player-grid').innerHTML = [...groups.entries()].map(([category, entries]) => `<section class="player-category"><h3>${category}</h3><div class="player-grid">${entries.map(({ player, stats }) => {
     const total = stats.wins + stats.losses;
     return `<a class="player-card" href="player.html?id=${player.playerId}"><span class="player-id">${player.playerId}</span><h3 class="player-name">${nameFor(player)}</h3><div class="player-detail">${[player.playingHand, player.playingStyle].filter(Boolean).join(' · ') || 'LITTLE KINGS'}</div><div class="player-record">${stats.wins}W - ${stats.losses}L <small>${total ? Math.round(stats.wins / total * 100) : 0}%</small></div></a>`;
-  }).join('');
+  }).join('')}</div></section>`).join('');
 }
 
 function renderGroupStats(matches) {
