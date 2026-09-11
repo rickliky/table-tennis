@@ -1,5 +1,5 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec?action=publicData';
-let data = { players: [], matches: [] }, mode = 'all', selectedMonth = 'all', selectedYear = 'all', charts = [];
+let data = { players: [], matches: [] }, mode = 'all', selectedMonth = 'all', selectedYear = 'all', selectedSession = '', calendarMonth = '', charts = [];
 let language = localStorage.getItem('lk-language') || 'en';
 const words = {
   en: { navPlayers:'Players',navMatches:'Matches',navStats:'Statistics',navSessions:'Sessions',eyebrow:'OFFICIAL CLUB DATABASE',heroDescription:'Every point. Every player. One club.',viewResults:'View match results',matchesPlayed:'Matches played',activePlayers:'Active players',latestResult:'Latest result',winsLeader:'Wins leader',sectionStatsKicker:'THE NUMBERS',sectionStats:'Club Statistics',rankingTitle:'Win Rankings',minimumMatches:'Min. 3 matches',sectionMatchesKicker:'LIVE ARCHIVE',sectionMatches:'Latest Results',sectionPlayersKicker:'THE SQUAD',sectionPlayers:'Players',sessionKicker:'TRAINING LOG',sessionTitle:'Session Replay',allResults:'All results',training:'Training',tournament:'Tournament',trainingYear:'Training year',trainingMonth:'Training month',winsChart:'Most Wins',formatChart:'Match Breakdown',groupKicker:'SQUAD BREAKDOWN',groupTitle:'Group Statistics',categoryStats:'Player Category',genderStats:'Gender',unassigned:'Unassigned',loading:'Loading live data...',updating:'Live data',lastUpdated:'Last updated',officialSite:'Official club website',matches:'matches',players:'players',noSessions:'No training sessions found' },
@@ -46,16 +46,35 @@ function renderCharts(ranked) {
 }
 
 function renderSession() {
-  const select = document.querySelector('#session-select');
   const dates = [...new Set(data.matches.filter(match => eventType(match) === 'training').map(match => match.matchDate))].sort().reverse();
   if (!dates.length) { document.querySelector('#session-summary').textContent = t('noSessions'); return; }
-  select.innerHTML = dates.map(date => `<option value="${date}">${date}</option>`).join('');
-  select.onchange = showSession;
-  showSession();
+  if (!dates.includes(selectedSession)) selectedSession = dates[0];
+  if (!calendarMonth) calendarMonth = selectedSession.slice(0, 7);
+  renderCalendar(dates);
+  showSession(selectedSession);
 }
 
-function showSession() {
-  const date = document.querySelector('#session-select').value;
+function renderCalendar(dates) {
+  const [year, month] = calendarMonth.split('-').map(Number);
+  const monthStart = new Date(year, month - 1, 1);
+  const startDay = monthStart.getDay();
+  const days = new Date(year, month, 0).getDate();
+  const cells = Array.from({ length: startDay }, () => '<span class="calendar-day blank"></span>');
+  for (let day = 1; day <= days; day++) {
+    const date = `${calendarMonth}-${String(day).padStart(2, '0')}`;
+    const available = dates.includes(date);
+    cells.push(`<button class="calendar-day ${available ? 'available' : ''} ${date === selectedSession ? 'selected' : ''}" ${available ? `data-date="${date}"` : 'disabled'}>${day}</button>`);
+  }
+  document.querySelector('#session-calendar').innerHTML = `<div class="calendar-head"><button data-direction="-1" aria-label="Previous month">‹</button><strong>${calendarMonth}</strong><button data-direction="1" aria-label="Next month">›</button></div><div class="calendar-week">${['S','M','T','W','T','F','S'].map(day => `<span>${day}</span>`).join('')}</div><div class="calendar-grid">${cells.join('')}</div>`;
+  document.querySelector('#session-calendar').onclick = event => {
+    const date = event.target.dataset.date;
+    if (date) { selectedSession = date; calendarMonth = date.slice(0, 7); renderCalendar(dates); showSession(date); return; }
+    const direction = Number(event.target.dataset.direction);
+    if (direction) { const next = new Date(year, month - 1 + direction, 1); calendarMonth = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`; renderCalendar(dates); }
+  };
+}
+
+function showSession(date) {
   const matches = data.matches.filter(match => match.matchDate === date && eventType(match) === 'training');
   const participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id])).size;
   document.querySelector('#session-summary').innerHTML = `<strong>${date}</strong><span>${matches.length} ${t('matches')}</span><span>${participants} ${t('players')}</span>`;
