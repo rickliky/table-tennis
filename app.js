@@ -11,7 +11,7 @@ const nameFor = player => language === 'en' && player.englishName ? player.engli
 const playerLink = player => `<a class="player-link" href="player.html?id=${player.playerId}">${nameFor(player)}</a>`;
 const eligibility = matches => { const gameDays = new Set(matches.map(match => match.matchDate)).size, minimum = gameDays * 2; return { minimum, gameDays, text: language === 'en' ? `Eligibility: at least ${minimum} matches (2 per ${gameDays} match days).` : `対象: ${gameDays}試合日 x 2 = 最低${minimum}試合。` }; };
 const categoryOrder = ['小学生', '中学生', '高校生', '一般'];
-const sortCategories = entries => entries.sort(([left], [right]) => { const leftIndex = categoryOrder.indexOf(left), rightIndex = categoryOrder.indexOf(right); return (leftIndex < 0 ? 99 : leftIndex) - (rightIndex < 0 ? 99 : rightIndex) || left.localeCompare(right, 'ja'); });
+const sortCategories = entries => entries.sort(([left], [right]) => { const index = category => category === t('unassigned') || category === 'Unassigned' ? 98 : categoryOrder.includes(category) ? categoryOrder.indexOf(category) : 97; return index(left) - index(right) || left.localeCompare(right, 'ja'); });
 const categoryLeaders = () => language === 'en' ? 'Category leaders' : 'カテゴリ首位';
 const phrase = key => ({ matchDays: language === 'en' ? 'match days' : '試合日', yearKicker: language === 'en' ? 'YEAR IN REVIEW' : '年間成績', yearTitle: language === 'en' ? 'Yearly Leaderboard' : '年間リーダーボード', selectYear: language === 'en' ? 'Select year' : '年を選択', h2h: language === 'en' ? 'HEAD TO HEAD' : '直接対決', h2hTimeline: language === 'en' ? 'Newest to oldest · Win / Draw / Loss timeline' : '新しい順 · 勝ち / 引分 / 負け タイムライン' })[key];
 const eventType = match => /club|training|練習/i.test(`${match.event} ${match.division}`) ? 'training' : 'tournament';
@@ -109,7 +109,7 @@ function renderPlayers(ranked) {
   const query = document.querySelector('#player-search').value.toLowerCase();
   const groups = new Map();
   ranked.filter(entry => entry.stats.wins + entry.stats.losses > 0 && nameFor(entry.player).toLowerCase().includes(query)).forEach(entry => { const category = entry.player.schoolLevel || t('unassigned'); if (!groups.has(category)) groups.set(category, []); groups.get(category).push(entry); });
-  document.querySelector('#player-grid').innerHTML = [...groups.entries()].map(([category, entries]) => `<section class="player-category"><h3>${category}</h3><div class="player-grid">${entries.map(({ player, stats }) => {
+  document.querySelector('#player-grid').innerHTML = sortCategories([...groups.entries()]).map(([category, entries]) => `<section class="player-category"><h3>${category}</h3><div class="player-grid">${entries.map(({ player, stats }) => {
     const total = stats.wins + stats.losses;
     return `<a class="player-card" href="player.html?id=${player.playerId}"><span class="player-id">${player.playerId}</span><h3 class="player-name">${nameFor(player)}</h3><div class="player-detail">${[player.playingHand, player.playingStyle].filter(Boolean).join(' · ') || 'LITTLE KINGS'}</div><div class="player-record">${stats.wins}W - ${stats.losses}L <small>${total ? Math.round(stats.wins / total * 100) : 0}%</small></div><div class="record-bar"><i style="width:${stats.wins / total * 100}%"></i><b style="width:${stats.losses / total * 100}%"></b></div></a>`;
   }).join('')}</div></section>`).join('');
@@ -122,7 +122,8 @@ function renderGroupStats(matches) {
     data.players.forEach(player => groups.set(player[field] || t('unassigned'), { players: 0, wins: 0, games: 0 }));
     data.players.forEach(player => groups.get(player[field] || t('unassigned')).players++);
     matches.forEach(match => [match.player1Id, match.player2Id].forEach(id => { const player = playerById.get(id); if (!player) return; const group = groups.get(player[field] || t('unassigned')); group.games++; if (match.winnerId === id) group.wins++; }));
-    document.querySelector(target).innerHTML = [...groups.entries()].sort((a, b) => b[1].games - a[1].games).map(([label, value]) => `<div class="group-row"><strong>${label}</strong><span>${value.players} ${t('players')}</span><span>${value.games ? Math.round(value.wins / value.games * 100) : 0}%</span></div>`).join('');
+    const entries = field === 'schoolLevel' ? sortCategories([...groups.entries()]) : [...groups.entries()].sort((a, b) => b[1].games - a[1].games);
+    document.querySelector(target).innerHTML = entries.map(([label, value]) => `<div class="group-row"><strong>${label}</strong><span>${value.players} ${t('players')}</span><span>${value.games ? Math.round(value.wins / value.games * 100) : 0}%</span></div>`).join('');
   };
   renderGroup('schoolLevel', '#category-stats');
   renderGroup('gender', '#gender-stats');
