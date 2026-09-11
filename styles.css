@@ -36,6 +36,8 @@
 .match-date-group > header .record-bar { flex:1 0 100%; grid-column:auto; margin-top:3px; width:100%; }
 
 #opponent-stats h3 { align-items:center; display:flex; justify-content:space-between; } .opponent-nav { display:flex; gap:4px; } .opponent-nav button { background:#1b1d20; border:1px solid var(--gold); color:var(--gold); cursor:pointer; font-size:18px; height:26px; line-height:1; width:28px; } .opponent-nav button:disabled { border-color:var(--line); color:#555; cursor:not-allowed; }
+.match-card.result-incomplete { border-color:#6e6a62; box-shadow:inset 0 3px 0 #6e6a62; } .match-card.result-incomplete .score,.match-card.result-incomplete .result-label { color:#a5a198; }
+#monthly-chart { height:300px !important; max-height:none; } @media (max-width:760px) { .profile-stats .chart-card:first-child { min-height:440px; } #monthly-chart { height:360px !important; } .h2h-chart { overflow-x:auto; } #h2h-chart { min-width:500px; } }
 
 .header-actions { display:flex; gap:8px; align-items:center; } .menu-toggle { display:none; background:var(--gold); border:1px solid var(--gold); color:var(--black); cursor:pointer; font:800 12px "Barlow Condensed",sans-serif; letter-spacing:.1em; padding:9px 11px; } @media (max-width:760px) { .site-header nav { display:none; position:absolute; left:0; right:0; top:67px; background:#101214; border-bottom:1px solid var(--gold); padding:16px 20px 20px; } .site-header nav.open { display:grid; gap:16px; } .site-header nav a { border-bottom:1px solid var(--line); padding-bottom:12px; } .menu-toggle { display:block; } }
 
