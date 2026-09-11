@@ -57,7 +57,7 @@
 
       <section class="content-section feature-section" id="stats">
         <div class="section-title"><p data-i18n="sectionStatsKicker">THE NUMBERS</p><h2 data-i18n="sectionStats">Club Statistics</h2></div>
-        <div class="filter-row"><p class="training-label">CLUB TRAINING MATCH GAME LOG</p><div class="date-pickers"><label class="month-picker"><span data-i18n="trainingYear">Training year</span><select id="year-select"></select></label><label class="month-picker"><span data-i18n="trainingMonth">Training month</span><select id="month-select"></select></label></div></div>
+        <div class="filter-row"><p id="training-label" class="training-label">CLUB TRAINING MATCH GAME LOG</p><div class="date-pickers"><label class="month-picker"><span data-i18n="trainingYear">Training year</span><select id="year-select"></select></label><label class="month-picker"><span data-i18n="trainingMonth">Training month</span><select id="month-select"></select></label></div></div>
         <div class="chart-grid single-chart"><article class="chart-card"><h3 data-i18n="winsChart">Most Wins</h3><p id="wins-eligibility" class="eligibility"></p><canvas id="wins-chart"></canvas></article></div>
         <div class="section-title group-title"><p data-i18n="groupKicker">SQUAD BREAKDOWN</p><h2 data-i18n="groupTitle">Group Statistics</h2></div><div class="group-stat-grid"><article><h3 data-i18n="categoryStats">Player Category</h3><div id="category-stats"></div></article><article><h3 data-i18n="genderStats">Gender</h3><div id="gender-stats"></div></article></div>
         <div class="section-title group-title recent-title"><div><p data-i18n="threeMonthKicker">RECENT FORM</p><h2 data-i18n="threeMonthTitle">Last 3 Months</h2></div><div class="recent-nav"><button id="recent-prev" aria-label="Older months">‹</button><button id="recent-next" aria-label="Newer months">›</button></div></div><div id="three-month-summary" class="three-month-summary"></div>
@@ -66,7 +66,7 @@
 
       <section class="content-section session-section" id="sessions">
         <div class="section-title"><p data-i18n="sessionKicker">TRAINING LOG</p><h2 data-i18n="sessionTitle">Session Replay</h2></div>
-        <div id="session-calendar" class="session-calendar" aria-label="Training session calendar"></div><article class="chart-card session-timeline"><h3>Match-Day Volume</h3><canvas id="session-timeline-chart"></canvas></article><div id="session-summary" class="session-summary"></div><div id="session-matches" class="match-list"></div>
+        <div id="session-calendar" class="session-calendar" aria-label="Training session calendar"></div><article class="chart-card session-timeline"><h3 id="session-timeline-title">Match-Day Volume</h3><canvas id="session-timeline-chart"></canvas></article><div id="session-summary" class="session-summary"></div><div id="session-matches" class="match-list"></div>
       </section>
 
       <section class="content-section" id="players">
