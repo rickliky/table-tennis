@@ -46,10 +46,6 @@
           <p class="hero-description" data-i18n="heroDescription">Every point. Every player. One club.</p>
           <a class="gold-button" href="#sessions" data-i18n="viewResults">View match results</a>
         </div>
-        <div class="hero-mark" aria-hidden="true">
-          <span>LK</span>
-          <p>PLAY<br />WITH<br />PRIDE</p>
-        </div>
       </section>
 
       <section class="stat-bar" aria-label="Club statistics">
@@ -61,7 +57,7 @@
 
       <section class="content-section feature-section" id="stats">
         <div class="section-title"><p data-i18n="sectionStatsKicker">THE NUMBERS</p><h2 data-i18n="sectionStats">Club Statistics</h2></div>
-        <div class="filter-row"><div class="mode-switch" id="mode-switch"><button class="active" data-mode="all" data-i18n="allResults">All results</button><button data-mode="training" data-i18n="training">Training</button><button data-mode="tournament" data-i18n="tournament">Tournament</button></div><div class="date-pickers"><label class="month-picker"><span data-i18n="trainingYear">Training year</span><select id="year-select"></select></label><label class="month-picker"><span data-i18n="trainingMonth">Training month</span><select id="month-select"></select></label></div></div>
+        <div class="filter-row"><p class="training-label">CLUB TRAINING MATCH GAME LOG</p><div class="date-pickers"><label class="month-picker"><span data-i18n="trainingYear">Training year</span><select id="year-select"></select></label><label class="month-picker"><span data-i18n="trainingMonth">Training month</span><select id="month-select"></select></label></div></div>
         <div class="chart-grid"><article class="chart-card"><h3 data-i18n="winsChart">Most Wins</h3><canvas id="wins-chart"></canvas></article><article class="chart-card"><h3 data-i18n="formatChart">Match Breakdown</h3><canvas id="format-chart"></canvas></article></div>
         <div class="section-title group-title"><p data-i18n="groupKicker">SQUAD BREAKDOWN</p><h2 data-i18n="groupTitle">Group Statistics</h2></div><div class="group-stat-grid"><article><h3 data-i18n="categoryStats">Player Category</h3><div id="category-stats"></div></article><article><h3 data-i18n="genderStats">Gender</h3><div id="gender-stats"></div></article></div>
         <div class="section-title group-title"><p data-i18n="threeMonthKicker">RECENT FORM</p><h2 data-i18n="threeMonthTitle">Last 3 Months</h2></div><div id="three-month-summary" class="three-month-summary"></div>
