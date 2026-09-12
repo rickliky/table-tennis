@@ -42,7 +42,7 @@ function rankPlayers(matches = visibleMatches()) {
 function matchCard(match, players) {
   const first = players.get(match.player1Id) || { displayName: match.player1Name };
   const second = players.get(match.player2Id) || { displayName: match.player2Name };
-  return `<button class="match-card" data-match-id="${match.matchId}"><div class="match-meta"><span>${match.matchDate}</span><span class="badge ${eventType(match)}">${t(eventType(match))}</span></div><div class="match-score"><span class="match-player ${match.winnerId === match.player1Id ? 'winner' : ''}">${nameFor(first)}</span><strong class="score">${match.player1Sets} <i>:</i> ${match.player2Sets}</strong><span class="match-player ${match.winnerId === match.player2Id ? 'winner' : ''}">${nameFor(second)}</span></div><div class="match-context"><span>${match.event || 'Little Kings'}</span><b>${!isComplete(match) ? t('incomplete') : ''}</b></div></button>`;
+  return `<button class="match-card" data-match-id="${match.matchId}"><div class="match-meta"><span>${match.matchDate}</span><span class="badge ${eventType(match)}">${t(eventType(match))}</span></div><div class="match-score"><span class="match-player ${match.winnerId === match.player1Id ? 'winner' : ''}">${nameFor(first)}${first.schoolLevel ? `<small class="match-category">${first.schoolLevel}</small>` : ''}</span><strong class="score">${match.player1Sets} <i>:</i> ${match.player2Sets}</strong><span class="match-player ${match.winnerId === match.player2Id ? 'winner' : ''}">${nameFor(second)}${second.schoolLevel ? `<small class="match-category">${second.schoolLevel}</small>` : ''}</span></div><div class="match-context"><span>${match.event || 'Little Kings'}</span><b>${!isComplete(match) ? t('incomplete') : ''}</b></div></button>`;
 }
 
 
@@ -145,7 +145,7 @@ function renderYearlySummary() {
   const categories = new Map();
   rankings.forEach(entry => { const category = entry.player.schoolLevel || t('unassigned'); if (!categories.has(category)) categories.set(category, []); categories.get(category).push(entry); });
   const categoryEntries = sortCategories([...categories.entries()]);
-  document.querySelector('#overall-stat-list').innerHTML = categoryEntries.map(([category, entries]) => `<section><b>🏆 ${category}</b>${entries.slice(0,3).map((entry,index) => `<span>${rankIcon(index)} ${playerLink(entry.player)}</span>`).join('')}</section>`).join('');
+  const participants = new Set(matches.filter(isComplete).flatMap(match => [match.player1Id,match.player2Id])).size; document.querySelector('#overall-link-detail').textContent = language === 'en' ? `Top 3 by category · ${participants} players` : `カテゴリ別 TOP 3 · ${participants}人`; document.querySelector('#overall-stat-list').innerHTML = categoryEntries.map(([category, entries]) => `<section><b>🏆 ${category}</b>${entries.slice(0,3).map((entry,index) => { const games = entry.stats.wins + entry.stats.losses, rate = Math.round(entry.stats.wins / games * 100); return `<span><i>${rankIcon(index)}</i><a class="player-link" href="player.html?id=${entry.player.playerId}">${nameFor(entry.player)}<small>${rate}% · ${games}G · ${entry.stats.wins}W-${entry.stats.losses}L</small></a></span>`; }).join('')}</section>`).join('');
 }
 
 function openHeadToHead(matchId) {
@@ -163,7 +163,7 @@ function render() {
   document.documentElement.lang = language;
   document.querySelectorAll('[data-i18n]').forEach(element => { element.textContent = t(element.dataset.i18n); });
   document.querySelector('#language-toggle').textContent = language === 'en' ? '日本語' : 'ENGLISH';
-  document.querySelector('#overall-link-title').textContent = language === 'en' ? 'Overall Leaderboard' : '総合リーダーボード'; document.querySelector('#overall-link-detail').textContent = language === 'en' ? 'Top 3 by category' : 'カテゴリ別 TOP 3'; document.querySelector('#training-label').textContent = phrase('trainingLog'); document.querySelector('#session-timeline-title').textContent = phrase('matchDayVolume'); document.querySelector('#menu-toggle').textContent = phrase('menu');
+  document.querySelector('#overall-link-title').textContent = language === 'en' ? 'All-Time Leaderboard' : '通算リーダーボード'; document.querySelector('#overall-link-detail').textContent = language === 'en' ? 'Top 3 by category' : 'カテゴリ別 TOP 3'; document.querySelector('#session-timeline-title').textContent = phrase('matchDayVolume'); document.querySelector('#menu-toggle').textContent = phrase('menu');
   document.querySelector('#player-search').placeholder = language === 'en' ? 'Search players' : '選手を検索';
   setupMonths();
   const matches = visibleMatches(), ranked = rankPlayers(matches), dates = matches.map(match => match.matchDate).filter(Boolean).sort();
