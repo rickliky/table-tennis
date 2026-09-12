@@ -1,6 +1,6 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec?action=publicData';
 Chart.register({ id: 'valueLabels', afterDatasetsDraw(chart) { const { ctx } = chart, isWinRate = chart.canvas.id === 'wins-chart'; ctx.save(); ctx.fillStyle = isWinRate ? '#090a0b' : '#f6f0e2'; ctx.font = '700 11px Barlow Condensed'; ctx.textAlign = 'center'; chart.data.datasets.forEach((dataset, datasetIndex) => chart.getDatasetMeta(datasetIndex).data.forEach((element, index) => { const value = dataset.data[index]; if (value === null || value === undefined) return; const point = element.tooltipPosition(), isBar = chart.getDatasetMeta(datasetIndex).type === 'bar', horizontalBar = isBar && chart.options.indexAxis === 'y', label = isWinRate ? `${value}%` : Math.abs(value); ctx.fillText(label, horizontalBar ? (element.x + element.base) / 2 : point.x, isBar ? (horizontalBar ? point.y + 4 : (element.y + element.base) / 2 + 4) : point.y - 8); })); ctx.restore(); } });
-let data = { players: [], matches: [] }, selectedMonth = 'all', selectedYear = 'all', selectedSummaryYear = '', selectedSession = '', calendarMonth = '', recentStart = 0, charts = [];
+let data = { players: [], matches: [] }, selectedMonth = 'all', selectedYear = 'all', selectedSession = '', calendarMonth = '', recentStart = 0, charts = [];
 let language = 'ja';
 const words = {
   en: { navPlayers:'Players',navMatches:'Matches',navStats:'Statistics',navSessions:'Sessions',eyebrow:'CLUB TRAINING MATCH GAME LOG',heroDescription:'Every point. Every player. One club.',viewResults:'View match results',matchesPlayed:'Matches played',activePlayers:'Active players',latestResult:'Latest result',winsLeader:'Wins leader',sectionStatsKicker:'THE NUMBERS',sectionStats:'Club Training Statistics',rankingTitle:'Win Rankings',minimumMatches:'Min. 3 matches',sectionMatchesKicker:'CLUB TRAINING GAME LOG',sectionMatches:'Training Match Results',sectionPlayersKicker:'THE SQUAD',sectionPlayers:'Players',sessionKicker:'TRAINING LOG',sessionTitle:'Session Replay',allResults:'All results',training:'Training',tournament:'Tournament',incomplete:'Incomplete',trainingYear:'Training year',trainingMonth:'Training month',winsChart:'Win Rate Leaders',formatChart:'Score Breakdown',groupKicker:'SQUAD BREAKDOWN',groupTitle:'Group Statistics',categoryStats:'Player Category',genderStats:'Gender',threeMonthKicker:'RECENT FORM',threeMonthTitle:'Monthly Leaderboard',monthLeader:'Month leader',yearLeader:'Year leader',gamesPlayed:'games played',participated:'participated',unassigned:'Unassigned',loading:'Loading live data...',updating:'Live data',lastUpdated:'Last updated',officialSite:'Official club website',matches:'matches',players:'players',noSessions:'No training sessions found' },
@@ -93,10 +93,6 @@ function setupMonths() {
   const yearSelect = document.querySelector('#year-select');
   yearSelect.innerHTML = `<option value="all">${t('allResults')}</option>${years.map(year => `<option value="${year}">${year}</option>`).join('')}`;
   yearSelect.value = years.includes(selectedYear) ? selectedYear : 'all';
-  const summarySelect = document.querySelector('#yearly-select');
-  if (!selectedSummaryYear) selectedSummaryYear = 'all'; else if (selectedSummaryYear !== 'all' && !years.includes(selectedSummaryYear)) selectedSummaryYear = years[0] || 'all';
-  summarySelect.innerHTML = `<option value="all">${language === 'en' ? 'All-Time' : '全期間'}</option>${years.map(year => `<option value="${year}">${year}</option>`).join('')}`;
-  summarySelect.value = selectedSummaryYear || 'all';
 }
 
 function renderPlayers(ranked) {
@@ -145,15 +141,11 @@ function renderThreeMonthSummary() {
 }
 
 function renderYearlySummary() {
-  const matches = data.matches.filter(match => eventType(match) === 'training' && (selectedSummaryYear === 'all' || match.matchDate.startsWith(selectedSummaryYear)));
-  const participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id]));
-  const periodEligibility = eligibility(matches), rankings = rankPlayers(matches).filter(entry => entry.stats.wins + entry.stats.losses >= eligibility(matches, entry.player.playerId).minimum);
+  const matches = data.matches.filter(match => eventType(match) === 'training'), rankings = rankPlayers(matches).filter(entry => entry.stats.wins + entry.stats.losses >= eligibility(matches, entry.player.playerId).minimum);
   const categories = new Map();
   rankings.forEach(entry => { const category = entry.player.schoolLevel || t('unassigned'); if (!categories.has(category)) categories.set(category, []); categories.get(category).push(entry); });
   const categoryEntries = sortCategories([...categories.entries()]);
-  const podiums = categoryEntries.map(([category, entries]) => `<section class="category-podium"><h4>🏆 ${category}</h4>${entries.slice(0, 3).map((entry, index) => { const games = entry.stats.wins + entry.stats.losses, minimum = eligibility(matches, entry.player.playerId).minimum; return `<div><i>${rankIcon(index)}</i><b>${playerLink(entry.player)}</b><span>${Math.round(entry.stats.wins / games * 100)}% · ${games}G (${minimumText(minimum)}) · ${entry.stats.wins}W-${entry.stats.losses}L</span><aside class="record-bar"><i style="width:${entry.stats.wins / games * 100}%"></i><b style="width:${entry.stats.losses / games * 100}%"></b></aside></div>`; }).join('')}</section>`).join('');
-  const champions = categoryEntries.map(([category, entries]) => { const entry = entries[0], games = entry.stats.wins + entry.stats.losses; return `<div><span>${category}</span><b>${playerLink(entry.player)}</b><small>${Math.round(entry.stats.wins / games * 100)}% · ${games}G · ${entry.stats.wins}W-${entry.stats.losses}L</small></div>`; }).join('');
-  document.querySelector('#yearly-summary').innerHTML = `<article><header><p>${selectedSummaryYear === 'all' ? (language === 'en' ? 'ALL-TIME' : '全期間') : selectedSummaryYear || '-'}</p><strong>${matches.filter(isComplete).length}<small>${t('matches')}</small></strong><span>${periodEligibility.gameDays} ${phrase('matchDays')} · ${participants.size} ${t('players')} ${t('participated')}</span><small class="eligibility">${periodEligibility.text}</small></header><div class="champion-strip"><b>🏆 ${categoryLeaders()}</b>${champions}</div><div class="podiums">${podiums}</div></article>`;
+  document.querySelector('#overall-stat-list').innerHTML = categoryEntries.map(([category, entries]) => `<section><b>🏆 ${category}</b>${entries.slice(0,3).map((entry,index) => `<span>${rankIcon(index)} ${playerLink(entry.player)}</span>`).join('')}</section>`).join('');
 }
 
 function openHeadToHead(matchId) {
@@ -171,7 +163,7 @@ function render() {
   document.documentElement.lang = language;
   document.querySelectorAll('[data-i18n]').forEach(element => { element.textContent = t(element.dataset.i18n); });
   document.querySelector('#language-toggle').textContent = language === 'en' ? '日本語' : 'ENGLISH';
-  document.querySelector('#yearly-title').textContent = language === 'en' ? 'Overall Leaderboard' : '総合リーダーボード'; document.querySelector('#overall-link-title').textContent = language === 'en' ? 'Overall Leaderboard' : '総合リーダーボード'; document.querySelector('#overall-link-detail').textContent = language === 'en' ? 'Top 3 by category' : 'カテゴリ別 TOP 3'; document.querySelector('#yearly-select-label').textContent = language === 'en' ? 'Select period' : '期間を選択'; document.querySelector('#training-label').textContent = phrase('trainingLog'); document.querySelector('#session-timeline-title').textContent = phrase('matchDayVolume'); document.querySelector('#menu-toggle').textContent = phrase('menu');
+  document.querySelector('#overall-link-title').textContent = language === 'en' ? 'Overall Leaderboard' : '総合リーダーボード'; document.querySelector('#overall-link-detail').textContent = language === 'en' ? 'Top 3 by category' : 'カテゴリ別 TOP 3'; document.querySelector('#training-label').textContent = phrase('trainingLog'); document.querySelector('#session-timeline-title').textContent = phrase('matchDayVolume'); document.querySelector('#menu-toggle').textContent = phrase('menu');
   document.querySelector('#player-search').placeholder = language === 'en' ? 'Search players' : '選手を検索';
   setupMonths();
   const matches = visibleMatches(), ranked = rankPlayers(matches), dates = matches.map(match => match.matchDate).filter(Boolean).sort();
@@ -187,7 +179,6 @@ document.querySelector('nav').onclick = event => { if (event.target.matches('a')
 document.querySelector('#player-search').oninput = () => renderPlayers(rankPlayers());
 document.querySelector('#month-select').onchange = event => { selectedMonth = event.target.value; render(); };
 document.querySelector('#year-select').onchange = event => { selectedYear = event.target.value; render(); };
-document.querySelector('#yearly-select').onchange = event => { selectedSummaryYear = event.target.value; renderYearlySummary(); };
 document.querySelector('#recent-prev').onclick = () => { recentStart++; renderThreeMonthSummary(); };
 document.querySelector('#recent-next').onclick = () => { recentStart--; renderThreeMonthSummary(); };
 document.addEventListener('click', event => { const card = event.target.closest('.match-card'); if (card?.dataset.matchId) { const match = data.matches.find(item => item.matchId === card.dataset.matchId); if (match) location.href = `player.html?id=${match.player1Id}&opponent=${match.player2Id}`; } if (event.target.closest('.modal-close')) document.querySelector('#head-to-head').close(); });

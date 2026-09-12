@@ -12,9 +12,9 @@ jobs:
   snapshot:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Fetch approved public sheet data
-        run: curl --fail --location --retry 3 "https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec?action=publicData" --output new-public-data.json
+        run: curl --fail --show-error --location --connect-timeout 20 --max-time 90 --retry 5 --retry-all-errors --retry-delay 3 "https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec?action=publicData" --output new-public-data.json
       - name: Verify cached match history
         run: jq -e '.ok == true and (.players | type == "array") and (.matches | type == "array") and all(.matches[]; .matchDate and .player1Id and .player2Id)' new-public-data.json > /dev/null
       - name: Commit only when player or match data changed
