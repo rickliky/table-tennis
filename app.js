@@ -8,13 +8,16 @@ const words = {
 };
 const t = key => words[language][key];
 const nameFor = player => language === 'en' && player.englishName ? `${player.displayName} | ${player.englishName}` : player.displayName;
+const dateLabel = date => `${date} · ${new Date(`${date}T00:00:00`).toLocaleDateString('en-US',{weekday:'short'}).toUpperCase()}`;
 const playerLink = player => `<a class="player-link" href="player.html?id=${player.playerId}">${nameFor(player)}</a>`;
 const resultDots = (matches, playerId) => { const playerMatches = matches.filter(match => isComplete(match) && (match.player1Id === playerId || match.player2Id === playerId)), wins = playerMatches.filter(match => match.winnerId === playerId).length, losses = playerMatches.length - wins, winLabel = language === 'ja' ? '勝' : 'W', lossLabel = language === 'ja' ? '負' : 'L'; return `<aside class="match-result-dots"><i class="win">${winLabel}</i><b>${wins}</b><i class="loss">${lossLabel}</i><b>${losses}</b></aside>`; };
+const recordSummary = stats => { const games = stats.wins + stats.losses, rate = Math.round(stats.wins / games * 100), winLabel = language === 'ja' ? '勝' : 'W', lossLabel = language === 'ja' ? '負' : 'L'; return `<span class="leader-record"><b class="${rate >= 50 ? 'positive' : 'negative'}">${rate}%</b><small><i class="win">${winLabel}</i> ${stats.wins} <i class="loss">${lossLabel}</i> ${stats.losses} · ${games}G</small></span>`; };
 const isComplete = match => Number(match.player1Sets) >= 3 || Number(match.player2Sets) >= 3;
 const eligibility = (matches, playerId) => { const completed = matches.filter(isComplete), dates = [...new Set(completed.map(match => match.matchDate))].sort(), periodStart = dates[0]; const playedBeforePeriod = playerId && data.matches.some(match => isComplete(match) && eventType(match) === 'training' && match.matchDate < periodStart && (match.player1Id === playerId || match.player2Id === playerId)); const firstDate = playedBeforePeriod ? periodStart : playerId && completed.filter(match => match.player1Id === playerId || match.player2Id === playerId).map(match => match.matchDate).sort()[0]; const gameDays = firstDate ? dates.filter(date => date >= firstDate).length : dates.length, minimum = gameDays * 2; return { minimum, gameDays, text: language === 'en' ? 'Eligibility: 2 matches per match day, starting on the period’s first day for returning players.' : '対象: 継続参加選手は期間初日から、初参加選手は初出場日から試合日ごとに2試合。' }; };
 const minimumText = minimum => language === 'en' ? `min. ${minimum}` : `最低${minimum}試合`;
 const categoryOrder = ['小学生', '中学生', '高校生', '一般'];
 const sortCategories = entries => entries.sort(([left], [right]) => { const index = category => category === t('unassigned') || category === 'Unassigned' ? 98 : categoryOrder.includes(category) ? categoryOrder.indexOf(category) : 97; return index(left) - index(right) || left.localeCompare(right, 'ja'); });
+const isAssignedCategory = category => category && category !== t('unassigned') && category !== 'Unassigned';
 const categoryLeaders = () => language === 'en' ? 'Category leaders' : 'カテゴリ首位';
 const rankIcon = index => ['🥇', '🥈', '🥉'][index] || `${index + 1}`;
 const phrase = key => ({ matchDays: language === 'en' ? 'match days' : '試合日', since: language === 'en' ? 'Since' : '集計開始', yearKicker: language === 'en' ? 'YEAR IN REVIEW' : '年間成績', yearTitle: language === 'en' ? 'Yearly Leaderboard' : '年間リーダーボード', selectYear: language === 'en' ? 'Select year' : '年を選択', trainingLog: language === 'en' ? 'CLUB TRAINING MATCH GAME LOG' : 'クラブ練習試合ゲームログ', matchDayVolume: language === 'en' ? 'Match-Day Volume' : '試合日別試合数', menu: language === 'en' ? 'MENU' : 'メニュー', h2h: language === 'en' ? 'HEAD TO HEAD' : '直接対決', h2hTimeline: language === 'en' ? 'Newest to oldest · Win / Draw / Loss timeline' : '新しい順 · 勝ち / 引分 / 負け タイムライン', win: language === 'en' ? 'WIN' : '勝ち', loss: language === 'en' ? 'LOSS' : '負け', draw: language === 'en' ? 'DRAW' : '引分' })[key];
@@ -43,7 +46,7 @@ function rankPlayers(matches = visibleMatches()) {
 function matchCard(match, players) {
   const first = players.get(match.player1Id) || { displayName: match.player1Name };
   const second = players.get(match.player2Id) || { displayName: match.player2Name };
-  return `<button class="match-card" data-match-id="${match.matchId}"><div class="match-meta"><span>${match.matchDate}</span><span class="badge ${eventType(match)}">${t(eventType(match))}</span></div><div class="match-score"><span class="match-player ${match.winnerId === match.player1Id ? 'winner' : ''}">${nameFor(first)}${first.schoolLevel ? `<small class="match-category">${first.schoolLevel}</small>` : ''}</span><strong class="score">${match.player1Sets} <i>:</i> ${match.player2Sets}</strong><span class="match-player ${match.winnerId === match.player2Id ? 'winner' : ''}">${nameFor(second)}${second.schoolLevel ? `<small class="match-category">${second.schoolLevel}</small>` : ''}</span></div><div class="match-context"><span>${match.event || 'Little Kings'}</span><b>${!isComplete(match) ? t('incomplete') : ''}</b></div></button>`;
+  return `<button class="match-card" data-match-id="${match.matchId}"><div class="match-meta"><span>${dateLabel(match.matchDate)}</span><span class="badge ${eventType(match)}">${t(eventType(match))}</span></div><div class="match-score"><span class="match-player ${match.winnerId === match.player1Id ? 'winner' : match.winnerId === match.player2Id ? 'loser' : ''}">${nameFor(first)}${first.schoolLevel ? `<small class="match-category">${first.schoolLevel}</small>` : ''}</span><strong class="score">${match.player1Sets} <i>:</i> ${match.player2Sets}</strong><span class="match-player ${match.winnerId === match.player2Id ? 'winner' : match.winnerId === match.player1Id ? 'loser' : ''}">${nameFor(second)}${second.schoolLevel ? `<small class="match-category">${second.schoolLevel}</small>` : ''}</span></div><div class="match-context"><span>${match.event || 'Little Kings'}</span><b>${!isComplete(match) ? t('incomplete') : ''}</b></div></button>`;
 }
 
 
@@ -81,7 +84,7 @@ function renderCalendar(dates) {
 function showSession(date) {
   const matches = data.matches.filter(match => match.matchDate === date && eventType(match) === 'training');
   const participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id])).size;
-  document.querySelector('#session-summary').innerHTML = `<strong>${date}</strong><span>${matches.length} ${t('matches')}</span><span>${participants} ${t('players')}</span>`;
+  document.querySelector('#session-summary').innerHTML = `<strong>${dateLabel(date)}</strong><span>${matches.length} ${t('matches')}</span><span>${participants} ${t('players')}</span>`;
   document.querySelector('#session-matches').innerHTML = matches.map(match => matchCard(match, playerMap())).join('');
 }
 
@@ -133,8 +136,8 @@ function renderThreeMonthSummary() {
     const periodEligibility = eligibility(matches), rankings = rankPlayers(matches).filter(entry => entry.stats.wins + entry.stats.losses >= eligibility(matches, entry.player.playerId).minimum);
     const groups = new Map();
     rankings.forEach(entry => { const category = entry.player.schoolLevel || t('unassigned'); if (!groups.has(category)) groups.set(category, []); groups.get(category).push(entry); });
-    const categories = sortCategories([...groups.entries()]);
-    const leaders = categories.map(([category, entries]) => `<section class="category-podium"><h4>🏆 ${category}</h4>${entries.slice(0, 3).map((entry, index) => { const games = entry.stats.wins + entry.stats.losses, minimum = eligibility(matches, entry.player.playerId).minimum; return `<div><i>${rankIcon(index)}</i><b>${playerLink(entry.player)}</b><span>${Math.round(entry.stats.wins / games * 100)}% · ${games}G (${minimumText(minimum)}) · ${entry.stats.wins}W-${entry.stats.losses}L</span>${resultDots(matches, entry.player.playerId)}</div>`; }).join('')}</section>`).join('');
+    const categories = sortCategories([...groups.entries()].filter(([category]) => isAssignedCategory(category)));
+    const leaders = categories.map(([category, entries]) => `<section class="category-podium"><h4>🏆 ${category}</h4>${entries.slice(0, 3).map((entry, index) => { const minimum = eligibility(matches, entry.player.playerId).minimum; return `<div><i>${rankIcon(index)}</i><b>${playerLink(entry.player)}</b>${recordSummary(entry.stats)}<small class="leader-minimum">${minimumText(minimum)}</small></div>`; }).join('')}</section>`).join('');
     const champions = categories.map(([category, entries]) => { const entry = entries[0], games = entry.stats.wins + entry.stats.losses; return `<div><span>${category}</span><b>${playerLink(entry.player)}</b><small>${Math.round(entry.stats.wins / games * 100)}% · ${games}G · ${entry.stats.wins}W-${entry.stats.losses}L</small></div>`; }).join('');
     return { month, matches, participants, leaders, champions, eligibility: periodEligibility };
   });
@@ -145,7 +148,7 @@ function renderYearlySummary() {
   const matches = data.matches.filter(match => eventType(match) === 'training'), rankings = rankPlayers(matches).filter(entry => entry.stats.wins + entry.stats.losses >= eligibility(matches, entry.player.playerId).minimum);
   const categories = new Map();
   rankings.forEach(entry => { const category = entry.player.schoolLevel || t('unassigned'); if (!categories.has(category)) categories.set(category, []); categories.get(category).push(entry); });
-  const categoryEntries = sortCategories([...categories.entries()]);
+  const categoryEntries = sortCategories([...categories.entries()].filter(([category]) => isAssignedCategory(category)));
   const participants = new Set(matches.filter(isComplete).flatMap(match => [match.player1Id,match.player2Id])).size; document.querySelector('#overall-link-detail').textContent = language === 'en' ? `Top 3 by category · ${participants} players` : `カテゴリ別 TOP 3 · ${participants}人`; document.querySelector('#overall-stat-list').innerHTML = categoryEntries.map(([category, entries]) => `<section><b>🏆 ${category}</b>${entries.slice(0,3).map((entry,index) => { const games = entry.stats.wins + entry.stats.losses, rate = Math.round(entry.stats.wins / games * 100); return `<span><i>${rankIcon(index)}</i><a class="player-link" href="player.html?id=${entry.player.playerId}">${nameFor(entry.player)}<small>${rate}% · ${games}G · ${entry.stats.wins}W-${entry.stats.losses}L</small></a></span>`; }).join('')}</section>`).join('');
 }
 
