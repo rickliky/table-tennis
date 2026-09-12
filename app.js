@@ -171,7 +171,7 @@ function render() {
   document.documentElement.lang = language;
   document.querySelectorAll('[data-i18n]').forEach(element => { element.textContent = t(element.dataset.i18n); });
   document.querySelector('#language-toggle').textContent = language === 'en' ? '日本語' : 'ENGLISH';
-  document.querySelector('#yearly-kicker').textContent = language === 'en' ? 'OVERALL RESULTS' : '総合成績'; document.querySelector('#yearly-title').textContent = language === 'en' ? 'Overall Leaderboard' : '総合リーダーボード'; document.querySelector('#yearly-select-label').textContent = language === 'en' ? 'Select period' : '期間を選択'; document.querySelector('#training-label').textContent = phrase('trainingLog'); document.querySelector('#session-timeline-title').textContent = phrase('matchDayVolume'); document.querySelector('#menu-toggle').textContent = phrase('menu');
+  document.querySelector('#yearly-title').textContent = language === 'en' ? 'Overall Leaderboard' : '総合リーダーボード'; document.querySelector('#yearly-select-label').textContent = language === 'en' ? 'Select period' : '期間を選択'; document.querySelector('#training-label').textContent = phrase('trainingLog'); document.querySelector('#session-timeline-title').textContent = phrase('matchDayVolume'); document.querySelector('#menu-toggle').textContent = phrase('menu');
   document.querySelector('#player-search').placeholder = language === 'en' ? 'Search players' : '選手を検索';
   setupMonths();
   const matches = visibleMatches(), ranked = rankPlayers(matches), dates = matches.map(match => match.matchDate).filter(Boolean).sort();
@@ -179,7 +179,6 @@ function render() {
   document.querySelector('#match-count').textContent = matches.filter(isComplete).length;
   document.querySelector('#match-since').textContent = `${phrase('since')} ${dates[0] || '-'}`;
   document.querySelector('#player-count').textContent = data.players.length;
-  document.querySelector('#latest-date').textContent = dates.at(-1) || '-';
   renderPlayers(ranked); renderGroupStats(matches); renderThreeMonthSummary(); renderYearlySummary(); renderSession();
   document.querySelector('#last-updated').textContent = `${t('lastUpdated')}: ${new Date(data.lastUpdated).toLocaleString(language === 'ja' ? 'ja-JP' : 'en-GB')}`;
 }
