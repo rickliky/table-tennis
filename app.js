@@ -57,8 +57,8 @@ function renderSession() {
   if (!dates.includes(selectedSession)) selectedSession = dates[0];
   if (!calendarMonth) calendarMonth = selectedSession.slice(0, 7);
   renderCalendar(dates);
-  const counts = dates.map(date => data.matches.filter(match => match.matchDate === date && eventType(match) === 'training').length).reverse();
-  charts.push(new Chart(document.querySelector('#session-timeline-chart'), { type: 'line', data: { labels: [...dates].reverse(), datasets: [{ label: t('matches'), data: counts, borderColor: '#d6a516', backgroundColor: 'rgba(214,165,22,.2)', fill: true, tension: .25, pointBackgroundColor: '#f6f0e2' }] }, options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#a5a198', maxRotation: 45 }, grid: { display: false } }, y: { ticks: { color: '#a5a198', stepSize: 1 }, grid: { color: 'rgba(246,240,226,.1)' } } } } }));
+  const chronologicalDates = [...dates].reverse(), counts = chronologicalDates.map(date => data.matches.filter(match => match.matchDate === date && eventType(match) === 'training').length), participants = chronologicalDates.map(date => new Set(data.matches.filter(match => match.matchDate === date && eventType(match) === 'training').flatMap(match => [match.player1Id,match.player2Id])).size);
+  charts.push(new Chart(document.querySelector('#session-timeline-chart'), { type: 'bar', data: { labels: chronologicalDates, datasets: [{ label: t('players'), data: participants, backgroundColor: 'rgba(84,184,209,.62)', borderRadius: 4 }, { type: 'line', label: t('matches'), data: counts, borderColor: '#d6a516', backgroundColor: '#d6a516', tension: .25, pointBackgroundColor: '#f6f0e2', pointRadius: 4, order: 10 }] }, options: { plugins: { legend: { labels: { color: '#f6f0e2' } } }, scales: { x: { ticks: { color: '#a5a198', maxRotation: 45 }, grid: { display: false } }, y: { ticks: { color: '#a5a198', stepSize: 1 }, grid: { color: 'rgba(246,240,226,.1)' } } } } }));
   showSession(selectedSession);
 }
 
@@ -138,7 +138,7 @@ function renderThreeMonthSummary() {
     const groups = new Map();
     rankings.forEach(entry => { const category = entry.player.schoolLevel || t('unassigned'); if (!groups.has(category)) groups.set(category, []); groups.get(category).push(entry); });
     const categories = sortCategories([...groups.entries()].filter(([category]) => isAssignedCategory(category)));
-    const leaders = categories.map(([category, entries]) => `<section class="category-podium"><h4>🏆 ${category}</h4>${entries.slice(0, 3).map((entry, index) => { const minimum = eligibility(matches, entry.player.playerId).minimum; return `<div><i>${rankIcon(index)}</i><b>${playerLink(entry.player)}</b>${recordSummary(entry.stats)}<small class="leader-minimum">${minimumText(minimum)}</small></div>`; }).join('')}</section>`).join('');
+    const leaders = categories.map(([category, entries]) => `<section class="category-podium"><h4>🏆 ${category}</h4>${entries.slice(0, 3).map((entry, index) => `<div><i>${rankIcon(index)}</i><b>${playerLink(entry.player)}</b>${recordSummary(entry.stats)}</div>`).join('')}</section>`).join('');
     const champions = categories.map(([category, entries]) => { const entry = entries[0], games = entry.stats.wins + entry.stats.losses; return `<div><span>${category}</span><b>${playerLink(entry.player)}</b><small>${Math.round(entry.stats.wins / games * 100)}% · ${games}G · ${entry.stats.wins}W-${entry.stats.losses}L</small></div>`; }).join('');
     return { month, matches, participants, leaders, champions, eligibility: periodEligibility };
   });
