@@ -50,10 +50,11 @@
       </section>
 
       <section class="content-section internal-notice"><p class="eyebrow">INTERNAL USE ONLY</p><h2>内部利用限定 <em>/ Internal Usage Only</em></h2><p>このサイトはパスワードで保護されたリトルキングス内部利用サイトです。パスワードを共有しないでください。<br />This password-protected site is for Little Kings internal use only. Do not share the password.</p><p>ご自身のデータのみを利用・共有し、他の選手のデータは本人の同意なく共有しないでください。<br />Use and share only your own data. Do not share another player’s data without their consent.</p></section>
+      <section class="bookmark-callout"><div><p class="eyebrow">QUICK ACCESS</p><h2>このページをブックマーク</h2><p>いつでも最新の試合結果を確認できるように、サイトをブックマークしてください。<br />Bookmark this site for quick access to the latest match results.</p><a href="https://tinyurl.com/ritokinryumon" target="_blank" rel="noreferrer">tinyurl.com/ritokinryumon</a></div><a class="bookmark-qr" href="https://tinyurl.com/ritokinryumon" target="_blank" rel="noreferrer" aria-label="Open Little Kings match database"><img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&amp;data=https%3A%2F%2Ftinyurl.com%2Fritokinryumon" alt="QR code for tinyurl.com/ritokinryumon" /></a></section>
       <aside id="match-data-status" class="match-data-status"></aside>
 
       <section class="stat-bar" aria-label="Club statistics">
-        <article class="overall-stat"><strong id="overall-link-title">All-Time Leaderboard</strong><span id="overall-link-detail">Top 3 by category</span><div id="overall-stat-list"></div></article>
+        <article class="overall-stat"><div class="overall-leaderboard-head"><strong id="overall-link-title">Yearly Leaderboard</strong><span class="overall-nav"><button id="overall-year-prev" aria-label="Previous year">‹</button><button id="overall-year-next" aria-label="Next year">›</button></span></div><span id="overall-link-detail">Top 3 by category</span><div id="overall-stat-list"></div></article>
         <article><strong id="player-count">-</strong><span data-i18n="activePlayers">Active players</span><div class="active-breakdown"><div><b data-i18n="categoryStats">Player Category</b><div id="category-stats"></div></div><div><b data-i18n="genderStats">Gender</b><div id="gender-stats"></div></div></div></article>
       </section>
 
@@ -71,7 +72,7 @@
       </section>
     </main>
 
-    <dialog id="head-to-head" class="head-to-head"><button class="modal-close" aria-label="Close">×</button><div id="head-to-head-content"></div></dialog>
+    <dialog id="head-to-head" class="head-to-head"><button class="modal-close" aria-label="Close">×</button><div id="head-to-head-content"></div></dialog><dialog id="category-leaderboard" class="head-to-head category-leaderboard"><button class="modal-close" aria-label="Close">×</button><div id="category-leaderboard-content"></div></dialog>
 
     <footer>
       <img src="little-kings-logo.jpg" alt="" />
