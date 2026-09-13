@@ -4,7 +4,8 @@ const surveyStatus = document.querySelector('#survey-status');
 
 fetch(`${SURVEY_API_URL}?action=publicData`).then(response => response.json()).then(data => {
   const select = document.querySelector('#player-names');
-  select.innerHTML = '<option value="">選手名を選択 / Select player name</option>' + data.players.sort((left, right) => left.displayName.localeCompare(right.displayName, 'ja')).map(player => `<option value="${player.displayName}">${player.displayName}</option>`).join('') + '<option value="Other">その他 / Other</option>';
+  const activePlayers = data.players.filter(player => player.status === 'Active' && player.displayName);
+  select.innerHTML = '<option value="">選手名を選択 / Select player name</option>' + activePlayers.sort((left, right) => left.displayName.localeCompare(right.displayName, 'ja')).map(player => `<option value="${player.displayName}">${player.displayName}</option>`).join('') + '<option value="Other">その他 / Other</option>';
 }).catch(() => {});
 
 document.querySelectorAll('[data-other-for]').forEach(field => {
