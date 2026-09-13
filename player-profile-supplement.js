@@ -3,7 +3,8 @@ const surveyForm = document.querySelector('#equipment-survey');
 const surveyStatus = document.querySelector('#survey-status');
 
 fetch(`${SURVEY_API_URL}?action=publicData`).then(response => response.json()).then(data => {
-  document.querySelector('#player-names').innerHTML = data.players.map(player => `<option value="${player.displayName}"></option>`).join('');
+  const select = document.querySelector('#player-names');
+  select.innerHTML = '<option value="">選手名を選択 / Select player name</option>' + data.players.sort((left, right) => left.displayName.localeCompare(right.displayName, 'ja')).map(player => `<option value="${player.displayName}">${player.displayName}</option>`).join('') + '<option value="Other">その他 / Other</option>';
 }).catch(() => {});
 
 document.querySelectorAll('[data-other-for]').forEach(field => {
@@ -16,7 +17,7 @@ document.querySelectorAll('[data-other-for]').forEach(field => {
 surveyForm.addEventListener('submit', async event => {
   event.preventDefault();
   const body = new URLSearchParams(new FormData(surveyForm));
-  ['playingStyle', 'forehandModel', 'backhandModel'].forEach(field => {
+  ['kanjiName', 'playingStyle', 'forehandModel', 'backhandModel'].forEach(field => {
     if (body.get(field) === 'Other') body.set(field, body.get(`${field}Other`));
     body.delete(`${field}Other`);
   });

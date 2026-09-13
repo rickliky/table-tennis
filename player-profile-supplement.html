@@ -15,7 +15,7 @@
   <header class="site-header"><a class="brand" href="index.html"><img src="little-kings-logo.jpg" alt="Little Kings" /><span>LITTLE KINGS<small>TABLE TENNIS CLUB</small></span></a><a class="back-link" href="index.html">← クラブページへ / Back to club</a></header>
   <main class="survey-page"><section class="survey-intro"><p class="eyebrow">PLAYER PROFILE SUPPLEMENT</p><h1>選手プロフィール補足情報 <em>/ Player Profile Supplement</em></h1><p>選手情報と用具を確認します。回答は選手データベースとは別に保存されます。</p></section>
     <form id="equipment-survey" class="equipment-form">
-      <label>漢字名 / Kanji name<input name="kanjiName" list="player-names" required autocomplete="name" /><datalist id="player-names"></datalist></label>
+      <label>漢字名 / Kanji name<select name="kanjiName" id="player-names" required><option value="">選手名を選択 / Select player name</option><option value="Other">その他 / Other</option></select></label><label class="other-field" data-other-for="kanjiName">その他の漢字名 / Other kanji name<input name="kanjiNameOther" autocomplete="name" /></label>
       <label>ふりがな / Furigana<input name="furigana" required /></label>
       <label>カテゴリ / Category<select name="playerCategory" required><option value="">選択 / Select</option><option>小学生</option><option>中学生</option><option>高校生</option><option>一般</option><option>Unassigned</option></select></label>
       <fieldset><legend>利き手 / Playing hand</legend><label><input type="radio" name="playingHand" value="右" required /> 右 / Right</label><label><input type="radio" name="playingHand" value="左" required /> 左 / Left</label></fieldset>
