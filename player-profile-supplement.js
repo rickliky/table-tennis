@@ -20,7 +20,7 @@ const RUBBER_MODELS = {
     'Victas VO>102', 'Victas VO>103', 'Victas スピンピップスD3 / Spinpips D3', 'Yasaka ラクザPO / Rakza PO', 'TSP スペクトル / Spectol'
   ],
   '粒高': [
-    'Butterfly フェイントロングIII / Feint Long III', 'Nittaku P-1R', 'Victas カールP1V / Curl P1V', 'Victas カールP4V / Curl P4V', 'DHS C8', 'Dawei 388D-1'
+    'Butterfly フェイントロングIII / Feint Long III', 'Nittaku P-1R', 'Victas カールP1V / Curl P1V', 'Victas カールP4V / Curl P4V', 'STIGA バーティカル20 / Vertical 20', 'DHS C8', 'Dawei 388D-1'
   ],
   'アンチ': [
     'Butterfly スーパーアンチ / Super Anti', 'Yasaka アンチパワー / Anti Power', 'Dr. Neubauer ゴリラ / Gorilla', 'Dr. Neubauer バッファロー+ / Buffalo+', 'Der Materialspezialist エレンディル / Ellen DEF'
