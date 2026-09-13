@@ -8,19 +8,19 @@ const surveyThankYou = document.querySelector('#survey-thank-you');
 let pendingSubmission;
 const RUBBER_MODELS = {
   '裏ソフト': [
-    'Butterfly テナジー05 / Tenergy 05', 'Butterfly テナジー05FX / Tenergy 05 FX', 'Butterfly テナジー64 / Tenergy 64', 'Butterfly ディグニクス05 / Dignics 05', 'Butterfly ディグニクス09C / Dignics 09C', 'Butterfly ロゼナ / Rozena',
+    'Butterfly テナジー05 / Tenergy 05', 'Butterfly テナジー05FX / Tenergy 05 FX', 'Butterfly テナジー64 / Tenergy 64', 'Butterfly ディグニクス05 / Dignics 05', 'Butterfly ディグニクス09C / Dignics 09C', 'Butterfly ディグニクス64 / Dignics 64', 'Butterfly ディグニクス80 / Dignics 80', 'Butterfly グレイザー / Glayzer', 'Butterfly グレイザー09C / Glayzer 09C', 'Butterfly ロゼナ / Rozena',
     'Nittaku ファスタークG-1 / Fastarc G-1', 'Nittaku ファスタークC-1 / Fastarc C-1', 'Nittaku ハモンドZ2 / Hammond Z2',
     'Yasaka ラクザ7 / Rakza 7', 'Yasaka ラクザX / Rakza X', 'Yasaka ラクザZ / Rakza Z',
     'XIOM ヴェガプロ / Vega Pro', 'XIOM ヴェガX / Vega X', 'XIOM ヴェガヨーロッパ / Vega Europe',
     'Victas V>15 Extra', 'Victas V>15 Limber', 'Tibhar エボリューションMX-P / Evolution MX-P', 'Tibhar エボリューションEL-P / Evolution EL-P',
-    'Donic ブルースターA1 / Bluestar A1', 'andro ラザンターR47 / Rasanter R47', 'Stiga DNA Platinum XH', 'DHS キョウヒョウ3 NEO / Hurricane 3 Neo', '729 バトルII / Battle II'
+    'Donic ブルースターA1 / Bluestar A1', 'andro ラザンターR47 / Rasanter R47', 'Stiga DNA Platinum XH', 'DHS キョウヒョウ3 NEO / Hurricane 3 Neo', 'DHS キョウヒョウPRO 3 / Hurricane PRO 3', '729 バトルII / Battle II'
   ],
   '表ソフト': [
     'Butterfly インパーシャルXS / Impartial XS', 'Butterfly スペクトルS1 / Spectol S1', 'Nittaku モリストSP / Moristo SP', 'Nittaku ハモンドFA / Hammond FA',
     'Victas VO>102', 'Victas VO>103', 'Victas スピンピップスD3 / Spinpips D3', 'Yasaka ラクザPO / Rakza PO', 'TSP スペクトル / Spectol'
   ],
   '粒高': [
-    'Butterfly フェイントロングIII / Feint Long III', 'Nittaku P-1R', 'Victas カールP1V / Curl P1V', 'Victas カールP4V / Curl P4V', 'STIGA バーティカル20 / Vertical 20', 'DHS C8', 'Dawei 388D-1'
+    'Butterfly フェイントロングIII / Feint Long III', 'Nittaku P-1R', 'Victas カールP1V / Curl P1V', 'Victas カールP4V / Curl P4V', 'STIGA バーティカル20 / Vertical 20', 'Tibhar グラス D.TecS / Grass D.TecS', 'DHS C8', 'Dawei 388D-1'
   ],
   'アンチ': [
     'Butterfly スーパーアンチ / Super Anti', 'Yasaka アンチパワー / Anti Power', 'Dr. Neubauer ゴリラ / Gorilla', 'Dr. Neubauer バッファロー+ / Buffalo+', 'Der Materialspezialist エレンディル / Ellen DEF'

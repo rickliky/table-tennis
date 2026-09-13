@@ -172,7 +172,6 @@ function render() {
   document.querySelectorAll('[data-i18n]').forEach(element => { element.textContent = t(element.dataset.i18n); });
   document.querySelector('#language-toggle').textContent = language === 'en' ? '日本語' : 'ENGLISH';
   document.querySelector('#overall-link-title').textContent = language === 'en' ? 'All-Time Leaderboard' : '通算リーダーボード'; document.querySelector('#overall-link-detail').textContent = language === 'en' ? 'Top 3 by category' : 'カテゴリ別 TOP 3'; document.querySelector('#session-timeline-title').textContent = phrase('matchDayVolume'); document.querySelector('#menu-toggle').textContent = '☰'; document.querySelector('#menu-toggle').setAttribute('aria-label', phrase('menu'));
-  document.querySelector('#club-intro-copy').innerHTML = clubIntroduction();
   document.querySelector('#player-search').placeholder = language === 'en' ? 'Search players' : '選手を検索';
   const matches = visibleMatches(), ranked = rankPlayers(matches), dates = matches.map(match => match.matchDate).filter(Boolean).sort();
   charts.forEach(chart => chart.destroy()); charts = [];
@@ -188,7 +187,4 @@ document.querySelector('#player-search').oninput = () => renderPlayers(rankPlaye
 document.querySelector('#recent-prev').onclick = () => { recentStart++; renderThreeMonthSummary(); };
 document.querySelector('#recent-next').onclick = () => { recentStart--; renderThreeMonthSummary(); };
 document.addEventListener('click', event => { const card = event.target.closest('.match-card'); if (card?.dataset.matchId) { const match = data.matches.find(item => item.matchId === card.dataset.matchId); if (match) location.href = `player.html?id=${match.player1Id}&opponent=${match.player2Id}`; } if (event.target.closest('.modal-close')) document.querySelector('#head-to-head').close(); });
-const passwordGate = document.querySelector('#site-password-gate'), passwordForm = document.querySelector('#site-password-form'), passwordStatus = document.querySelector('#site-password-status');
-if (sessionStorage.getItem('lk-internal-access') === 'granted') passwordGate.hidden = true;
-passwordForm.addEventListener('submit', async event => { event.preventDefault(); passwordStatus.textContent = '確認中… / Checking…'; try { const body = new URLSearchParams({ action:'verifySitePassword', password:document.querySelector('#site-password').value }), response = await fetch(API_URL.split('?')[0], { method:'POST', body }), result = await response.json(); if (!result.authorized) throw new Error(); sessionStorage.setItem('lk-internal-access', 'granted'); passwordGate.hidden = true; } catch { passwordStatus.textContent = 'パスワードが正しくないか、確認できませんでした。 / Incorrect password or verification failed.'; } });
 fetch('./public-data.json').then(response => { if (!response.ok) throw new Error(); return response.json(); }).catch(() => fetch(API_URL).then(response => response.json())).then(result => { if (!result.ok) throw new Error(); data = result; render(); }).catch(() => document.querySelectorAll('.loading').forEach(element => { element.textContent = 'Unable to load live data.'; }));
