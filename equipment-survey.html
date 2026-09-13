@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>用具アンケート | Little Kings</title>
+  <link rel="icon" href="little-kings-logo.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+  <header class="site-header"><a class="brand" href="index.html"><img src="little-kings-logo.jpg" alt="Little Kings" /><span>LITTLE KINGS<small>TABLE TENNIS CLUB</small></span></a><a class="back-link" href="index.html">← クラブページへ / Back to club</a></header>
+  <main class="survey-page"><section class="survey-intro"><p class="eyebrow">PLAYER EQUIPMENT SURVEY</p><h1>用具アンケート <em>/ Equipment Survey</em></h1><p>選手情報とラバーを確認します。回答は選手データベースとは別に保存されます。</p></section>
+    <form id="equipment-survey" class="equipment-form">
+      <label>漢字名 / Kanji name<input name="kanjiName" required autocomplete="name" /></label>
+      <label>ふりがな / Furigana<input name="furigana" required /></label>
+      <label>カテゴリ / Category<select name="playerCategory" required><option value="">選択 / Select</option><option>小学生</option><option>中学生</option><option>高校生</option><option>一般</option><option>Unassigned</option></select></label>
+      <fieldset><legend>利き手 / Playing hand</legend><label><input type="radio" name="playingHand" value="右" required /> 右 / Right</label><label><input type="radio" name="playingHand" value="左" required /> 左 / Left</label></fieldset>
+      <section><h2>フォア面 / Forehand</h2><label>種類 / Type<select name="forehandType" required><option value="">選択 / Select</option><option>裏ソフト</option><option>表ソフト</option><option>粒高</option><option>アンチ</option></select></label><label>モデル名 / Brand and model<select name="forehandModel" required><option value="">選択 / Select</option><option>Butterfly テナジー05 / Tenergy 05</option><option>Butterfly ディグニクス05 / Dignics 05</option><option>Butterfly ロゼナ / Rozena</option><option>Nittaku ファスタークG-1 / Fastarc G-1</option><option>Nittaku ファスタークC-1 / Fastarc C-1</option><option>Yasaka ラクザ7 / Rakza 7</option><option>Yasaka ラクザX / Rakza X</option><option>XIOM ヴェガプロ / Vega Pro</option><option>XIOM ヴェガヨーロッパ / Vega Europe</option><option>Victas V&gt;15 Extra</option><option>Victas V&gt;15 Limber</option><option>その他 / Other</option></select></label></section>
+      <section><h2>バック面 / Backhand</h2><label>種類 / Type<select name="backhandType" required><option value="">選択 / Select</option><option>裏ソフト</option><option>表ソフト</option><option>粒高</option><option>アンチ</option></select></label><label>モデル名 / Brand and model<select name="backhandModel" required><option value="">選択 / Select</option><option>Butterfly テナジー05 / Tenergy 05</option><option>Butterfly ディグニクス05 / Dignics 05</option><option>Butterfly ロゼナ / Rozena</option><option>Nittaku ファスタークG-1 / Fastarc G-1</option><option>Nittaku ファスタークC-1 / Fastarc C-1</option><option>Yasaka ラクザ7 / Rakza 7</option><option>Yasaka ラクザX / Rakza X</option><option>XIOM ヴェガプロ / Vega Pro</option><option>XIOM ヴェガヨーロッパ / Vega Europe</option><option>Victas V&gt;15 Extra</option><option>Victas V&gt;15 Limber</option><option>その他 / Other</option></select></label></section>
+      <button class="gold-button" type="submit">送信する / Submit</button><p id="survey-status" role="status"></p>
+    </form>
+  </main>
+  <script src="equipment-survey.js"></script>
+</body>
+</html>
