@@ -63,7 +63,7 @@ surveyForm.addEventListener('submit', event => {
   });
   body.set('action', 'submitEquipmentSurvey');
   pendingSubmission = body;
-  const labels = { kanjiName:'漢字名 / Kanji name', furigana:'ふりがな / Furigana', playerCategory:'カテゴリ / Category', playingHand:'利き手 / Playing hand', playingStyle:'戦型 / Playing style', forehandType:'フォア面の種類 / Forehand type', forehandModel:'フォア面のモデル / Forehand model', backhandType:'バック面の種類 / Backhand type', backhandModel:'バック面のモデル / Backhand model', profilePicturePermission:'プロフィール写真 / Profile picture' };
+  const labels = { kanjiName:'漢字名 / Kanji name', romanizedName:'ローマ字表記 / Romanized name', playerCategory:'カテゴリ / Category', playingHand:'利き手 / Playing hand', playingStyle:'戦型 / Playing style', forehandType:'フォア面の種類 / Forehand type', forehandModel:'フォア面のモデル / Forehand model', backhandType:'バック面の種類 / Backhand type', backhandModel:'バック面のモデル / Backhand model', profilePicturePermission:'プロフィール写真 / Profile picture' };
   surveyPreviewList.innerHTML = Object.entries(labels).map(([key,label]) => `<div><dt>${label}</dt><dd>${body.get(key)}</dd></div>`).join('');
   surveyForm.hidden = true;
   surveyPreview.hidden = false;
