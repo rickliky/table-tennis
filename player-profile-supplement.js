@@ -4,6 +4,7 @@ const surveyStatus = document.querySelector('#survey-status');
 const surveyPreview = document.querySelector('#survey-preview');
 const surveyPreviewList = document.querySelector('#survey-preview-list');
 const surveyPreviewStatus = document.querySelector('#survey-preview-status');
+const surveyThankYou = document.querySelector('#survey-thank-you');
 let pendingSubmission;
 const RUBBER_MODELS = {
   '裏ソフト': [
@@ -66,7 +67,7 @@ surveyForm.addEventListener('submit', event => {
   surveyPreviewList.innerHTML = Object.entries(labels).map(([key,label]) => `<div><dt>${label}</dt><dd>${body.get(key)}</dd></div>`).join('');
   surveyForm.hidden = true;
   surveyPreview.hidden = false;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  surveyPreview.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
 document.querySelector('#survey-edit').addEventListener('click', () => {
@@ -83,8 +84,8 @@ document.querySelector('#survey-confirm').addEventListener('click', async () => 
     surveyForm.reset();
     pendingSubmission = undefined;
     surveyPreview.hidden = true;
-    surveyForm.hidden = false;
-    surveyStatus.textContent = '送信しました。ありがとうございます。 / Submitted. Thank you.';
+    surveyThankYou.hidden = false;
+    surveyThankYou.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch {
     surveyPreviewStatus.textContent = '送信できませんでした。もう一度お試しください。 / Submission failed. Please try again.';
   }
