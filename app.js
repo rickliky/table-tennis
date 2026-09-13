@@ -178,6 +178,7 @@ function render() {
   document.querySelector('#player-count').textContent = data.players.length;
   renderPlayers(ranked); renderGroupStats(matches); renderThreeMonthSummary(); renderYearlySummary(); renderSession();
   document.querySelector('#last-updated').textContent = `${t('lastUpdated')}: ${new Date(data.lastUpdated).toLocaleString(language === 'ja' ? 'ja-JP' : 'en-GB')}`;
+  const latestMatchDate = data.matches.map(match => match.matchDate).filter(Boolean).sort().at(-1); document.querySelector('#match-data-status').textContent = latestMatchDate ? (language === 'en' ? `Latest match data: ${dateLabel(latestMatchDate)}` : `最新試合データ: ${dateLabel(latestMatchDate)}`) : (language === 'en' ? 'No match data recorded' : '試合データはありません');
 }
 
 document.querySelector('#language-toggle').onclick = () => { language = language === 'en' ? 'ja' : 'en'; localStorage.setItem('lk-language', language); render(); };
