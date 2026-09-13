@@ -169,7 +169,7 @@ function render() {
   document.documentElement.lang = language;
   document.querySelectorAll('[data-i18n]').forEach(element => { element.textContent = t(element.dataset.i18n); });
   document.querySelector('#language-toggle').textContent = language === 'en' ? '日本語' : 'ENGLISH';
-  document.querySelector('#overall-link-title').textContent = language === 'en' ? 'All-Time Leaderboard' : '通算リーダーボード'; document.querySelector('#overall-link-detail').textContent = language === 'en' ? 'Top 3 by category' : 'カテゴリ別 TOP 3'; document.querySelector('#session-timeline-title').textContent = phrase('matchDayVolume'); document.querySelector('#menu-toggle').textContent = phrase('menu');
+  document.querySelector('#overall-link-title').textContent = language === 'en' ? 'All-Time Leaderboard' : '通算リーダーボード'; document.querySelector('#overall-link-detail').textContent = language === 'en' ? 'Top 3 by category' : 'カテゴリ別 TOP 3'; document.querySelector('#session-timeline-title').textContent = phrase('matchDayVolume'); document.querySelector('#menu-toggle').textContent = '☰'; document.querySelector('#menu-toggle').setAttribute('aria-label', phrase('menu'));
   document.querySelector('#player-search').placeholder = language === 'en' ? 'Search players' : '選手を検索';
   const matches = visibleMatches(), ranked = rankPlayers(matches), dates = matches.map(match => match.matchDate).filter(Boolean).sort();
   charts.forEach(chart => chart.destroy()); charts = [];
