@@ -2,7 +2,7 @@ const SURVEY_API_URL = 'https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8
 const surveyForm = document.querySelector('#equipment-survey');
 const surveyStatus = document.querySelector('#survey-status');
 
-fetch(`${SURVEY_API_URL}?action=publicData`).then(response => response.ok ? response.json() : Promise.reject()).catch(() => fetch('./public-data.json').then(response => response.ok ? response.json() : Promise.reject())).then(data => {
+fetch('./public-data.json').then(response => response.ok ? response.json() : Promise.reject()).then(data => {
   const select = document.querySelector('#player-names');
   const activePlayers = data.players.filter(player => player.status === 'Active' && player.displayName);
   select.innerHTML = activePlayers.length ? '<option value="">選手名を選択 / Select player name</option>' + activePlayers.sort((left, right) => left.displayName.localeCompare(right.displayName, 'ja')).map(player => `<option value="${player.displayName}">${player.displayName}</option>`).join('') + '<option value="Other">その他 / Other</option>' : '<option value="Other">登録中の有効な選手が見つかりません / No active players found</option>';
