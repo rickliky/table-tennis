@@ -1,6 +1,10 @@
 const SURVEY_API_URL = 'https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec';
 const surveyForm = document.querySelector('#equipment-survey');
 const surveyStatus = document.querySelector('#survey-status');
+const surveyPreview = document.querySelector('#survey-preview');
+const surveyPreviewList = document.querySelector('#survey-preview-list');
+const surveyPreviewStatus = document.querySelector('#survey-preview-status');
+let pendingSubmission;
 const RUBBER_MODELS = {
   '裏ソフト': [
     'Butterfly テナジー05 / Tenergy 05', 'Butterfly テナジー05FX / Tenergy 05 FX', 'Butterfly テナジー64 / Tenergy 64', 'Butterfly ディグニクス05 / Dignics 05', 'Butterfly ディグニクス09C / Dignics 09C', 'Butterfly ロゼナ / Rozena',
@@ -34,7 +38,7 @@ fetch('./public-data.json').then(response => response.ok ? response.json() : Pro
 document.querySelectorAll('[data-other-for]').forEach(field => {
   const select = surveyForm.elements[field.dataset.otherFor];
   const input = field.querySelector('input');
-  const update = () => { const isOther = select.value === 'Other'; field.hidden = !isOther; input.disabled = !isOther; input.required = isOther; if (!isOther) input.value = ''; };
+  const update = () => { const isOther = select.value === 'Other'; input.disabled = !isOther; input.required = isOther; input.placeholder = isOther ? '' : 'Not Required / 入力不要'; if (!isOther) input.value = ''; };
   select.addEventListener('change', update); update();
 });
 
@@ -49,7 +53,7 @@ document.querySelectorAll('[data-other-for]').forEach(field => {
   type.dispatchEvent(new Event('change'));
 });
 
-surveyForm.addEventListener('submit', async event => {
+surveyForm.addEventListener('submit', event => {
   event.preventDefault();
   const body = new URLSearchParams(new FormData(surveyForm));
   ['kanjiName', 'playingStyle', 'forehandModel', 'backhandModel'].forEach(field => {
@@ -57,13 +61,31 @@ surveyForm.addEventListener('submit', async event => {
     body.delete(`${field}Other`);
   });
   body.set('action', 'submitEquipmentSurvey');
-  surveyStatus.textContent = '送信中… / Sending…';
+  pendingSubmission = body;
+  const labels = { kanjiName:'漢字名 / Kanji name', furigana:'ふりがな / Furigana', playerCategory:'カテゴリ / Category', playingHand:'利き手 / Playing hand', playingStyle:'戦型 / Playing style', forehandType:'フォア面の種類 / Forehand type', forehandModel:'フォア面のモデル / Forehand model', backhandType:'バック面の種類 / Backhand type', backhandModel:'バック面のモデル / Backhand model', profilePicturePermission:'プロフィール写真 / Profile picture' };
+  surveyPreviewList.innerHTML = Object.entries(labels).map(([key,label]) => `<div><dt>${label}</dt><dd>${body.get(key)}</dd></div>`).join('');
+  surveyForm.hidden = true;
+  surveyPreview.hidden = false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
+document.querySelector('#survey-edit').addEventListener('click', () => {
+  surveyPreview.hidden = true;
+  surveyForm.hidden = false;
+  surveyForm.scrollIntoView({ behavior: 'smooth' });
+});
+
+document.querySelector('#survey-confirm').addEventListener('click', async () => {
+  if (!pendingSubmission) return;
+  surveyPreviewStatus.textContent = '送信中… / Sending…';
   try {
-    await fetch(SURVEY_API_URL, { method: 'POST', mode: 'no-cors', body });
+    await fetch(SURVEY_API_URL, { method: 'POST', mode: 'no-cors', body: pendingSubmission });
     surveyForm.reset();
+    pendingSubmission = undefined;
+    surveyPreview.hidden = true;
+    surveyForm.hidden = false;
     surveyStatus.textContent = '送信しました。ありがとうございます。 / Submitted. Thank you.';
   } catch {
-    surveyStatus.textContent = '送信できませんでした。もう一度お試しください。 / Submission failed. Please try again.';
+    surveyPreviewStatus.textContent = '送信できませんでした。もう一度お試しください。 / Submission failed. Please try again.';
   }
 });
