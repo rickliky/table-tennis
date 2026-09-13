@@ -1,0 +1,27 @@
+{
+  "ok": true,
+  "entries": [
+    {
+      "kanjiName": "李(J)",
+      "romanizedName": "Jacelyn",
+      "playerCategory": "中学生",
+      "playingHand": "右",
+      "playingStyle": "異質攻撃型 / Combination attacker",
+      "forehandType": "裏ソフト",
+      "forehandModel": "Butterfly ディグニクス09C / Dignics 09C",
+      "backhandType": "裏ソフト",
+      "backhandModel": "Butterfly ディグニクス09C / Dignics 09C"
+    },
+    {
+      "kanjiName": "李(K)",
+      "romanizedName": "Kaitlyn",
+      "playerCategory": "小学生",
+      "playingHand": "右",
+      "playingStyle": "異質攻撃型 / Combination attacker",
+      "forehandType": "裏ソフト",
+      "forehandModel": "Butterfly ディグニクス09C / Dignics 09C",
+      "backhandType": "裏ソフト",
+      "backhandModel": "Butterfly ディグニクス05 / Dignics 05"
+    }
+  ]
+}

@@ -1,8 +1,7 @@
-const SUPPLEMENT_API_URL = 'https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec';
 const categoryOrder = ['小学生', '中学生', '高校生', '一般'];
 const list = document.querySelector('#supplement-list');
 
-fetch(`${SUPPLEMENT_API_URL}?action=profileSupplements`).then(response => response.ok ? response.json() : Promise.reject()).then(data => {
+fetch('./player-profile-supplements.json').then(response => response.ok ? response.json() : Promise.reject()).then(data => {
   const entries = data.entries || [];
   const groups = new Map(categoryOrder.map(category => [category, []]));
   entries.forEach(entry => {
