@@ -19,6 +19,9 @@ const RUBBER_MODELS = {
   ],
   'アンチ': [
     'Butterfly スーパーアンチ / Super Anti', 'Yasaka アンチパワー / Anti Power', 'Dr. Neubauer ゴリラ / Gorilla', 'Dr. Neubauer バッファロー+ / Buffalo+', 'Der Materialspezialist エレンディル / Ellen DEF'
+  ],
+  '一枚': [
+    'Nittaku P-1R OX', 'Victas カールP1V OX / Curl P1V OX', 'Victas カールP4V OX / Curl P4V OX', 'TSP スペクトル OX / Spectol OX'
   ]
 };
 
@@ -31,7 +34,7 @@ fetch('./public-data.json').then(response => response.ok ? response.json() : Pro
 document.querySelectorAll('[data-other-for]').forEach(field => {
   const select = surveyForm.elements[field.dataset.otherFor];
   const input = field.querySelector('input');
-  const update = () => { const isOther = select.value === 'Other'; field.hidden = !isOther; input.required = isOther; if (!isOther) input.value = ''; };
+  const update = () => { const isOther = select.value === 'Other'; field.hidden = !isOther; input.disabled = !isOther; input.required = isOther; if (!isOther) input.value = ''; };
   select.addEventListener('change', update); update();
 });
 
