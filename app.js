@@ -9,7 +9,7 @@ const words = {
 };
 const t = key => words[language][key];
 document.addEventListener('mouseover', event => { const dot = event.target.closest('.game-result-dot'); if (!dot) return; const card = dot.closest('.match-card'); if (card) dot.title = card.innerText.replace(/\s+/g, ' ').trim(); });
-const nameFor = player => language === 'en' && player.englishName ? `${player.displayName} | ${player.englishName}` : player.displayName;
+const nameFor = player => language === 'en' && player.englishName ? `${player.displayName} | ${player.englishName.toUpperCase()}` : player.displayName;
 const recordText = (wins, losses, games = wins + losses) => language === 'en' ? `${wins}W-${losses}L · ${games}G` : `${wins}勝-${losses}負 · ${games}試合`;
 const dateLabel = date => `${date} · ${new Date(`${date}T00:00:00`).toLocaleDateString('en-US',{weekday:'short'}).toUpperCase()}`;
 const playerLink = player => `<a class="player-link" href="player.html?id=${player.playerId}">${nameFor(player)}</a>`;
