@@ -118,12 +118,12 @@ function renderGroupStats(matches) {
   const playerById = playerMap();
   const renderGroup = (field, target) => {
     const groups = new Map();
-    data.players.forEach(player => groups.set(player[field] || t('unassigned'), { players: 0, wins: 0, games: 0 }));
-    data.players.forEach(player => groups.get(player[field] || t('unassigned')).players++);
+    data.players.forEach(player => groups.set(player[field] || t('unassigned'), { players: 0, wins: 0, games: 0, names: [] }));
+    data.players.forEach(player => { const group = groups.get(player[field] || t('unassigned')); group.players++; group.names.push(nameFor(player)); });
     matches.filter(isComplete).forEach(match => [match.player1Id, match.player2Id].forEach(id => { const player = playerById.get(id); if (!player) return; const group = groups.get(player[field] || t('unassigned')); group.games++; if (match.winnerId === id) group.wins++; }));
     const entries = field === 'schoolLevel' ? sortCategories([...groups.entries()]) : [...groups.entries()].sort((a, b) => b[1].games - a[1].games);
     const totalGames = entries.reduce((total, [, value]) => total + value.games, 0);
-    document.querySelector(target).innerHTML = entries.map(([label, value]) => `<div class="group-row"><strong>${label}</strong><span>${value.players} ${t('players')}</span><span>${totalGames ? Math.round(value.games / totalGames * 100) : 0}%</span></div>`).join('');
+    document.querySelector(target).innerHTML = entries.map(([label, value]) => `<div class="group-row" tabindex="0" title="${language === 'en' ? 'Players' : '選手'}: ${value.names.join(' · ')}"><strong>${label}</strong><span>${value.players} ${t('players')}</span><span>${totalGames ? Math.round(value.games / totalGames * 100) : 0}%</span><aside><b>${language === 'en' ? 'Players' : '選手'}</b>${value.names.join(' · ')}</aside></div>`).join('');
   };
   renderGroup('schoolLevel', '#category-stats');
   renderGroup('gender', '#gender-stats');
