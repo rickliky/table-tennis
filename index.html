@@ -27,17 +27,17 @@
   <body>
     <div class="grain" aria-hidden="true"></div>
     <header class="site-header">
-      <a class="brand" href="#top" aria-label="Little Kings home">
+      <a class="brand" href="#top" aria-label="Little Kings home" data-i18n-aria="home">
         <img src="little-kings-logo.jpg" alt="Little Kings crown" />
         <span>LITTLE KINGS<small>TABLE TENNIS CLUB</small></span>
       </a>
-      <nav aria-label="Main navigation">
+      <nav aria-label="Main navigation" data-i18n-aria="mainNavigation">
         <a href="#players" data-i18n="navPlayers">Players</a>
         <a href="#stats" data-i18n="navStats">Statistics</a>
         <a href="#sessions" data-i18n="navSessions">Sessions</a>
         <a href="player-profile-supplement.html" data-i18n="navSurvey">Player Profile Supplement</a>
       </nav>
-      <div class="header-actions"><button id="language-toggle" class="language-toggle" type="button" aria-label="Switch language">日本語</button><button id="menu-toggle" class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false">MENU</button></div>
+      <div class="header-actions"><button id="language-toggle" class="language-toggle" type="button" aria-label="Switch language" data-i18n-aria="switchLanguage">日本語</button><button id="menu-toggle" class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false">MENU</button></div>
     </header>
 
     <main id="top">
@@ -47,15 +47,15 @@
           <h1>LITTLE <em>KINGS</em><small>KANAGAWA <i>·</i> JAPAN</small></h1>
           <p class="hero-ja">リトルキングス</p>
            <p class="hero-description" data-i18n="heroDescription">Every point. Every player. One club.</p>
-           <div class="hero-quick-access"><div><span>QUICK ACCESS</span><p>ブックマークはこちら / Bookmark this site</p><a href="https://tinyurl.com/ritokinryumon" target="_blank" rel="noreferrer">https://tinyurl.com/ritokinryumon</a></div><a class="bookmark-qr" href="https://tinyurl.com/ritokinryumon" target="_blank" rel="noreferrer" aria-label="Open Little Kings match database"><img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&amp;data=https%3A%2F%2Ftinyurl.com%2Fritokinryumon" alt="QR code for tinyurl.com/ritokinryumon" /></a></div><aside id="match-data-status" class="match-data-status"></aside>
-           <div class="hero-actions"><a class="gold-button" href="#sessions" data-i18n="viewResults">View match results</a><button id="hero-player-finder" class="hero-player-finder" type="button">⌕ <span>Find a Player</span></button></div><div id="hero-player-panel" class="hero-player-panel" hidden><label for="hero-player-search">選手を探す / Find a player</label><input id="hero-player-search" type="search" autocomplete="off" placeholder="Name or player ID" /><div id="hero-player-results"></div></div>
+           <div class="hero-quick-access"><div><span data-i18n="quickAccess">QUICK ACCESS</span><p data-i18n="bookmarkSite">Bookmark this site</p><a href="https://tinyurl.com/ritokinryumon" target="_blank" rel="noreferrer">https://tinyurl.com/ritokinryumon</a></div><a class="bookmark-qr" href="https://tinyurl.com/ritokinryumon" target="_blank" rel="noreferrer" aria-label="Open Little Kings match database" data-i18n-aria="openDatabase"><img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&amp;data=https%3A%2F%2Ftinyurl.com%2Fritokinryumon" alt="QR code for tinyurl.com/ritokinryumon" data-i18n-alt="databaseQr" /></a></div><aside id="match-data-status" class="match-data-status"></aside>
+            <div class="hero-actions"><a class="gold-button" href="#sessions" data-i18n="viewResults">View match results</a><button id="hero-player-finder" class="hero-player-finder" type="button">⌕ <span data-i18n="findPlayer">Find a Player</span></button></div><div id="hero-player-panel" class="hero-player-panel" hidden><label for="hero-player-search" data-i18n="findPlayer">Find a player</label><input id="hero-player-search" type="search" autocomplete="off" placeholder="Name or player ID" data-i18n-placeholder="playerSearch" /><div id="hero-player-results"></div></div>
         </div>
       </section>
 
-      <section class="content-section internal-notice"><p class="eyebrow">IMPORTANT NOTICE</p><h2>重要なお知らせ <em>/ Important Notice</em></h2><div class="notice-grid"><article><b>01 <span>内部利用限定 / Internal Use Only</span></b><p>このサイトとパスワードは、リトルキングスファミリー以外の方へ共有しないでください。パスワードは定期的に変更され、リトルキングスファミリー内でご案内します。ご自身のデータのみを利用・共有し、他の選手のデータは本人の同意なく共有しないでください。<br />Do not share this site or its password with anyone outside the Little Kings Family. The password is changed regularly and circulated internally to the Little Kings Family. Use and share only your own data, and never share another player’s data without their consent.</p></article><article><b>02 <span>データについて / Data Guidance</span></b><p>勝率やランキングは、対戦相手、試合数、その日のコンディションなど多くの要因による参考情報です。選手の良し悪しを判断するものではありません。この記録は、練習試合を振り返り、改善点を見つけて次の成長につなげるためのものです。<br />Win percentages and rankings are for reference only. They reflect many factors, including opponents, match volume, and condition on the day. They do not define whether a player is good or bad. Use the match log to review training, reflect, identify improvements, and keep growing.</p></article><article><b>03 <span>選手データの登録 / Player Data Onboarding</span></b><p>まだプロフィール補足データを登録していない選手は、用具やプレースタイルを登録してください。<br />If you have not yet added your profile supplement, please register your equipment and playing style.</p><a href="player-profile-supplement.html">プロフィール補足データを登録する / Add profile supplement</a></article></div></section>
+      <section class="content-section internal-notice" id="internal-notice"></section>
 
       <section class="stat-bar" aria-label="Club statistics">
-        <article class="overall-stat"><div class="overall-leaderboard-head"><strong id="overall-link-title">Yearly Leaderboard</strong><span class="overall-nav"><button id="overall-year-prev" aria-label="Previous year">‹</button><button id="overall-year-next" aria-label="Next year">›</button><button class="how-to-read" data-help="yearly" aria-label="How to read the yearly leaderboard">?</button></span></div><span id="overall-link-detail">Top 3 by category</span><div id="overall-stat-list"></div></article>
+        <article class="overall-stat"><div class="overall-leaderboard-head"><strong id="overall-link-title">Yearly Leaderboard</strong><span class="overall-nav"><button id="overall-year-prev" aria-label="Previous year" data-i18n-aria="previousYear">‹</button><button id="overall-year-next" aria-label="Next year" data-i18n-aria="nextYear">›</button><button class="how-to-read" data-help="yearly" aria-label="How to read the yearly leaderboard" data-i18n-aria="helpYearly">?</button></span></div><span id="overall-link-detail">Top 3 by category</span><div id="overall-stat-list"></div></article>
         <article><strong id="player-count">-</strong><span data-i18n="activePlayers">Active players</span><div class="active-breakdown"><div><b data-i18n="categoryStats">Player Category</b><div id="category-stats"></div></div><div><b data-i18n="genderStats">Gender</b><div id="gender-stats"></div></div></div><div id="player-setup-distribution" class="player-setup-distribution"></div></article>
       </section>
 
@@ -68,7 +68,7 @@
       </section>
 
       <section class="content-section" id="players">
-        <div class="section-title"><p data-i18n="sectionPlayersKicker">THE SQUAD</p><h2 data-i18n="sectionPlayers">Players</h2><button class="how-to-read" data-help="players" aria-label="How to read player profiles">?</button></div><input id="player-search" type="search" placeholder="Search players" aria-label="Search players" />
+        <div class="section-title"><p data-i18n="sectionPlayersKicker">THE SQUAD</p><h2 data-i18n="sectionPlayers">Players</h2><button class="how-to-read" data-help="players" aria-label="How to read player profiles" data-i18n-aria="helpPlayers">?</button></div><input id="player-search" type="search" placeholder="Search players" aria-label="Search players" data-i18n-placeholder="playerSearch" data-i18n-aria="playerSearch" />
         <div id="player-grid" class="player-grid"><div class="loading" data-i18n="loading">Loading live data...</div></div>
       </section>
     </main>
