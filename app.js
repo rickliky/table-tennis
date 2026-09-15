@@ -111,7 +111,15 @@ function renderCalendar(dates) {
 function showSession(date) {
   const matches = data.matches.filter(match => match.matchDate === date && eventType(match) === 'training');
   const participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id])).size;
-  document.querySelector('#session-summary').innerHTML = `<strong>${dateLabel(date)}</strong><span>${matches.length} ${t('matches')}</span><span>${participants} ${t('players')}</span>`;
+  const participantLabel = language === 'en' ? `View ${participants} players participating on ${dateLabel(date)}` : `${dateLabel(date)}に参加した${participants}選手を表示`;
+  document.querySelector('#session-summary').innerHTML = `<strong>${dateLabel(date)}</strong><span>${matches.length} ${t('matches')}</span><button type="button" class="session-player-open" aria-label="${escapeHtml(participantLabel)}">${participants} ${t('players')}</button>`;
+  document.querySelector('#session-summary .session-player-open').onclick = () => {
+    const players = playerMap(), members = [...new Set(matches.flatMap(match => [match.player1Id, match.player2Id]))].map(playerId => {
+      const match = matches.find(item => item.player1Id === playerId || item.player2Id === playerId);
+      return players.get(playerId) || { playerId, displayName: match?.player1Id === playerId ? match.player1Name : match?.player2Name };
+    });
+    openActivePlayerList(dateLabel(date), members, matches, true);
+  };
   const players = playerMap(), categoryFor = playerId => players.get(playerId)?.schoolLevel || t('unassigned'), matchupFor = match => [categoryFor(match.player1Id), categoryFor(match.player2Id)].sort((left, right) => categoryPrecedence(left) - categoryPrecedence(right) || left.localeCompare(right, 'ja'));
   const matchups = new Map();
   matches.filter(isComplete).forEach(match => {
@@ -137,15 +145,18 @@ function showSession(date) {
   renderMatchPortraits();
 }
 
-function openActivePlayerList(title, members) {
+function openActivePlayerList(title, members, matches = data.matches, groupedByCategory = false) {
   if (!document.querySelector('#active-player-list')) document.body.insertAdjacentHTML('beforeend', '<dialog id="active-player-list" class="active-player-list"><button class="modal-close" aria-label="Close">×</button><div id="active-player-list-content"></div></dialog>');
-  const labels = language === 'en' ? { kicker:'ACTIVE PLAYERS', displayName:'Display Name', englishName:'Preferred English Name', id:'Player ID', category:'Category', gender:'Gender', hand:'Playing Hand', style:'Playing Style', grip:'Grip', games:'Completed Games', record:'W / L', rate:'Win %' } : { kicker:'アクティブ選手', displayName:'表示名', englishName:'希望英語名', id:'選手ID', category:'カテゴリ', gender:'性別', hand:'利き手', style:'戦型', grip:'グリップ', games:'完了試合数', record:'勝 / 負', rate:'勝率' };
-  const stats = playerStats(data.matches);
-  document.querySelector('#active-player-list-content').innerHTML = `<p class="eyebrow">${labels.kicker}</p><h2>${escapeHtml(title)}</h2><p>${members.length} ${t('players')}</p><ul>${members.map(player => {
+  const labels = language === 'en' ? { kicker:groupedByCategory ? 'SESSION PARTICIPANTS' : 'ACTIVE PLAYERS', displayName:'Display Name', englishName:'Preferred English Name', id:'Player ID', category:'Category', gender:'Gender', hand:'Playing Hand', style:'Playing Style', grip:'Grip', games:'Completed Games', record:'W / L', rate:'Win %' } : { kicker:groupedByCategory ? '練習日参加選手' : 'アクティブ選手', displayName:'表示名', englishName:'希望英語名', id:'選手ID', category:'カテゴリ', gender:'性別', hand:'利き手', style:'戦型', grip:'グリップ', games:'完了試合数', record:'勝 / 負', rate:'勝率' };
+  const stats = playerStats(matches), playerRow = player => {
     const record = stats.get(player.playerId) || { wins:0, losses:0 }, games = record.wins + record.losses, rate = games ? Math.round(record.wins / games * 100) : 0;
     const details = [[labels.category,player.schoolLevel],[labels.gender,player.gender],[labels.hand,player.playingHand],[labels.style,player.playingStyle],[labels.grip,player.grip]].filter(([, value]) => value);
     return `<li><a class="active-player-row" href="player.html?id=${encodeURIComponent(player.playerId)}"><figure class="active-player-portrait"><img src="img/${encodeURIComponent(player.playerId)}.jpg" alt="${escapeHtml(player.displayName || player.englishName || player.playerId)}"></figure><div class="active-player-main"><div class="active-player-names"><span><small>${labels.displayName}</small><b>${escapeHtml(player.displayName || '-')}</b></span><span><small>${labels.englishName}</small><b>${escapeHtml(player.englishName || '-')}</b></span></div><div class="active-player-details"><span><b>${labels.id}</b>${escapeHtml(player.playerId || '-')}</span>${details.map(([label, value]) => `<span><b>${label}</b>${escapeHtml(value)}</span>`).join('')}</div><div class="active-player-record"><span><b>${labels.games}</b>${games}</span><span><b>${labels.record}</b>${record.wins} / ${record.losses}</span><span><b>${labels.rate}</b>${rate}%</span></div></div></a></li>`;
-  }).join('')}</ul>`;
+  };
+  const groups = new Map();
+  if (groupedByCategory) members.forEach(player => { const category = player.schoolLevel || t('unassigned'); if (!groups.has(category)) groups.set(category, []); groups.get(category).push(player); });
+  const content = groupedByCategory ? `<div class="session-player-groups">${sortCategories([...groups.entries()]).map(([category, players]) => `<section><h3>${escapeHtml(category)}</h3><ul>${players.map(playerRow).join('')}</ul></section>`).join('')}</div>` : `<ul>${members.map(playerRow).join('')}</ul>`;
+  document.querySelector('#active-player-list-content').innerHTML = `<p class="eyebrow">${labels.kicker}</p><h2>${escapeHtml(title)}</h2><p>${members.length} ${t('players')}</p>${content}`;
   document.querySelector('#active-player-list').showModal();
 }
 
