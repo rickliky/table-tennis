@@ -1,7 +1,7 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec?action=publicData';
 Chart.defaults.layout.padding = { top: 18, right: 8, bottom: 0, left: 0 };
 Chart.register({ id: 'valueLabels', afterDatasetsDraw(chart) { const { ctx } = chart, isWinRate = chart.canvas.id === 'wins-chart'; if (chart.canvas.id === 'session-timeline-chart' && window.matchMedia('(max-width: 760px)').matches) return; ctx.save(); ctx.fillStyle = isWinRate ? '#090a0b' : '#f6f0e2'; ctx.font = '700 11px Barlow Condensed'; ctx.textAlign = 'center'; chart.data.datasets.forEach((dataset, datasetIndex) => chart.getDatasetMeta(datasetIndex).data.forEach((element, index) => { const value = dataset.data[index]; if (value === null || value === undefined) return; const point = element.tooltipPosition(), isBar = chart.getDatasetMeta(datasetIndex).type === 'bar', horizontalBar = isBar && chart.options.indexAxis === 'y', label = isWinRate ? `${value}%` : Math.abs(value); ctx.fillText(label, horizontalBar ? (element.x + element.base) / 2 : point.x, isBar ? (horizontalBar ? point.y + 4 : (element.y + element.base) / 2 + 4) : point.y - 8); })); ctx.restore(); } });
-let data = { players: [], matches: [] }, selectedMonth = 'all', selectedYear = 'all', selectedSession = '', calendarMonth = '', recentStart = 0, leaderboardYearIndex = 0, categoryLeaderboardEntries = new Map(), categoryLeaderboardYear = '', categoryLeaderboardMatches = [], monthlyCategoryEntries = new Map(), monthlyCategoryMatches = new Map(), charts = [];
+let data = { players: [], matches: [] }, selectedMonth = 'all', selectedYear = 'all', selectedSession = '', selectedSessionMatchup = '', sessionMatchupsExpanded = false, calendarMonth = '', recentStart = 0, leaderboardYearIndex = 0, categoryLeaderboardEntries = new Map(), categoryLeaderboardYear = '', categoryLeaderboardMatches = [], monthlyCategoryEntries = new Map(), monthlyCategoryMatches = new Map(), charts = [];
 let language = localStorage.getItem('lk-language') || 'ja';
 const words = {
   en: { navPlayers:'Players',navMatches:'Matches',navStats:'Statistics',navSessions:'Sessions',navSurvey:'Player Profile Supplement',eyebrow:'CLUB TRAINING MATCH GAME LOG',heroDescription:'Every point. Every player. One club.',viewResults:'View match results',matchesPlayed:'Matches played',activePlayers:'Active players',latestResult:'Latest result',winsLeader:'Wins leader',sectionStatsKicker:'THE NUMBERS',sectionStats:'Club Training Statistics',rankingTitle:'Win Rankings',minimumMatches:'Min. 3 matches',sectionMatchesKicker:'CLUB TRAINING GAME LOG',sectionMatches:'Training Match Results',sectionPlayersKicker:'THE SQUAD',sectionPlayers:'Players',sessionKicker:'TRAINING LOG',sessionTitle:'Session Replay',allResults:'All results',training:'Training',tournament:'Tournament',incomplete:'Incomplete',trainingYear:'Training year',trainingMonth:'Training month',winsChart:'Win Rate Leaders',formatChart:'Score Breakdown',groupKicker:'SQUAD BREAKDOWN',groupTitle:'Group Statistics',categoryStats:'Player Category',genderStats:'Gender',threeMonthKicker:'RECENT FORM',threeMonthTitle:'Monthly Leaderboard',monthLeader:'Month leader',yearLeader:'Year leader',gamesPlayed:'games played',participated:'participated',unassigned:'Unassigned',loading:'Loading live data...',updating:'Live data',lastUpdated:'Last updated',officialSite:'Official club website',matches:'matches',players:'players',noSessions:'No training sessions found',quickAccess:'QUICK ACCESS',bookmarkSite:'Bookmark this site',findPlayer:'Find a player',playerSearch:'Name or player ID',home:'Little Kings home',mainNavigation:'Main navigation',switchLanguage:'Switch language',openDatabase:'Open Little Kings match database',databaseQr:'QR code for tinyurl.com/ritokinryumon',previousYear:'Previous year',nextYear:'Next year',helpYearly:'How to read the yearly leaderboard',helpPlayers:'How to read player profiles',loadError:'Unable to load live data.' },
@@ -102,7 +102,7 @@ function renderCalendar(dates) {
   document.querySelector('#session-calendar').innerHTML = `<div class="calendar-head"><button data-direction="-1" aria-label="Previous month">‹</button><strong>${calendarMonth}</strong><button data-direction="1" aria-label="Next month">›</button></div><div class="calendar-week">${['S','M','T','W','T','F','S'].map(day => `<span>${day}</span>`).join('')}</div><div class="calendar-grid">${cells.join('')}</div>`;
   document.querySelector('#session-calendar').onclick = event => {
     const date = event.target.dataset.date;
-    if (date) { selectedSession = date; calendarMonth = date.slice(0, 7); renderCalendar(dates); showSession(date); return; }
+    if (date) { selectedSession = date; selectedSessionMatchup = ''; sessionMatchupsExpanded = false; calendarMonth = date.slice(0, 7); renderCalendar(dates); showSession(date); return; }
     const direction = Number(event.target.dataset.direction);
     if (direction) { const next = new Date(year, month - 1 + direction, 1); calendarMonth = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`; renderCalendar(dates); }
   };
@@ -112,7 +112,28 @@ function showSession(date) {
   const matches = data.matches.filter(match => match.matchDate === date && eventType(match) === 'training');
   const participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id])).size;
   document.querySelector('#session-summary').innerHTML = `<strong>${dateLabel(date)}</strong><span>${matches.length} ${t('matches')}</span><span>${participants} ${t('players')}</span>`;
-  document.querySelector('#session-matches').innerHTML = matches.map(match => matchCard(match, playerMap())).join('');
+  const players = playerMap(), categoryFor = playerId => players.get(playerId)?.schoolLevel || t('unassigned'), matchupFor = match => [categoryFor(match.player1Id), categoryFor(match.player2Id)].sort((left, right) => left.localeCompare(right, 'ja'));
+  const matchups = new Map();
+  matches.filter(isComplete).forEach(match => {
+    const categories = matchupFor(match), key = JSON.stringify(categories), record = matchups.get(key) || { categories, count:0 };
+    record.count++;
+    matchups.set(key, record);
+  });
+  const entries = [...matchups.entries()].sort(([, left], [, right]) => right.count - left.count || left.categories.join().localeCompare(right.categories.join(), 'ja'));
+  if (!entries.some(([key]) => key === selectedSessionMatchup)) selectedSessionMatchup = '';
+  let breakdown = document.querySelector('#session-matchup-breakdown');
+  if (!breakdown) { breakdown = document.createElement('section'); breakdown.id = 'session-matchup-breakdown'; breakdown.className = 'session-matchup-breakdown'; document.querySelector('#session-summary').insertAdjacentElement('afterend', breakdown); }
+  const visibleEntries = sessionMatchupsExpanded ? entries : entries.slice(0, 3), labels = language === 'en' ? { title:'Matchup breakdown', all:'Show all', less:'Show less', clear:'Clear filter', versus:'vs' } : { title:'対戦カテゴリ内訳', all:'すべて表示', less:'表示を減らす', clear:'絞り込み解除', versus:'対' };
+  breakdown.hidden = !entries.length;
+  breakdown.innerHTML = entries.length ? `<div class="session-matchup-head"><b>${labels.title}</b>${selectedSessionMatchup ? `<button type="button" data-session-matchup-clear>${labels.clear}</button>` : ''}</div><div class="session-matchup-rows">${visibleEntries.map(([key, record]) => `<button type="button" class="session-matchup-row ${key === selectedSessionMatchup ? 'active' : ''}" data-session-matchup="${escapeHtml(key)}" aria-pressed="${key === selectedSessionMatchup}"><span class="session-matchup-indicators">${record.categories.map(category => `<i style="--category-color:${categoryDistribution.color(category)}"></i>`).join('')}</span><span>${record.categories.map(escapeHtml).join(` <em>${labels.versus}</em> `)}</span><b>${record.count}</b></button>`).join('')}</div>${entries.length > 3 ? `<button type="button" class="session-matchup-toggle" data-session-matchup-toggle>${sessionMatchupsExpanded ? labels.less : labels.all}</button>` : ''}` : '';
+  breakdown.onclick = event => {
+    if (event.target.closest('[data-session-matchup-clear]')) selectedSessionMatchup = '';
+    else if (event.target.closest('[data-session-matchup-toggle]')) sessionMatchupsExpanded = !sessionMatchupsExpanded;
+    else { const row = event.target.closest('[data-session-matchup]'); if (!row) return; selectedSessionMatchup = selectedSessionMatchup === row.dataset.sessionMatchup ? '' : row.dataset.sessionMatchup; }
+    showSession(date);
+  };
+  const displayedMatches = selectedSessionMatchup ? matches.filter(match => JSON.stringify(matchupFor(match)) === selectedSessionMatchup) : matches;
+  document.querySelector('#session-matches').innerHTML = displayedMatches.map(match => matchCard(match, players)).join('');
   renderMatchPortraits();
 }
 
