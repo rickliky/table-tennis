@@ -48,7 +48,7 @@ function renderMatchPortraits() {
       if (!matchPlayer || !name || name.querySelector('.match-portrait')) return;
       const portrait = document.createElement('figure'), image = document.createElement('img');
       portrait.className = 'match-portrait'; image.src = `img/${encodeURIComponent(matchPlayer.playerId)}.jpg`; image.alt = nameFor(matchPlayer);
-      image.onerror = () => portrait.remove(); portrait.append(image); name.prepend(portrait);
+      image.onerror = () => { if (image.dataset.fallback) portrait.remove(); else { image.dataset.fallback = 'true'; image.src = 'img/NoProfilePic.jpg'; } }; portrait.append(image); name.prepend(portrait);
     });
   });
 }
