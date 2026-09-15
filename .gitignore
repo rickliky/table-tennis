@@ -9,3 +9,4 @@ data/*
 !data/tournament-matches.json
 !data/tournament-progress.json
 !data/metadata.json
+!data/uat-roles.json

@@ -16,4 +16,5 @@ if (accessUntil <= Date.now()) {
   passwordForm.addEventListener('submit', async event => { event.preventDefault(); const passwordStatus = document.querySelector('#site-password-status'); passwordStatus.textContent = accessText.checking; try { const body = new URLSearchParams({ action:'verifySitePassword', password:document.querySelector('#site-password').value }), response = await fetch(ACCESS_API_URL, { method:'POST', body }), result = await response.json(); if (!result.authorized) throw new Error(); localStorage.setItem(accessKey, String(Date.now() + 7 * 24 * 60 * 60 * 1000)); document.querySelector('#site-password-gate').remove(); } catch { passwordStatus.textContent = accessText.error; } });
 }
 const environment = /\/uat(?:\/|$)/i.test(location.pathname) ? 'UAT' : 'PROD';
-document.body.insertAdjacentHTML('beforeend', `<aside class="environment-badge ${environment.toLowerCase()}" aria-label="Environment: ${environment}">${environment}</aside>`);
+const environmentLink = environment === 'UAT' ? ' <a href="admin.html">ADMIN</a>' : '';
+document.body.insertAdjacentHTML('beforeend', `<aside class="environment-badge ${environment.toLowerCase()}" aria-label="Environment: ${environment}">${environment}${environmentLink}</aside>`);

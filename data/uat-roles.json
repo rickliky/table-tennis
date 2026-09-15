@@ -1,0 +1,17 @@
+{
+  "environment": "UAT only",
+  "roles": [
+    {
+      "role": "admin",
+      "passwordHash": "ba30f59c2ec033f40fcd0f8dc89c9765a4d4ed51ee5140e915a8b3ccd2b43986"
+    },
+    {
+      "role": "match-entry",
+      "passwordHash": "4f722a45f1b4ada8d9934404c10393db3b2741fac46de912c63c5307ad08140b"
+    },
+    {
+      "role": "reviewer",
+      "passwordHash": "f1c55b663621642747bab9024ce7768b4fd225a0cfdb28a54ad163457902ef27"
+    }
+  ]
+}
