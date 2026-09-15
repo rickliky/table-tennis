@@ -32,6 +32,20 @@ const clubIntroduction = () => language === 'en' ? `<p class="eyebrow">KANAGAWA 
 const eventType = match => /club|training|練習/i.test(`${match.event} ${match.division}`) ? 'training' : 'tournament';
 const visibleMatches = () => data.matches.filter(match => eventType(match) === 'training' && (selectedYear === 'all' || match.matchDate.startsWith(selectedYear)) && (selectedMonth === 'all' || match.matchDate.startsWith(selectedMonth)));
 const playerMap = () => new Map(data.players.map(player => [player.playerId, player]));
+function renderMatchPortraits() {
+  const players = playerMap();
+  document.querySelectorAll('.match-card[data-match-id]').forEach(card => {
+    const match = data.matches.find(item => item.matchId === card.dataset.matchId);
+    if (!match) return;
+    [match.player1Id, match.player2Id].forEach((playerId, index) => {
+      const player = players.get(playerId), name = card.querySelectorAll('.match-player')[index];
+      if (!player || !name || name.querySelector('.match-portrait')) return;
+      const portrait = document.createElement('figure'), image = document.createElement('img');
+      portrait.className = 'match-portrait'; image.src = `img/${encodeURIComponent(player.playerId)}.jpg`; image.alt = nameFor(player);
+      image.onerror = () => portrait.remove(); portrait.append(image); name.prepend(portrait);
+    });
+  });
+}
 
 function playerStats(matches = visibleMatches()) {
   const stats = new Map(data.players.map(player => [player.playerId, { wins: 0, losses: 0, setsFor: 0, setsAgainst: 0 }]));
@@ -94,6 +108,7 @@ function showSession(date) {
   const participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id])).size;
   document.querySelector('#session-summary').innerHTML = `<strong>${dateLabel(date)}</strong><span>${matches.length} ${t('matches')}</span><span>${participants} ${t('players')}</span>`;
   document.querySelector('#session-matches').innerHTML = matches.map(match => matchCard(match, playerMap())).join('');
+  renderMatchPortraits();
 }
 
 function setupMonths() {
