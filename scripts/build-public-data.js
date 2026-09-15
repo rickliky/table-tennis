@@ -21,3 +21,4 @@ const publicData = {
 
 fs.writeFileSync(path.join(root, 'public-data.json'), `${JSON.stringify(publicData)}\n`);
 fs.writeFileSync(path.join(root, 'admin-players.json'), `${JSON.stringify(allPlayers)}\n`);
+fs.writeFileSync(path.join(root, 'admin-training-matches.json'), `${JSON.stringify(read('training-matches.json'))}\n`);
