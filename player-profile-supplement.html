@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-J3BCMWMCMJ"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-J3BCMWMCMJ');</script>
+  <title>選手プロフィール補足情報 | Little Kings</title>
+  <link rel="icon" href="little-kings-logo.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+  <header class="site-header"><a class="brand" href="index.html"><img src="little-kings-logo.jpg" alt="Little Kings" /><span>LITTLE KINGS<small>TABLE TENNIS CLUB</small></span></a><div><a class="back-link" href="player-profile-supplements.html">補足一覧 / View entries</a> <a class="back-link" href="index.html">← クラブページへ / Back to club</a></div></header>
+  <main class="survey-page"><section class="survey-intro"><p class="eyebrow">PLAYER PROFILE SUPPLEMENT</p><h1>選手プロフィール補足情報 <em>/ Player Profile Supplement</em></h1><p>選手情報と用具を確認します。回答は選手データベースとは別に保存されます。</p></section>
+    <form id="equipment-survey" class="equipment-form">
+      <label>漢字名 / Kanji name<select name="kanjiName" id="player-names" required><option value="">選手名を選択 / Select player name</option><option value="Other">その他 / Other</option></select></label><label class="other-field" data-other-for="kanjiName">その他の漢字名 / Other kanji name<input name="kanjiNameOther" autocomplete="name" /></label>
+      <label>ローマ字表記 / Romanized name<input name="romanizedName" placeholder="Example: Tomokazu Harimoto" required /></label>
+      <label>カテゴリ / Category<select name="playerCategory" required><option value="">選択 / Select</option><option>小学生</option><option>中学生</option><option>高校生</option><option>一般</option></select></label>
+      <fieldset><legend>利き手 / Playing hand</legend><label><input type="radio" name="playingHand" value="右" required /> 右 / Right</label><label><input type="radio" name="playingHand" value="左" required /> 左 / Left</label></fieldset><label>グリップ / Grip<select name="grip" required><option value="">選択 / Select</option><option>シェークハンド / Shakehand</option><option>ペンホルダー / Penhold</option></select></label>
+      <label>戦型 / Playing style<select name="playingStyle" required><option value="">選択 / Select</option><option>ドライブ攻撃型 / Topspin attacker</option><option>前陣速攻型 / Close-to-table attacker</option><option>表ソフト攻撃型 / Short-pips attacker</option><option>異質攻撃型 / Combination attacker</option><option>カット主戦型 / Defensive chopper</option><option>オールラウンド型 / All-round</option><option value="Other">その他 / Other</option></select></label><label class="other-field" data-other-for="playingStyle">その他の戦型 / Other playing style<input name="playingStyleOther" /></label>
+      <section><h2>フォア面 / Forehand</h2><label>ラバーの種類 / Rubber type<select name="forehandType" required><option value="">選択 / Select</option><option value="裏ソフト">裏ソフトラバー / Inverted</option><option value="表ソフト">表ソフトラバー / Short pips</option><option value="粒高">粒高ラバー / Long pips</option><option value="アンチ">アンチラバー / Anti-spin</option><option value="一枚">一枚ラバー（スポンジなし） / OX pips</option></select></label><label>モデル名 / Brand and model<select name="forehandModel" required><option value="">選択 / Select</option><option>Butterfly テナジー05 / Tenergy 05</option><option>Butterfly ディグニクス05 / Dignics 05</option><option>Butterfly ロゼナ / Rozena</option><option>Nittaku ファスタークG-1 / Fastarc G-1</option><option>Nittaku ファスタークC-1 / Fastarc C-1</option><option>Yasaka ラクザ7 / Rakza 7</option><option>Yasaka ラクザX / Rakza X</option><option>XIOM ヴェガプロ / Vega Pro</option><option>XIOM ヴェガヨーロッパ / Vega Europe</option><option>Victas V&gt;15 Extra</option><option>Victas V&gt;15 Limber</option><option value="Other">その他 / Other</option></select></label><label class="other-field" data-other-for="forehandModel">その他のモデル名 / Other brand and model<input name="forehandModelOther" /></label></section>
+      <section><h2>バック面 / Backhand</h2><label>ラバーの種類 / Rubber type<select name="backhandType" required><option value="">選択 / Select</option><option value="裏ソフト">裏ソフトラバー / Inverted</option><option value="表ソフト">表ソフトラバー / Short pips</option><option value="粒高">粒高ラバー / Long pips</option><option value="アンチ">アンチラバー / Anti-spin</option><option value="一枚">一枚ラバー（スポンジなし） / OX pips</option></select></label><label>モデル名 / Brand and model<select name="backhandModel" required><option value="">選択 / Select</option><option>Butterfly テナジー05 / Tenergy 05</option><option>Butterfly ディグニクス05 / Dignics 05</option><option>Butterfly ロゼナ / Rozena</option><option>Nittaku ファスタークG-1 / Fastarc G-1</option><option>Nittaku ファスタークC-1 / Fastarc C-1</option><option>Yasaka ラクザ7 / Rakza 7</option><option>Yasaka ラクザX / Rakza X</option><option>XIOM ヴェガプロ / Vega Pro</option><option>XIOM ヴェガヨーロッパ / Vega Europe</option><option>Victas V&gt;15 Extra</option><option>Victas V&gt;15 Limber</option><option value="Other">その他 / Other</option></select></label><label class="other-field" data-other-for="backhandModel">その他のモデル名 / Other brand and model<input name="backhandModelOther" /></label></section>
+      <fieldset><legend>プロフィール写真 / Profile picture</legend><p>選手プロフィールに掲載するため、プロフィール写真を撮影してもよろしいですか？<br />May we take a profile picture for your player profile on this website?</p><label><input type="radio" name="profilePicturePermission" value="Yes" required /> はい / Yes</label><label><input type="radio" name="profilePicturePermission" value="No" required /> いいえ / No</label></fieldset>
+      <button class="gold-button" type="submit">送信する / Submit</button><p id="survey-status" role="status"></p>
+    </form>
+    <section id="survey-preview" class="survey-preview" hidden><p class="eyebrow">REVIEW YOUR RESPONSE</p><h2>内容の確認 / Confirm your details</h2><p>内容をご確認ください。確認後に送信を押すまで、回答は保存されません。<br />Please check your details. Nothing is saved until you confirm submission.</p><dl id="survey-preview-list"></dl><div><button id="survey-edit" type="button">修正する / Edit</button><button id="survey-confirm" class="gold-button" type="button">確認して送信 / Confirm and submit</button></div><p id="survey-preview-status" role="status"></p></section>
+    <section id="survey-thank-you" class="survey-preview survey-thank-you" hidden><p class="eyebrow">THANK YOU</p><h2>送信ありがとうございました</h2><p>回答を受け付けました。ご協力ありがとうございます。<br />Your response has been received. Thank you for your cooperation.</p><a class="gold-button" href="index.html">クラブページへ / Back to club</a></section>
+  </main>
+  <script src="access-gate.js"></script><script src="player-profile-supplement.js"></script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+# Club source records stay local; the published site reads the approved public API.
+*.xlsx
+data/
