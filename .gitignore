@@ -1,3 +1,11 @@
-# Club source records stay local; the published site reads the approved public API.
+# Keep local data assets out of version control while tracking published source records.
 *.xlsx
-data/
+data/*
+!data/club.json
+!data/players.json
+!data/training-matches.json
+!data/external-opponents.json
+!data/tournaments.json
+!data/tournament-matches.json
+!data/tournament-progress.json
+!data/metadata.json
