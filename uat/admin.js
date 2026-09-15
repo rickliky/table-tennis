@@ -55,7 +55,7 @@
       event.preventDefault();
       status.textContent = 'Verifying locally... / ローカルで確認中...';
       try {
-        const roles = await fetchJson('data/uat-roles.json');
+        const roles = await fetchJson('uat-roles.json');
         const match = roles.roles.find(item => item.role === role.value);
         if (!match || await sha256(password.value) !== match.passwordHash) throw new Error('invalid');
         currentRole = match.role;
@@ -80,7 +80,7 @@
 
   async function loadWorkspace() {
     try {
-      players = await fetchJson('data/players.json');
+      players = await fetchJson('admin-players.json');
       renderWorkspace();
     } catch {
       empty(app).append(text('p', 'Could not load data/players.json. / 選手データを読み込めませんでした。', 'admin-load-error'));
