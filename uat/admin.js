@@ -10,9 +10,15 @@
     tournamentMatch: [['tournamentMatchId', '大会試合ID / Tournament match ID', 'text', true], ['tournamentId', '大会ID / Tournament ID', 'text', true], ['matchDate', '日付 / Date', 'text', true], ['round', 'ラウンド / Round', 'text'], ['format', '形式 / Format', 'text'], ['player1Name', '選手1 / Player 1', 'text', true], ['player1Sets', '選手1セット / Player 1 sets', 'number'], ['player2Name', '選手2 / Player 2', 'text', true], ['player2Sets', '選手2セット / Player 2 sets', 'number'], ['winnerName', '勝者 / Winner', 'text'], ['score', 'スコア / Score', 'text'], ['resultStatus', '結果ステータス / Result status', 'select', false, ['', 'Completed', 'Incomplete', 'Void']]],
     tournamentProgress: [['tournamentProgressId', '進捗ID / Progress ID', 'text', true], ['tournamentId', '大会ID / Tournament ID', 'text', true], ['playerId', '選手ID / Player ID', 'text'], ['playerName', '選手名 / Player name', 'text'], ['round', 'ラウンド / Round', 'text'], ['result', '結果 / Result', 'text']]
   };
-  const entityIdKey = { club: 'name', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId' };
-  const entityStorageKey = { club: 'clubs', externalOpponent: 'externalOpponents', tournament: 'tournaments', tournamentMatch: 'tournamentMatches', tournamentProgress: 'tournamentProgress' };
-  const entityLabel = { club: 'CLUB / クラブ', externalOpponent: 'EXTERNAL OPPONENT / 外部選手', tournament: 'TOURNAMENT / 大会', tournamentMatch: 'TOURNAMENT MATCH / 大会試合', tournamentProgress: 'TOURNAMENT PROGRESS / 大会進捗' };
+  entityFields.clubs = entityFields.club;
+  entityFields.externalOpponents = entityFields.externalOpponent;
+  entityFields.tournaments = entityFields.tournament;
+  entityFields.tournamentMatches = entityFields.tournamentMatch;
+  entityFields.tournamentProgress = entityFields.tournamentProgress;
+  const entityIdKey = { club: 'name', clubs: 'name', externalOpponent: 'externalOpponentId', externalOpponents: 'externalOpponentId', tournament: 'tournamentId', tournaments: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentMatches: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId' };
+  const entityStorageKey = { club: 'clubs', clubs: 'clubs', externalOpponent: 'external-opponents', externalOpponents: 'external-opponents', tournament: 'tournaments', tournaments: 'tournaments', tournamentMatch: 'tournament-matches', tournamentMatches: 'tournament-matches', tournamentProgress: 'tournament-progress' };
+  const entityLabel = { club: 'CLUB / クラブ', clubs: 'CLUB / クラブ', externalOpponent: 'EXTERNAL OPPONENT / 外部選手', externalOpponents: 'EXTERNAL OPPONENT / 外部選手', tournament: 'TOURNAMENT / 大会', tournaments: 'TOURNAMENT / 大会', tournamentMatch: 'TOURNAMENT MATCH / 大会試合', tournamentMatches: 'TOURNAMENT MATCH / 大会試合', tournamentProgress: 'TOURNAMENT PROGRESS / 大会進捗' };
+  const entityTypeKey = { clubs: 'club', externalOpponents: 'externalOpponent', tournaments: 'tournament', tournamentMatches: 'tournamentMatch', tournamentProgress: 'tournamentProgress' };
   let players = [];
   let trainingMatches = [];
   let entityData = {};
@@ -210,7 +216,7 @@
       labelNode.append(text('span', label), input); form.append(labelNode);
     });
     const actions = el('div', { className: 'admin-editor-actions' });
-    const entityType = type === 'externalOpponent' ? type : type === 'tournamentMatch' ? type : type.replace(/s$/, '');
+    const entityType = entityTypeKey[type] || type;
     if (currentRole === 'admin') {
       actions.append(button('SUBMIT FOR APPROVAL / 承認申請', () => form.requestSubmit(), 'primary'));
       actions.append(button(record ? 'RESET / リセット' : 'CLEAR / クリア', () => form.reset(), 'secondary'));
