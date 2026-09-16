@@ -37,8 +37,19 @@
   function findPendingChange(entityType, targetId) { return pendingChanges.find(c => c.entityType === entityType && c.targetId === targetId); }
   function renderPendingInfo(change) {
     const box = el('div', { className: 'admin-pending-info' });
+    const header = el('div', { className: 'admin-pending-info-header' });
     const actionLabels = { create: 'NEW / 新規', update: 'MODIFIED / 変更', delete: 'DELETE / 削除' };
-    box.append(text('p', `PENDING ${actionLabels[change.action] || change.action} / 承認待ち`, 'admin-pending-info-title'));
+    header.append(text('p', `PENDING ${actionLabels[change.action] || change.action} / 承認待ち`, 'admin-pending-info-title'));
+    const cancelBtn = button('CANCEL REQUEST / 申請取消', async () => {
+      if (!confirm('Cancel this pending change? / この承認待ちの変更を取消しますか？\n\nThe change will be discarded. / 変更は破棄されます。')) return;
+      try {
+        await window.LKData.request('/api/approve', { method: 'POST', body: JSON.stringify({ changeId: change.changeId, decision: 'reject' }) });
+        await loadPendingChanges();
+        renderWorkspace();
+      } catch (error) { alert(`${error.message} / 操作に失敗しました`); }
+    }, 'danger');
+    header.append(cancelBtn);
+    box.append(header);
     const meta = el('div', { className: 'admin-pending-info-meta' });
     meta.append(text('span', `Submitted by: ${change.createdBy} · ${formatPendingDate(change.createdAt)}`));
     box.append(meta);
@@ -111,7 +122,7 @@
     if (currentRole === 'admin') {
       tabs.append(tab('players', 'PLAYERS / 選手'), tab('clubs', 'CLUBS / クラブ'), tab('externalOpponents', 'EXT. OPPONENTS / 外部選手'), tab('tournaments', 'TOURNAMENTS / 大会'), tab('tournamentMatches', 'TOURNAMENT RESULTS / 大会結果'), tab('tournamentProgress', 'TOURNAMENT PROGRESS / 大会進捗'));
     }
-    if (currentRole === 'approver') tabs.append(tab('pending', 'PENDING CHANGES / 承認待ち'));
+    tabs.append(tab('pending', 'PENDING CHANGES / 承認待ち'));
     tabs.append(tab('history', 'HISTORY / 変更履歴'));
     app.append(header, tabs);
     activeTab = activeTab === 'players' && currentRole !== 'admin' ? 'matches' : activeTab;
@@ -416,8 +427,6 @@
         }
         const actions = el('div', { className: 'admin-pending-actions' });
         const status = text('span', '', 'admin-pending-action-status');
-        const acceptBtn = button('ACCEPT / 承認', () => { if (!confirm(`Accept this ${change.entityType} change? / この${change.entityType}の変更を承認しますか？\n\nThe change will be applied immediately. / 変更は即座に反映されます。`)) return; handleDecision('accept', acceptBtn, rejectBtn); }, 'primary');
-        const rejectBtn = button('REJECT / 却下', () => { if (!confirm(`Reject this ${change.entityType} change? / この${change.entityType}の変更を却下しますか？\n\nThe change will be discarded. / 変更は破棄されます。`)) return; handleDecision('reject', acceptBtn, rejectBtn); }, 'danger');
         const handleDecision = async (decision, btnA, btnB) => {
           btnA.disabled = true; btnB.disabled = true; status.textContent = 'Processing... / 処理中...';
           try {
@@ -428,7 +437,13 @@
             btnA.disabled = false; btnB.disabled = false;
           }
         };
-        actions.append(acceptBtn, rejectBtn, status);
+        if (currentRole === 'approver') {
+          const acceptBtn = button('ACCEPT / 承認', () => { if (!confirm(`Accept this ${change.entityType} change? / この${change.entityType}の変更を承認しますか？\n\nThe change will be applied immediately. / 変更は即座に反映されます。`)) return; handleDecision('accept', acceptBtn, rejectBtn); }, 'primary');
+          const rejectBtn = button('REJECT / 却下', () => { if (!confirm(`Reject this ${change.entityType} change? / この${change.entityType}の変更を却下しますか？\n\nThe change will be discarded. / 変更は破棄されます。`)) return; handleDecision('reject', acceptBtn, rejectBtn); }, 'danger');
+          actions.append(acceptBtn, rejectBtn, status);
+        } else {
+          actions.append(status);
+        }
         card.append(actions); panel.append(card);
       });
     } catch (error) { panel.append(text('p', `${error.message} / 読み込みに失敗しました`, 'admin-load-error')); }

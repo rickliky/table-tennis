@@ -182,6 +182,8 @@ html[lang="ja"] .matchup-axis::after { content:'この用具・利き手との�
  .admin-pending-action-status { color: #e09288; font: 600 12px "Noto Sans JP", sans-serif; flex: 1; }
  @media (max-width: 760px) { .admin-pending-card-header { flex-direction: column; gap: 6px; } .admin-pending-table { font-size: 11px; } .admin-pending-actions { flex-direction: column; } }
  .admin-pending-info { background: linear-gradient(110deg, #2a2109, #14110e); border: 1px solid rgba(214,165,22,.35); margin-top: 18px; padding: 16px 18px; }
+ .admin-pending-info-header { align-items: center; display: flex; gap: 10px; justify-content: space-between; margin-bottom: 8px; }
+ .admin-pending-info-header .admin-pending-info-title { margin: 0; }
  .admin-pending-info-title { color: var(--gold); font: 800 11px "Barlow Condensed", sans-serif; letter-spacing: .1em; margin: 0 0 8px; text-transform: uppercase; }
  .admin-pending-info-meta { color: var(--muted); font: 600 11px "Noto Sans JP", sans-serif; margin-bottom: 12px; }
  .admin-pending-info-note { color: var(--cream); font: 600 12px "Noto Sans JP", sans-serif; margin: 0; }
