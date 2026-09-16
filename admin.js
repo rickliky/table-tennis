@@ -209,21 +209,27 @@
   function select(name, options, value) { const node = el('select', { name }); options.forEach(option => node.append(el('option', { value: option, textContent: option }))); node.value = value; return node; }
   function playerSelect(name, value) {
     const activePlayers = players.filter(p => p.status === 'Active').sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja'));
+    const clubName = cid => { const c = (entityData.clubs || []).find(cl => cl.clubId === cid); return c ? (c.nameJa || c.name || '') : ''; };
+    const playerLabel = p => { const parts = [p.displayName]; if (p.englishName) parts.push(p.englishName); parts.push(p.playerId); const cn = clubName(p.clubId); if (cn) parts.push(cn); return parts.join(' · '); };
     const selected = activePlayers.find(p => p.playerId === value);
     const hidden = el('input', { name, type: 'hidden', value: value || '' });
     const listId = `${name}-list`;
-    const input = el('input', { type: 'text', className: 'player-combobox-input', value: selected ? `${selected.displayName} (${selected.playerId})` : '', autocomplete: 'off', placeholder: '選手名で検索 / Search player name' });
+    const input = el('input', { type: 'text', className: 'player-combobox-input', value: selected ? playerLabel(selected) : '', autocomplete: 'off', placeholder: '選手名・ID・クラブ名で検索 / Search name, ID, or club' });
     input.setAttribute('list', listId);
     const datalist = el('datalist', { id: listId });
-    activePlayers.forEach(p => datalist.append(el('option', { value: `${p.displayName} (${p.playerId})` })));
+    activePlayers.forEach(p => datalist.append(el('option', { value: playerLabel(p) })));
     input.append(datalist);
-    const syncHidden = () => { const match = activePlayers.find(p => `${p.displayName} (${p.playerId})` === input.value); hidden.value = match ? match.playerId : ''; };
+    const syncHidden = () => {
+      const q = input.value.toLowerCase();
+      const match = activePlayers.find(p => playerLabel(p) === input.value) || activePlayers.find(p => `${p.displayName} (${p.playerId})` === input.value) || activePlayers.find(p => p.playerId.toLowerCase() === q) || activePlayers.find(p => (p.displayName || '').toLowerCase() === q) || activePlayers.find(p => (p.englishName || '').toLowerCase() === q);
+      hidden.value = match ? match.playerId : '';
+    };
     input.addEventListener('input', syncHidden);
     input.addEventListener('change', syncHidden);
     const wrapper = el('span', { className: 'player-combobox-wrapper' });
     wrapper.style.display = 'contents';
     wrapper.append(hidden, input, datalist);
-    Object.defineProperty(wrapper, 'value', { get() { return hidden.value; }, set(v) { hidden.value = v; const p = activePlayers.find(pl => pl.playerId === v); input.value = p ? `${p.displayName} (${p.playerId})` : ''; } });
+    Object.defineProperty(wrapper, 'value', { get() { return hidden.value; }, set(v) { hidden.value = v; const p = activePlayers.find(pl => pl.playerId === v); input.value = p ? playerLabel(p) : ''; } });
     Object.defineProperty(wrapper, 'onchange', { set(fn) { input.onchange = fn; }, get() { return input.onchange; } });
     Object.defineProperty(wrapper, 'disabled', { set(v) { input.disabled = v; }, get() { return input.disabled; } });
     Object.defineProperty(wrapper, 'required', { set(v) { hidden.required = v; }, get() { return hidden.required; } });
