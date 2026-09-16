@@ -16,14 +16,6 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Build public data from repository sources
-        run: node scripts/build-public-data.js
-
       - name: Deploy production
         if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4

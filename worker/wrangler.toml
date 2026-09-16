@@ -1,0 +1,8 @@
+name = "little-kings-api"
+main = "src/index.js"
+compatibility_date = "2026-09-16"
+
+[vars]
+# Set secrets with: wrangler secret put UPSTASH_REDIS_REST_URL
+# Required secrets: UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN,
+# SITE_PASSWORD, ADMIN_PASSWORD, APPROVER_PASSWORD, SESSION_SECRET
