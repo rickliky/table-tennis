@@ -24,6 +24,7 @@
   let players = [];
   let trainingMatches = [];
   let entityData = {};
+  let pendingChanges = [];
   let currentRole = '';
   let activeTab = 'matches';
   let selectedId = '';
@@ -32,6 +33,33 @@
   const text = (tag, value, className) => { const node = el(tag, { textContent: value }); if (className) node.className = className; return node; };
   function createDiff(before, after) { const keys = new Set([...Object.keys(before || {}), ...Object.keys(after || {})]); return [...keys].filter(key => key === 'gradeHistory' || JSON.stringify(before?.[key]) !== JSON.stringify(after?.[key])).map(field => ({ field, before: before?.[field] ?? '', after: after?.[field] ?? '' })); }
   function computeDiff(change) { if (change.diff && change.diff.length) return change.diff; if (change.changedFields && change.before && change.after) { return change.changedFields.filter(f => f !== 'gradeHistory').map(f => ({ field: f, before: change.before[f] ?? '', after: change.after[f] ?? '' })).filter(d => JSON.stringify(d.before) !== JSON.stringify(d.after)); } if (change.before && change.after) return createDiff(change.before, change.after); return []; }
+  async function loadPendingChanges() { try { const result = await window.LKData.request('/api/pending'); pendingChanges = (result.changes || []).filter(c => c.status === 'pending'); } catch { pendingChanges = []; } }
+  function findPendingChange(entityType, targetId) { return pendingChanges.find(c => c.entityType === entityType && c.targetId === targetId); }
+  function renderPendingInfo(change) {
+    const box = el('div', { className: 'admin-pending-info' });
+    const actionLabels = { create: 'NEW / 新規', update: 'MODIFIED / 変更', delete: 'DELETE / 削除' };
+    box.append(text('p', `PENDING ${actionLabels[change.action] || change.action} / 承認待ち`, 'admin-pending-info-title'));
+    const meta = el('div', { className: 'admin-pending-info-meta' });
+    meta.append(text('span', `Submitted by: ${change.createdBy} · ${formatPendingDate(change.createdAt)}`));
+    box.append(meta);
+    const diff = computeDiff(change);
+    if (diff.length) {
+      const table = el('table', { className: 'admin-pending-table' });
+      const thead = el('thead'); const thr = el('tr'); thr.append(text('th', 'Field'), text('th', 'Before'), text('th', 'After')); thead.append(thr); table.append(thead);
+      const tbody = el('tbody'); table.append(tbody);
+      diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : String(d.before)), text('td', d.after === '' || d.after == null ? '—' : String(d.after))); tbody.append(row); });
+      box.append(table);
+    } else if (change.action === 'create' && change.after) {
+      const table = el('table', { className: 'admin-pending-table' });
+      const thead = el('thead'); const thr = el('tr'); thr.append(text('th', 'Field'), text('th', 'Value')); thead.append(thr); table.append(thead);
+      const tbody = el('tbody'); table.append(tbody);
+      Object.entries(change.after).forEach(([key, value]) => { if (value === '' || value === null || value === undefined || key === 'gradeHistory') return; const row = el('tr'); row.append(text('td', key), text('td', String(value))); tbody.append(row); });
+      box.append(table);
+    } else if (change.action === 'delete') {
+      box.append(text('p', 'Record will be deleted upon approval. / 承認後にレコードが削除されます。', 'admin-pending-info-note'));
+    }
+    return box;
+  }
   const empty = node => { node.replaceChildren(); return node; };
   const canEditMatches = () => currentRole === 'admin';
   const playerName = id => players.find(player => player.playerId === id)?.displayName || '';
@@ -65,6 +93,7 @@
       players = data.players || []; trainingMatches = data.matches || [];
       players.forEach(p => { if (!p.gradeHistory) p.gradeHistory = []; });
       entityData = { clubs: data.clubs || [], externalOpponents: data.externalOpponents || [], tournaments: data.tournaments || [], tournamentMatches: data.tournamentMatches || [], tournamentProgress: data.tournamentProgress || [] };
+      await loadPendingChanges();
       renderWorkspace();
     } catch { empty(app).append(text('p', 'Could not load admin data. / 管理データを読み込めませんでした。', 'admin-load-error')); }
   }
@@ -165,6 +194,7 @@
       };
     }
     editor.append(form);
+    if (match) { const pending = findPendingChange('match', match.matchId); if (pending) editor.append(renderPendingInfo(pending)); }
   }
   function select(name, options, value) { const node = el('select', { name }); options.forEach(option => node.append(el('option', { value: option, textContent: option }))); node.value = value; return node; }
   function playerSelect(name, value) { const node = el('select', { name, required: true }); node.append(el('option', { value: '', textContent: '選択 / Select' })); players.filter(player => player.status === 'Active').sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja')).forEach(player => node.append(el('option', { value: player.playerId, textContent: `${player.displayName} (${player.playerId})` }))); node.value = value || ''; return node; }
@@ -244,6 +274,7 @@
       submitChange('player', next.playerId, next, player ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
     };
     editor.append(form);
+    if (player) { const pending = findPendingChange('player', player.playerId); if (pending) editor.append(renderPendingInfo(pending)); }
   }
   function newPlayer() { const next = Math.max(0, ...players.map(player => Number((player.playerId || '').match(/\d+$/)?.[0]) || 0)) + 1; return Object.fromEntries(playerFields.map(([key]) => [key, key === 'playerId' ? `LK-${String(next).padStart(4, '0')}` : key === 'status' ? 'Active' : ''])); }
   function AprilRollover() {
@@ -332,6 +363,7 @@
       submitChange(entityType, next[idField], next, record ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
     };
     editor.append(form);
+    if (record) { const pending = findPendingChange(entityType, record[idField]); if (pending) editor.append(renderPendingInfo(pending)); }
   }
 
   async function submitChange(entityType, targetId, after, action) { return window.LKData.request('/api/change', { method: 'POST', body: JSON.stringify({ entityType, targetId, after, action }) }); }
