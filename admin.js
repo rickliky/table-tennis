@@ -248,7 +248,8 @@
       } else if (key === 'forehandRubber' || key === 'backhandRubber') {
         const typeKey = key === 'forehandRubber' ? 'forehandRubberType' : 'backhandRubberType';
         const listId = `${key}-list`;
-        input = el('input', { name: key, type: 'text', value: record[key] || '', list: listId, autocomplete: 'off', placeholder: 'Select type first / まず種類を選択' });
+        input = el('input', { name: key, type: 'text', value: record[key] || '', autocomplete: 'off', placeholder: 'Select type first / まず種類を選択' });
+        input.setAttribute('list', listId);
         const datalist = el('datalist', { id: listId });
         const currentType = record[typeKey] || '';
         const rubbers = rubberDB[currentType] || [];
