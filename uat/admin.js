@@ -237,16 +237,51 @@
     const panel = el('section', { className: 'admin-panel admin-pending-panel' }); panel.append(text('p', 'PENDING CHANGES / 承認待ち', 'eyebrow'), text('h2', 'Review changes / 変更を確認'));
     try {
       const result = await window.LKData.request('/api/pending'); const changes = (result.changes || []).filter(change => change.status === 'pending');
-      if (!changes.length) panel.append(text('p', 'No pending changes. / 承認待ちの変更はありません。', 'admin-empty'));
+      if (!changes.length) { panel.append(text('p', 'No pending changes. / 承認待ちの変更はありません。', 'admin-empty')); app.append(panel); return; }
+      const summary = text('p', `${changes.length} change${changes.length > 1 ? 's' : ''} awaiting review`, 'admin-pending-summary'); panel.append(summary);
       changes.forEach(change => {
-        const row = el('article', { className: 'admin-pending-row' });
-        row.append(text('h3', `${change.entityType} · ${change.targetId}`), text('small', `${change.createdBy} · ${change.createdAt}`), text('pre', JSON.stringify(change.diff, null, 2)));
-        row.append(button('ACCEPT / 承認', () => window.LKData.request('/api/approve', { method:'POST', body:JSON.stringify({ changeId:change.changeId, decision:'accept' }) }).then(renderWorkspace), 'primary'), button('REJECT / 却下', () => window.LKData.request('/api/approve', { method:'POST', body:JSON.stringify({ changeId:change.changeId, decision:'reject' }) }).then(renderWorkspace, error => alert(error.message)), 'danger'));
-        panel.append(row);
+        const card = el('article', { className: 'admin-pending-card' });
+        const actionLabels = { create: 'NEW / 新規', update: 'MODIFIED / 変更', delete: 'DELETE / 削除' };
+        const actionClass = { create: 'create', update: 'update', delete: 'delete' };
+        const header = el('div', { className: 'admin-pending-card-header' });
+        header.append(text('span', actionLabels[change.action] || change.action, `admin-pending-badge ${actionClass[change.action] || ''}`), text('h3', `${change.entityType} · ${change.targetId}`), text('span', formatPendingDate(change.createdAt), 'admin-pending-date'));
+        const meta = el('div', { className: 'admin-pending-meta' });
+        meta.append(text('span', `Submitted by: ${change.createdBy}`, 'admin-pending-by'));
+        card.append(header, meta);
+        if (change.action === 'delete' && change.before) {
+          const deleted = el('div', { className: 'admin-pending-deleted' }); deleted.append(text('p', 'Record to be deleted / 削除対象レコード', 'admin-pending-section-title'));
+          const table = el('table', { className: 'admin-pending-table' }); table.append(el('thead')).append(el('tr'));
+          table.querySelector('tr').append(text('th', 'Field'), text('th', 'Value'));
+          const tbody = el('tbody'); table.append(tbody);
+          Object.entries(change.before).forEach(([key, value]) => { if (value === '' || value === null || value === undefined) return; const row = el('tr'); row.append(text('td', key), text('td', String(value))); tbody.append(row); });
+          deleted.append(table); card.append(deleted);
+        } else if (change.diff && change.diff.length) {
+          const diffSection = el('div', { className: 'admin-pending-diff' }); diffSection.append(text('p', 'Changes / 変更内容', 'admin-pending-section-title'));
+          const table = el('table', { className: 'admin-pending-table' }); table.append(el('thead')).append(el('tr'));
+          table.querySelector('tr').append(text('th', 'Field'), text('th', 'Before'), text('th', 'After'));
+          const tbody = el('tbody'); table.append(tbody);
+          change.diff.forEach(d => {
+            const row = el('tr'); row.className = 'admin-pending-diff-row';
+            row.append(text('td', d.field), text('td', d.before === '' ? '—' : String(d.before)), text('td', d.after === '' ? '—' : String(d.after)));
+            tbody.append(row);
+          });
+          diffSection.append(table); card.append(diffSection);
+        } else if (change.after) {
+          const detail = el('div', { className: 'admin-pending-detail' }); detail.append(text('p', 'New record / 新規レコード', 'admin-pending-section-title'));
+          const table = el('table', { className: 'admin-pending-table' }); table.append(el('thead')).append(el('tr'));
+          table.querySelector('tr').append(text('th', 'Field'), text('th', 'Value'));
+          const tbody = el('tbody'); table.append(tbody);
+          Object.entries(change.after).forEach(([key, value]) => { if (value === '' || value === null || value === undefined) return; const row = el('tr'); row.append(text('td', key), text('td', String(value))); tbody.append(row); });
+          detail.append(table); card.append(detail);
+        }
+        const actions = el('div', { className: 'admin-pending-actions' });
+        actions.append(button('ACCEPT / 承認', async () => { if (!confirm(`Accept this change? / この変更を承認しますか？`)) return; await window.LKData.request('/api/approve', { method: 'POST', body: JSON.stringify({ changeId: change.changeId, decision: 'accept' }) }); renderWorkspace(); }, 'primary'), button('REJECT / 却下', async () => { if (!confirm(`Reject this change? / この変更を却下しますか？`)) return; await window.LKData.request('/api/approve', { method: 'POST', body: JSON.stringify({ changeId: change.changeId, decision: 'reject' }) }); renderWorkspace(); }, 'danger'));
+        card.append(actions); panel.append(card);
       });
     } catch (error) { panel.append(text('p', `${error.message} / 読み込みに失敗しました`, 'admin-load-error')); }
     app.append(panel);
   }
+  function formatPendingDate(iso) { if (!iso) return ''; const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
 
   if (document.querySelector('#admin-app')) shell();
 })();
