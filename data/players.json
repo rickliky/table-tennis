@@ -14,7 +14,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0002",
@@ -31,7 +33,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0003",
@@ -48,7 +52,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0004",
@@ -65,7 +71,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0005",
@@ -82,7 +90,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "表ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0006",
@@ -99,7 +109,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0007",
@@ -116,7 +128,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0009",
@@ -133,7 +147,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0011",
@@ -150,7 +166,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0012",
@@ -167,7 +185,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0013",
@@ -184,7 +204,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0015",
@@ -201,7 +223,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0016",
@@ -218,7 +242,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0018",
@@ -235,7 +261,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0027",
@@ -252,7 +280,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0032",
@@ -269,7 +299,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0033",
@@ -286,7 +318,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0046",
@@ -303,7 +337,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0053",
@@ -320,7 +356,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0060",
@@ -337,7 +375,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0062",
@@ -354,7 +394,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0064",
@@ -371,7 +413,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "表ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0065",
@@ -388,7 +432,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "表ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0079",
@@ -405,7 +451,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0080",
@@ -422,7 +470,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0081",
@@ -439,7 +489,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0082",
@@ -456,7 +508,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0083",
@@ -473,7 +527,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0084",
@@ -490,7 +546,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "表ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0085",
@@ -507,7 +565,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0086",
@@ -524,7 +584,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "粒高",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0087",
@@ -541,7 +603,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "粒高",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0088",
@@ -558,7 +622,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0089",
@@ -575,7 +641,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0090",
@@ -592,7 +660,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0091",
@@ -609,7 +679,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0092",
@@ -626,7 +698,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0093",
@@ -643,7 +717,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0094",
@@ -660,7 +736,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0098",
@@ -677,7 +755,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0099",
@@ -694,7 +774,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0101",
@@ -711,7 +793,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0102",
@@ -728,7 +812,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0103",
@@ -745,7 +831,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0104",
@@ -762,7 +850,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0105",
@@ -779,7 +869,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0106",
@@ -796,7 +888,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0107",
@@ -813,7 +907,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0115",
@@ -830,7 +926,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0116",
@@ -847,7 +945,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0117",
@@ -864,7 +964,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0118",
@@ -881,7 +983,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0119",
@@ -898,7 +1002,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0120",
@@ -915,7 +1021,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0121",
@@ -932,7 +1040,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0122",
@@ -949,7 +1059,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0123",
@@ -966,7 +1078,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0124",
@@ -983,7 +1097,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0125",
@@ -1000,7 +1116,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0126",
@@ -1017,7 +1135,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0127",
@@ -1034,7 +1154,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0128",
@@ -1051,7 +1173,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0130",
@@ -1068,7 +1192,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0131",
@@ -1085,7 +1211,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0132",
@@ -1102,7 +1230,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0133",
@@ -1119,7 +1249,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0134",
@@ -1136,7 +1268,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0135",
@@ -1153,7 +1287,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0136",
@@ -1170,7 +1306,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0137",
@@ -1187,7 +1325,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0138",
@@ -1204,7 +1344,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0139",
@@ -1221,7 +1363,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0140",
@@ -1238,7 +1382,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0141",
@@ -1255,7 +1401,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0142",
@@ -1272,7 +1420,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0144",
@@ -1289,7 +1439,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0146",
@@ -1306,7 +1458,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0147",
@@ -1323,7 +1477,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0148",
@@ -1340,7 +1496,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0149",
@@ -1357,7 +1515,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0150",
@@ -1374,7 +1534,9 @@
     "forehandRubberType": "",
     "backhandRubberType": "",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0151",
@@ -1391,7 +1553,9 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   },
   {
     "playerId": "LK-0152",
@@ -1408,6 +1572,8 @@
     "forehandRubberType": "裏ソフト",
     "backhandRubberType": "裏ソフト",
     "rating": "",
-    "status": "Active"
+    "status": "Active",
+    "grade": "",
+    "gradeHistory": []
   }
 ]
