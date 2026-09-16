@@ -44,12 +44,15 @@ export default { async fetch(request, env) {
       const idField = { club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId' }[body.entityType];
       const before = records[collection].find(item => item[idField] === body.targetId) || null;
       if (!before && body.action === 'delete') throw new Error('Record not found');
+      const mergedAfter = (body.action !== 'delete' && before && body.after) ? { ...before, ...body.after } : body.after;
       const changes = await repo.read(environment, 'pending-changes');
       const existingIndex = changes.findIndex(c => c.status === 'pending' && c.entityType === body.entityType && c.targetId === body.targetId);
       const refBefore = existingIndex >= 0 ? changes[existingIndex].before : before;
-      const diff = createDiff(refBefore, body.after);
-      const summary = buildSummary(body.entityType, body.after || before);
-      const change = { changeId: existingIndex >= 0 ? changes[existingIndex].changeId : `CHANGE-${Date.now()}`, entityType: body.entityType, action: body.action || (before ? 'update' : 'create'), targetId: body.targetId, before: refBefore, after: body.after, diff, summary, createdBy: actor.role, createdAt: existingIndex >= 0 ? changes[existingIndex].createdAt : new Date().toISOString(), status: 'pending' };
+      const diff = createDiff(refBefore, mergedAfter);
+      if (body.action !== 'create' && body.action !== 'delete' && !diff.length) return json({ ok: true, change: null, message: 'No changes detected' });
+      const changedFields = diff.map(d => d.field);
+      const summary = buildSummary(body.entityType, mergedAfter || before);
+      const change = { changeId: existingIndex >= 0 ? changes[existingIndex].changeId : `CHANGE-${Date.now()}`, entityType: body.entityType, action: body.action || (before ? 'update' : 'create'), targetId: body.targetId, before: refBefore, after: mergedAfter, diff, changedFields, summary, createdBy: actor.role, createdAt: existingIndex >= 0 ? changes[existingIndex].createdAt : new Date().toISOString(), status: 'pending' };
       const next = [...changes]; if (existingIndex >= 0) next[existingIndex] = change; else next.push(change);
       await repo.write(environment, 'pending-changes', next); return json({ ok: true, change });
     }
