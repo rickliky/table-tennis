@@ -1,5 +1,8 @@
 {
+  "clubId": "CLUB-0001",
   "name": "Little Kings",
   "nameJa": "リトルキングス",
-  "logoUrl": "https://ritokin.gosyuugi.com/img/3.jpg"
+  "logoUrl": "https://ritokin.gosyuugi.com/img/3.jpg",
+  "prefectureId": "14",
+  "status": "Active"
 }

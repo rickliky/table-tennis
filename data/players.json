@@ -34,8 +34,14 @@
     "backhandRubberType": "裏ソフト",
     "rating": "",
     "status": "Active",
-    "grade": "",
-    "gradeHistory": []
+    "grade": "6年生",
+    "gradeHistory": [
+      {
+        "date": "2026-09-16",
+        "schoolLevel": "小学生",
+        "grade": ""
+      }
+    ]
   },
   {
     "playerId": "LK-0003",
@@ -243,8 +249,14 @@
     "backhandRubberType": "",
     "rating": "",
     "status": "Active",
-    "grade": "",
-    "gradeHistory": []
+    "grade": "1年生",
+    "gradeHistory": [
+      {
+        "date": "2026-09-16",
+        "schoolLevel": "中学生",
+        "grade": ""
+      }
+    ]
   },
   {
     "playerId": "LK-0018",
@@ -338,8 +350,14 @@
     "backhandRubberType": "裏ソフト",
     "rating": "",
     "status": "Active",
-    "grade": "",
-    "gradeHistory": []
+    "grade": "6年生",
+    "gradeHistory": [
+      {
+        "date": "2026-09-16",
+        "schoolLevel": "小学生",
+        "grade": ""
+      }
+    ]
   },
   {
     "playerId": "LK-0053",

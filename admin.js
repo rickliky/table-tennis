@@ -31,6 +31,7 @@
   const el = (tag, options = {}) => Object.assign(document.createElement(tag), options);
   const text = (tag, value, className) => { const node = el(tag, { textContent: value }); if (className) node.className = className; return node; };
   function createDiff(before, after) { const keys = new Set([...Object.keys(before || {}), ...Object.keys(after || {})]); return [...keys].filter(key => key === 'gradeHistory' || JSON.stringify(before?.[key]) !== JSON.stringify(after?.[key])).map(field => ({ field, before: before?.[field] ?? '', after: after?.[field] ?? '' })); }
+  function computeDiff(change) { if (change.diff && change.diff.length) return change.diff; if (change.changedFields && change.before && change.after) { return change.changedFields.filter(f => f !== 'gradeHistory').map(f => ({ field: f, before: change.before[f] ?? '', after: change.after[f] ?? '' })).filter(d => JSON.stringify(d.before) !== JSON.stringify(d.after)); } if (change.before && change.after) return createDiff(change.before, change.after); return []; }
   const empty = node => { node.replaceChildren(); return node; };
   const canEditMatches = () => currentRole === 'admin';
   const playerName = id => players.find(player => player.playerId === id)?.displayName || '';
@@ -195,17 +196,17 @@
       labelNode.append(text('span', label), input); form.append(labelNode);
     });
     const gradeLabelNode = el('label');
-    gradeInput = select('grade', [], record.grade || '');
+    gradeInput = select('grade', [], '');
     gradeInput.required = false;
     const updateGradeOptions = (slValue, preserveGrade) => {
       const opts = gradeOptions[slValue] || [];
-      const currentGrade = preserveGrade ? gradeInput.value : '';
+      const savedGrade = preserveGrade ? gradeInput.value : '';
       gradeInput.replaceChildren();
       gradeInput.append(el('option', { value: '', textContent: '' }));
       opts.forEach(opt => gradeInput.append(el('option', { value: opt, textContent: opt })));
-      if (currentGrade && opts.includes(currentGrade)) gradeInput.value = currentGrade; else gradeInput.value = '';
-      const showGrade = opts.length > 0;
-      gradeLabelNode.style.display = showGrade ? '' : 'none';
+      if (savedGrade && opts.includes(savedGrade)) gradeInput.value = savedGrade;
+      else gradeInput.value = '';
+      gradeLabelNode.style.display = opts.length > 0 ? '' : 'none';
       updateBirthHelper();
     };
     gradeBirthHelper = text('small', '', 'admin-derived');
@@ -217,7 +218,8 @@
     };
     gradeLabelNode.append(text('span', '学年 / Grade'), gradeInput, gradeBirthHelper);
     form.append(gradeLabelNode);
-    updateGradeOptions(record.schoolLevel || '', true);
+    updateGradeOptions(record.schoolLevel || '', false);
+    if (record.grade && gradeOptions[record.schoolLevel]?.includes(record.grade)) gradeInput.value = record.grade;
     schoolLevelInput.onchange = () => { updateGradeOptions(schoolLevelInput.value, false); };
     gradeInput.onchange = updateBirthHelper;
     if (player && record.gradeHistory && record.gradeHistory.length) {
@@ -230,7 +232,7 @@
     }
     const actions = el('div', { className: 'admin-editor-actions' });
     actions.append(button('SUBMIT FOR APPROVAL / 承認申請', () => form.requestSubmit(), 'primary'));
-    actions.append(button(player ? 'RESET / リセット' : 'CLEAR / クリア', () => { form.reset(); updateGradeOptions(schoolLevelInput.value, true); }, 'secondary'));
+    actions.append(button(player ? 'RESET / リセット' : 'CLEAR / クリア', () => { form.reset(); updateGradeOptions(schoolLevelInput.value, false); if (record.grade && gradeOptions[record.schoolLevel]?.includes(record.grade)) gradeInput.value = record.grade; }, 'secondary'));
     if (player) actions.append(button('DELETE / 削除', async () => { if (confirm(`Delete ${record.playerId}? / この選手を削除しますか？`)) { await submitChange('player', record.playerId, null, 'delete'); await loadWorkspace(); } }, 'danger'));
     form.append(actions);
     form.onsubmit = event => {
@@ -357,7 +359,7 @@
           Object.entries(change.before).forEach(([key, value]) => { if (value === '' || value === null || value === undefined) return; const row = el('tr'); row.append(text('td', key), text('td', String(value))); tbody.append(row); });
           deleted.append(table); card.append(deleted);
         } else if (change.after) {
-          const diff = change.before ? createDiff(change.before, change.after) : [];
+          const diff = computeDiff(change);
           if (diff.length) {
             const diffSection = el('div', { className: 'admin-pending-diff' }); diffSection.append(text('p', 'Changes / 変更内容', 'admin-pending-section-title'));
             const table = el('table', { className: 'admin-pending-table' }); const thead2 = el('thead'); const thr2 = el('tr'); thead2.append(thr2); table.append(thead2);
@@ -376,6 +378,8 @@
             const tbody = el('tbody'); table.append(tbody);
             Object.entries(change.after).forEach(([key, value]) => { if (value === '' || value === null || value === undefined) return; const row = el('tr'); row.append(text('td', key), text('td', String(value))); tbody.append(row); });
             detail.append(table); card.append(detail);
+          } else {
+            card.append(text('p', 'No changes detected. / 変更は検出されませんでした。', 'admin-empty'));
           }
         }
         const actions = el('div', { className: 'admin-pending-actions' });
@@ -386,7 +390,7 @@
           btnA.disabled = true; btnB.disabled = true; status.textContent = 'Processing... / 処理中...';
           try {
             await window.LKData.request('/api/approve', { method: 'POST', body: JSON.stringify({ changeId: change.changeId, decision }) });
-            renderWorkspace();
+            await loadWorkspace();
           } catch (error) {
             status.textContent = `${error.message} / 操作に失敗しました`;
             btnA.disabled = false; btnB.disabled = false;
@@ -443,7 +447,7 @@
             const meta = el('div', { className: 'admin-pending-meta' });
             meta.append(text('span', `${c.entityType} · ${c.targetId} · Submitted: ${c.createdBy} · Reviewed: ${c.reviewedBy || '-'}`, 'admin-pending-by'));
             card.append(cardHeader, meta);
-            const diff = c.before && c.after ? createDiff(c.before, c.after) : (c.diff || []);
+            const diff = computeDiff(c);
             if (diff.length) {
               const diffSection = el('div', { className: 'admin-pending-diff' });
               const table = el('table', { className: 'admin-pending-table' }); const thead = el('thead'); const thr = el('tr'); thead.append(thr); table.append(thead);
