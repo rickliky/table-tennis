@@ -46,8 +46,11 @@ export default { async fetch(request, env) {
       if (!before && body.action === 'delete') throw new Error('Record not found');
       const changes = await repo.read(environment, 'pending-changes');
       const existingIndex = changes.findIndex(c => c.status === 'pending' && c.entityType === body.entityType && c.targetId === body.targetId);
+      const refBefore = existingIndex >= 0 ? changes[existingIndex].before : before;
+      const diff = createDiff(refBefore, body.after);
+      if (body.action !== 'create' && body.action !== 'delete' && !diff.length) return json({ ok: true, change: null, message: 'No changes detected' });
       const summary = buildSummary(body.entityType, body.after || before);
-      const change = { changeId: existingIndex >= 0 ? changes[existingIndex].changeId : `CHANGE-${Date.now()}`, entityType: body.entityType, action: body.action || (before ? 'update' : 'create'), targetId: body.targetId, before: existingIndex >= 0 ? changes[existingIndex].before : before, after: body.after, diff: createDiff(existingIndex >= 0 ? changes[existingIndex].before : before, body.after), summary, createdBy: actor.role, createdAt: existingIndex >= 0 ? changes[existingIndex].createdAt : new Date().toISOString(), status: 'pending' };
+      const change = { changeId: existingIndex >= 0 ? changes[existingIndex].changeId : `CHANGE-${Date.now()}`, entityType: body.entityType, action: body.action || (before ? 'update' : 'create'), targetId: body.targetId, before: refBefore, after: body.after, diff, summary, createdBy: actor.role, createdAt: existingIndex >= 0 ? changes[existingIndex].createdAt : new Date().toISOString(), status: 'pending' };
       const next = [...changes]; if (existingIndex >= 0) next[existingIndex] = change; else next.push(change);
       await repo.write(environment, 'pending-changes', next); return json({ ok: true, change });
     }
