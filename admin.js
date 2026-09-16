@@ -217,21 +217,15 @@
     const input = el('input', { type: 'text', className: 'player-combobox-input', value: selected ? `${selected.displayName} (${selected.playerId})` : '', autocomplete: 'off', placeholder: '選手名で検索 / Search player name' });
     input.setAttribute('list', listId);
     const datalist = el('datalist', { id: listId });
-    activePlayers.forEach(p => datalist.append(el('option', { value: `${p.displayName} (${p.playerId})`, 'data-id': p.playerId })));
+    activePlayers.forEach(p => datalist.append(el('option', { value: `${p.displayName} (${p.playerId})` })));
     input.append(datalist);
-    input.addEventListener('input', () => {
-      const match = activePlayers.find(p => `${p.displayName} (${p.playerId})` === input.value);
-      hidden.value = match ? match.playerId : '';
-    });
-    input.addEventListener('change', () => {
-      const match = activePlayers.find(p => `${p.displayName} (${p.playerId})` === input.value);
-      hidden.value = match ? match.playerId : '';
-    });
-    hidden.playerNameInput = input;
-    const wrapper = document.createDocumentFragment();
+    const syncHidden = () => { const match = activePlayers.find(p => `${p.displayName} (${p.playerId})` === input.value); hidden.value = match ? match.playerId : ''; };
+    input.addEventListener('input', syncHidden);
+    input.addEventListener('change', syncHidden);
+    const wrapper = el('span', { className: 'player-combobox-wrapper' });
+    wrapper.style.display = 'contents';
     wrapper.append(hidden, input, datalist);
-    wrapper.value = value || '';
-    wrapper.__proto__ = { get value() { return hidden.value; }, set value(v) { hidden.value = v; const p = activePlayers.find(pl => pl.playerId === v); input.value = p ? `${p.displayName} (${p.playerId})` : ''; } };
+    Object.defineProperty(wrapper, 'value', { get() { return hidden.value; }, set(v) { hidden.value = v; const p = activePlayers.find(pl => pl.playerId === v); input.value = p ? `${p.displayName} (${p.playerId})` : ''; } });
     Object.defineProperty(wrapper, 'onchange', { set(fn) { input.onchange = fn; }, get() { return input.onchange; } });
     Object.defineProperty(wrapper, 'disabled', { set(v) { input.disabled = v; }, get() { return input.disabled; } });
     Object.defineProperty(wrapper, 'required', { set(v) { hidden.required = v; }, get() { return hidden.required; } });
