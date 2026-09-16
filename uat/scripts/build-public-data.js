@@ -14,8 +14,13 @@ const matches = [
 const publicData = {
   ok: true,
   club: read('club.json'),
+  clubs: [read('club.json')],
   players,
   matches,
+  externalOpponents: read('external-opponents.json'),
+  tournaments: read('tournaments.json'),
+  tournamentMatches: read('tournament-matches.json'),
+  tournamentProgress: read('tournament-progress.json'),
   lastUpdated: metadata.lastUpdated
 };
 
