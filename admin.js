@@ -241,7 +241,7 @@
       const labelNode = el('label');
       let input;
       if (key === 'clubId') {
-        const clubOptions = ['', ...(entityData.clubs || []).map(c => c.name)];
+        const clubOptions = ['', ...(entityData.clubs || []).map(c => c.clubId || c.name)];
         input = select(key, clubOptions, record[key] || '');
       } else {
         input = type === 'select' ? select(key, options, record[key] || '') : el('input', { name: key, type: 'text', value: record[key] || '' });
@@ -302,7 +302,7 @@
     editor.append(form);
     if (player) { const pending = findPendingChange('player', player.playerId); if (pending) editor.append(renderPendingInfo(pending)); }
   }
-  function newPlayer() { const next = Math.max(0, ...players.map(player => Number((player.playerId || '').match(/\d+$/)?.[0]) || 0)) + 1; const record = Object.fromEntries(playerFields.map(([key]) => [key, key === 'playerId' ? `LK-${String(next).padStart(4, '0')}` : key === 'status' ? 'Active' : ''])); record.clubId = 'Little Kings'; return record; }
+  function newPlayer() { const next = Math.max(0, ...players.map(player => Number((player.playerId || '').match(/\d+$/)?.[0]) || 0)) + 1; const record = Object.fromEntries(playerFields.map(([key]) => [key, key === 'playerId' ? `LK-${String(next).padStart(4, '0')}` : key === 'status' ? 'Active' : ''])); record.clubId = (entityData.clubs || [])[0]?.clubId || 'CLUB-0001'; return record; }
   function AprilRollover() {
     const gradeProgression = { '1年生':'2年生', '2年生':'3年生', '3年生':'4年生', '4年生':'5年生', '5年生':'6年生' };
     const schoolProgression = { '小学生':'中学生', '中学生':'高校生', '高校生':'' };
@@ -374,8 +374,8 @@
       if (key === idField && !record) {
         input = el('input', { name: key, type: 'text', value: newId });
         input.readOnly = true;
-      } else if (key === 'clubId') {
-        const clubOptions = ['', ...(entityData.clubs || []).map(c => c.name)];
+      } else if (key === 'clubId' && key !== idField) {
+        const clubOptions = ['', ...(entityData.clubs || []).map(c => c.clubId || c.name)];
         input = select(key, clubOptions, record?.[key] || '');
       } else {
         input = type === 'select' ? select(key, options, record?.[key] || '') : el('input', { name: key, type: type === 'number' ? 'number' : 'text', value: record?.[key] || '' });
