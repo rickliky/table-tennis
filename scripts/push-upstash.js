@@ -20,7 +20,7 @@ const collections = { clubs: data.clubs, players: data.players, matches: data.ma
   for (const [name, value] of Object.entries(collections)) {
     const key = `${environment}:${name}`;
     const body = JSON.stringify(value || []);
-    const response = await fetch(`${url}/set/${encodeURIComponent(key)}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body });
+    const response = await fetch(`${url}/set/${encodeURIComponent(key)}`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'text/plain; charset=utf-8' }, body });
     if (!response.ok) throw new Error(`${name}: ${response.status}`);
     console.log(`Uploaded ${key}`);
   }
