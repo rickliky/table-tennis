@@ -178,5 +178,6 @@ html[lang="ja"] .matchup-axis::after { content:'この用具・利き手との�
  .admin-pending-table td:first-child { color: var(--muted); font: 600 11px "Barlow Condensed", sans-serif; letter-spacing: .05em; white-space: nowrap; }
  .admin-pending-diff-row td:nth-child(2) { color: #c66a61; }
  .admin-pending-diff-row td:nth-child(3) { color: #81c784; }
- .admin-pending-actions { display: flex; gap: 8px; padding: 14px 18px; border-top: 1px solid var(--line); }
+ .admin-pending-actions { display: flex; gap: 8px; padding: 14px 18px; border-top: 1px solid var(--line); align-items: center; }
+ .admin-pending-action-status { color: #e09288; font: 600 12px "Noto Sans JP", sans-serif; flex: 1; }
  @media (max-width: 760px) { .admin-pending-card-header { flex-direction: column; gap: 6px; } .admin-pending-table { font-size: 11px; } .admin-pending-actions { flex-direction: column; } }
