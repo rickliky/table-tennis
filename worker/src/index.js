@@ -57,7 +57,7 @@ export default { async fetch(request, env) {
       await repo.write(environment, 'pending-changes', next); return json({ ok: true, change });
     }
     if (url.pathname === '/api/approve' && request.method === 'POST') {
-      if (actor.role !== 'approver') throw new Error('Approver role required');
+      if (actor.role !== 'approver' && actor.role !== 'admin') throw new Error('Approver or admin role required');
       const body = await request.json();
       if (!['accept', 'reject'].includes(body.decision)) throw new Error('Decision must be accept or reject');
       return json(await repo.withLock(environment, async () => {
