@@ -17,5 +17,6 @@ if (!isAdminPage && accessUntil <= Date.now()) {
   passwordForm.addEventListener('submit', async event => { event.preventDefault(); const passwordStatus = document.querySelector('#site-password-status'); passwordStatus.textContent = accessText.checking; try { const response = await fetch(ACCESS_API_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ role:'site', password:document.querySelector('#site-password').value }) }), result = await response.json(); if (!response.ok || !result.ok) throw new Error(); localStorage.setItem('lk-site-session', result.token); localStorage.setItem(accessKey, String(Date.now() + 7 * 24 * 60 * 60 * 1000)); document.querySelector('#site-password-gate').remove(); } catch { passwordStatus.textContent = accessText.error; } });
 }
 const environment = /\/uat(?:\/|$)/i.test(location.pathname) ? 'UAT' : 'PROD';
-const environmentLink = environment === 'UAT' ? ' <a href="admin.html">ADMIN</a>' : '';
-document.body.insertAdjacentHTML('beforeend', `<aside class="environment-badge ${environment.toLowerCase()}" aria-label="Environment: ${environment}">${environment}${environmentLink}</aside>`);
+document.body.insertAdjacentHTML('beforeend', `<aside class="environment-badge ${environment.toLowerCase()}" aria-label="Environment: ${environment}">${environment}</aside>`);
+const nav = document.querySelector('nav');
+if (nav) nav.insertAdjacentHTML('beforeend', '<a href="admin.html" style="color:#8c423a;border-bottom:2px solid #8c423a;padding-bottom:0">ADMIN</a>');
