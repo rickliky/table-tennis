@@ -11,6 +11,19 @@ const collectionFor = entityType => ({ club: 'clubs', player: 'players', match: 
 const CORS_HEADERS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' };
 const JSON_HEADERS = { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' };
 
+function buildSummary(entityType, record) {
+  if (!record) return '';
+  switch (entityType) {
+    case 'player': return [record.displayName, record.englishName, record.schoolLevel, record.grade].filter(Boolean).join(' · ');
+    case 'match': return [record.player1Name, 'vs', record.player2Name, record.matchDate, record.score].filter(Boolean).join(' · ');
+    case 'club': return [record.name, record.nameJa].filter(Boolean).join(' · ');
+    case 'externalOpponent': return [record.displayName, record.englishName, record.affiliation].filter(Boolean).join(' · ');
+    case 'tournament': return [record.name, record.date, record.location].filter(Boolean).join(' · ');
+    case 'tournamentMatch': return [record.player1Name, 'vs', record.player2Name, record.matchDate].filter(Boolean).join(' · ');
+    default: return record.displayName || record.name || record.matchDate || '';
+  }
+}
+
 export default { async fetch(request, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS_HEADERS });
   try {
@@ -31,8 +44,12 @@ export default { async fetch(request, env) {
       const idField = { club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId' }[body.entityType];
       const before = records[collection].find(item => item[idField] === body.targetId) || null;
       if (!before && body.action === 'delete') throw new Error('Record not found');
-      const changes = await repo.read(environment, 'pending-changes'); const change = { changeId: `CHANGE-${Date.now()}`, entityType: body.entityType, action: body.action || (before ? 'update' : 'create'), targetId: body.targetId, before, after: body.after, diff: createDiff(before, body.after), createdBy: actor.role, createdAt: new Date().toISOString(), status: 'pending' };
-      await repo.write(environment, 'pending-changes', [...changes, change]); return json({ ok: true, change });
+      const changes = await repo.read(environment, 'pending-changes');
+      const existingIndex = changes.findIndex(c => c.status === 'pending' && c.entityType === body.entityType && c.targetId === body.targetId);
+      const summary = buildSummary(body.entityType, body.after || before);
+      const change = { changeId: existingIndex >= 0 ? changes[existingIndex].changeId : `CHANGE-${Date.now()}`, entityType: body.entityType, action: body.action || (before ? 'update' : 'create'), targetId: body.targetId, before: existingIndex >= 0 ? changes[existingIndex].before : before, after: body.after, diff: createDiff(existingIndex >= 0 ? changes[existingIndex].before : before, body.after), summary, createdBy: actor.role, createdAt: existingIndex >= 0 ? changes[existingIndex].createdAt : new Date().toISOString(), status: 'pending' };
+      const next = [...changes]; if (existingIndex >= 0) next[existingIndex] = change; else next.push(change);
+      await repo.write(environment, 'pending-changes', next); return json({ ok: true, change });
     }
     if (url.pathname === '/api/approve' && request.method === 'POST') {
       if (actor.role !== 'approver') throw new Error('Approver role required');

@@ -172,7 +172,10 @@
   function renderPlayers() {
     const workspace = el('section', { className: 'admin-workspace' }); const listPanel = el('section', { className: 'admin-panel admin-list-panel' });
     const listHeader = el('div', { className: 'admin-list-header' }); const heading = el('div'); heading.append(text('p', 'PLAYER DIRECTORY / 選手一覧', 'eyebrow'), text('h2', `${players.length} players`));
-    const search = el('input', { type: 'search', placeholder: '名前・IDで検索 / Search name or ID', ariaLabel: 'Search players' }); listHeader.append(heading, search); listPanel.append(listHeader, button('+ ADD PLAYER / 選手追加', () => showPlayerEditor(null), 'primary'));
+    const search = el('input', { type: 'search', placeholder: '名前・IDで検索 / Search name or ID', ariaLabel: 'Search players' }); listHeader.append(heading, search);
+    const addBtn = button('+ ADD PLAYER / 選手追加', () => showPlayerEditor(null), 'primary');
+    const rolloverBtn = button('APRIL ROLLOVER / 4月繰り上げ', () => { if (confirm(language === 'en' ? 'Advance all student grades by one year? This cannot be undone.' : '全選手の学年を1年繰り上げますか？元に戻せません。')) { AprilRollover(); } }, 'secondary');
+    listPanel.append(listHeader, addBtn, rolloverBtn);
     const list = el('div', { className: 'admin-player-list' }); listPanel.append(list); const editor = el('section', { className: 'admin-panel admin-editor-panel' }); workspace.append(listPanel, editor); app.append(workspace);
     const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); players.filter(player => `${player.playerId} ${player.displayName} ${player.englishName || ''}`.toLowerCase().includes(query)).sort((a, b) => a.playerId.localeCompare(b.playerId)).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${player.playerId === selectedId ? ' selected' : ''}` }); const names = el('span'); const gradeTag = player.grade ? ` · ${player.grade}` : ''; names.append(text('b', player.displayName || 'No display name'), text('small', `${player.playerId} · ${player.englishName || '-'}${gradeTag}`)); row.append(names, text('i', player.status || 'Active')); row.onclick = () => { selectedId = player.playerId; updateList(); showPlayerEditor(player); }; list.append(row); }); };
     search.oninput = updateList; window.adminPlayerListUpdate = updateList; updateList(); showPlayerEditor(players[0] || null);
@@ -240,6 +243,38 @@
     editor.append(form);
   }
   function newPlayer() { const next = Math.max(0, ...players.map(player => Number((player.playerId || '').match(/\d+$/)?.[0]) || 0)) + 1; return Object.fromEntries(playerFields.map(([key]) => [key, key === 'playerId' ? `LK-${String(next).padStart(4, '0')}` : key === 'status' ? 'Active' : ''])); }
+  function AprilRollover() {
+    const gradeProgression = { '1年生':'2年生', '2年生':'3年生', '3年生':'4年生', '4年生':'5年生', '5年生':'6年生' };
+    const schoolProgression = { '小学生':'中学生', '中学生':'高校生', '高校生':'' };
+    const today = new Date().toISOString().slice(0,10);
+    const toUpdate = [];
+    players.forEach(player => {
+      if (!player.schoolLevel || player.schoolLevel === '一般') return;
+      const oldSchool = player.schoolLevel, oldGrade = player.grade || '';
+      let newSchool = player.schoolLevel, newGrade = '';
+      if (player.grade && gradeProgression[player.grade]) {
+        newGrade = gradeProgression[player.grade];
+      } else if (player.schoolLevel !== '高校生') {
+        newSchool = schoolProgression[player.schoolLevel] || player.schoolLevel;
+        newGrade = '1年生';
+      } else {
+        newSchool = '一般'; newGrade = '';
+      }
+      if (newSchool !== oldSchool || newGrade !== oldGrade) {
+        if (!player.gradeHistory) player.gradeHistory = [];
+        player.gradeHistory.push({ date: today, schoolLevel: oldSchool, grade: oldGrade });
+        player.schoolLevel = newSchool;
+        player.grade = newGrade;
+        toUpdate.push(player);
+      }
+    });
+    if (!toUpdate.length) { alert(language === 'en' ? 'No student players to advance.' : '繰り上げ対象の選手がいません。'); return; }
+    (async () => {
+      for (const player of toUpdate) { await submitChange('player', player.playerId, player, 'update'); }
+      alert(language === 'en' ? `Updated ${toUpdate.length} player grades.` : `${toUpdate.length}選手の学年を更新しました。`);
+      await loadWorkspace();
+    })().catch(error => { alert(`${error.message} / 更新に失敗しました`); });
+  }
 
   function renderEntity(type) {
     const records = entityData[type] || [];
@@ -309,9 +344,9 @@
         const actionLabels = { create: 'NEW / 新規', update: 'MODIFIED / 変更', delete: 'DELETE / 削除' };
         const actionClass = { create: 'create', update: 'update', delete: 'delete' };
         const header = el('div', { className: 'admin-pending-card-header' });
-        header.append(text('span', actionLabels[change.action] || change.action, `admin-pending-badge ${actionClass[change.action] || ''}`), text('h3', `${change.entityType} · ${change.targetId}`), text('span', formatPendingDate(change.createdAt), 'admin-pending-date'));
+        header.append(text('span', actionLabels[change.action] || change.action, `admin-pending-badge ${actionClass[change.action] || ''}`), text('h3', change.summary || `${change.entityType} · ${change.targetId}`), text('span', formatPendingDate(change.createdAt), 'admin-pending-date'));
         const meta = el('div', { className: 'admin-pending-meta' });
-        meta.append(text('span', `Submitted by: ${change.createdBy}`, 'admin-pending-by'));
+        meta.append(text('span', `${change.entityType} · ${change.targetId} · Submitted by: ${change.createdBy}`, 'admin-pending-by'));
         card.append(header, meta);
         if (change.action === 'delete' && change.before) {
           const deleted = el('div', { className: 'admin-pending-deleted' }); deleted.append(text('p', 'Record to be deleted / 削除対象レコード', 'admin-pending-section-title'));
@@ -400,9 +435,9 @@
             const card = el('article', { className: `admin-history-card ${c.status}` });
             const cardHeader = el('div', { className: 'admin-history-card-header' });
             const actionLabels = { create: 'NEW', update: 'MODIFIED', delete: 'DELETE' };
-            cardHeader.append(text('span', actionLabels[c.action] || c.action, `admin-pending-badge ${c.action}`), text('h4', `${c.entityType} · ${c.targetId}`), text('span', c.status === 'accepted' ? '✓ ACCEPTED' : '✗ REJECTED', `admin-history-status ${c.status}`), text('span', formatPendingDate(c.reviewedAt), 'admin-pending-date'));
+            cardHeader.append(text('span', actionLabels[c.action] || c.action, `admin-pending-badge ${c.action}`), text('h4', c.summary || `${c.entityType} · ${c.targetId}`), text('span', c.status === 'accepted' ? '✓ ACCEPTED' : '✗ REJECTED', `admin-history-status ${c.status}`), text('span', formatPendingDate(c.reviewedAt), 'admin-pending-date'));
             const meta = el('div', { className: 'admin-pending-meta' });
-            meta.append(text('span', `Submitted: ${c.createdBy} · Reviewed: ${c.reviewedBy || '-'}`, 'admin-pending-by'));
+            meta.append(text('span', `${c.entityType} · ${c.targetId} · Submitted: ${c.createdBy} · Reviewed: ${c.reviewedBy || '-'}`, 'admin-pending-by'));
             card.append(cardHeader, meta);
             if (c.diff && c.diff.length) {
               const diffSection = el('div', { className: 'admin-pending-diff' });
