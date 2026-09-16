@@ -3,7 +3,7 @@
 // Usage: UPSTASH_URL=... UPSTASH_TOKEN=... node scripts/persist-club-id.js
 //    or: node scripts/persist-club-id.js <upstash-rest-url> <upstash-rest-token>
 
-const CLUB_ID = 'Little Kings';
+const CLUB_ID = 'CLUB-0001';
 
 const url = process.argv[2] || process.env.UPSTASH_REDIS_REST_URL;
 const token = process.argv[3] || process.env.UPSTASH_REDIS_REST_TOKEN;
