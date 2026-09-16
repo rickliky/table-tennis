@@ -1,15 +1,19 @@
 export function repository(env) {
   const url = env.UPSTASH_REDIS_REST_URL.replace(/\/$/, '');
   const token = env.UPSTASH_REDIS_REST_TOKEN;
-  const call = (command, ...args) => fetch(`${url}/${command}/${args.map(encodeURIComponent).join('/')}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).then(async response => { if (!response.ok) throw new Error(`Redis returned ${response.status}`); return response.json(); });
+  const headers = { Authorization: `Bearer ${token}` };
+  const get = (key) => fetch(`${url}/get/${encodeURIComponent(key)}`, { headers }).then(async r => { const d = await r.json(); return d.result; });
+  const set = (key, value) => fetch(`${url}/set/${encodeURIComponent(key)}`, { method: 'POST', headers, body: value }).then(r => r.json());
+  const del = (key) => fetch(`${url}/del/${encodeURIComponent(key)}`, { method: 'POST', headers }).then(r => r.json());
+  const setnxex = (key, value, ex) => fetch(`${url}/setnxex/${encodeURIComponent(key)}/${encodeURIComponent(value)}/${ex}`, { method: 'POST', headers }).then(r => r.json());
   const key = (environment, type) => `${environment}:${type}`;
-  const read = async (environment, type) => { const result = await call('get', key(environment, type)); return result.result ? JSON.parse(result.result) : []; };
-  const write = (environment, type, value) => call('set', key(environment, type), JSON.stringify(value));
+  const read = async (environment, type) => { const result = await get(key(environment, type)); return result ? JSON.parse(result) : []; };
+  const write = (environment, type, value) => set(key(environment, type), JSON.stringify(value));
   const withLock = async (environment, callback) => {
     const lock = `${environment}:approval-lock`;
-    const acquired = await call('setnxex', lock, crypto.randomUUID(), '15');
+    const acquired = await setnxex(lock, crypto.randomUUID(), '15');
     if (!acquired.result) throw new Error('Another approval is in progress');
-    try { return await callback(); } finally { await call('del', lock); }
+    try { return await callback(); } finally { await del(lock); }
   };
   return { read, write, withLock };
 }

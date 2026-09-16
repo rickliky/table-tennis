@@ -3,12 +3,13 @@ import { createDiff } from './diff.js';
 import { repository } from './repository.js';
 import { validateEntity, validateEnvironment } from './validation.js';
 
-const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' } });
+const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
 const types = ['clubs', 'players', 'matches', 'external-opponents', 'tournaments', 'tournament-matches', 'pending-changes'];
 const singular = type => ({ clubs: 'club', players: 'player', matches: 'match', 'external-opponents': 'externalOpponent', tournaments: 'tournament', 'tournament-matches': 'tournamentMatch' }[type]);
 const collectionFor = entityType => ({ club: 'clubs', player: 'players', match: 'matches', externalOpponent: 'external-opponents', tournament: 'tournaments', tournamentMatch: 'tournament-matches' }[entityType]);
 
 const CORS_HEADERS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' };
+const JSON_HEADERS = { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' };
 
 export default { async fetch(request, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -57,5 +58,5 @@ export default { async fetch(request, env) {
       }));
     }
     throw new Error('Not found');
-  } catch (error) { const status = error.message === 'Authentication required' ? 401 : 400; return new Response(JSON.stringify({ ok: false, error: error.message }), { status, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }); }
+  } catch (error) { const status = error.message === 'Authentication required' ? 401 : 400; return new Response(JSON.stringify({ ok: false, error: error.message }), { status, headers: JSON_HEADERS }); }
 } };
