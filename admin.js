@@ -154,7 +154,7 @@
     const editor = el('section', { className: 'admin-panel admin-editor-panel' }); workspace.append(listPanel, editor); app.append(workspace);
     const updateList = () => {
       empty(list); const query = search.value.trim().toLowerCase();
-      const results = trainingMatches.filter(match => `${match.matchId} ${match.matchDate} ${match.player1Name} ${match.player1Id} ${match.player2Name} ${match.player2Id} ${match.event || ''} ${match.division || ''} ${match.score || ''} ${match.resultStatus || ''}`.toLowerCase().includes(query));
+      const results = trainingMatches.filter(match => { const p1 = players.find(p => p.playerId === match.player1Id); const p2 = players.find(p => p.playerId === match.player2Id); return `${match.matchId} ${match.matchDate} ${match.player1Name} ${match.player1Id} ${p1?.englishName || ''} ${p2?.englishName || ''} ${match.player2Name} ${match.player2Id} ${match.event || ''} ${match.division || ''} ${match.score || ''} ${match.resultStatus || ''}`.toLowerCase().includes(query); });
       if (!results.length) list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty'));
       results.sort((a, b) => `${b.matchDate}${b.matchId}`.localeCompare(`${a.matchDate}${a.matchId}`)).forEach(match => {
         const row = el('button', { type: 'button', className: `admin-player-row${match.matchId === selectedId ? ' selected' : ''}` });
