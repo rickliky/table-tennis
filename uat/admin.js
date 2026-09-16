@@ -90,7 +90,8 @@
     const submit = el('button', { type: 'submit', className: 'admin-button primary', textContent: 'SIGN IN / ログイン' });
     const cancelBtn = el('button', { type: 'button', className: 'admin-button secondary', textContent: 'CANCEL / キャンセル' });
     const status = el('p', { className: 'admin-status', role: 'status' });
-    form.append(password, submit, cancelBtn); login.append(form, status); loginOverlay.append(login); app.append(loginOverlay);
+    form.append(password, submit, cancelBtn); login.append(form, status);     loginOverlay.append(login); app.append(loginOverlay);
+    loginOverlay.addEventListener('click', e => { if (e.target === loginOverlay) loginOverlay.remove(); });
     cancelBtn.onclick = () => loginOverlay.remove();
     form.addEventListener('submit', async event => {
       event.preventDefault(); status.textContent = 'Verifying... / 確認中...';
@@ -114,17 +115,21 @@
 
   function renderWorkspace() {
     empty(app);
-    const header = el('header', { className: 'admin-header' });
-    const brand = el('div', { className: 'admin-brand' });
-    brand.append(text('p', 'LITTLE KINGS', 'eyebrow'), text('h1', 'DATA MAINTENANCE'), text('span', 'データ管理 / Data Maintenance'));
-    const actions = el('div', { className: 'admin-header-actions' });
+    const header = el('header', { className: 'site-header' });
+    const brand = el('a', { className: 'brand', href: 'index.html', 'aria-label': 'Little Kings home' });
+    const brandText = el('span');
+    brandText.append(text('span', 'LITTLE KINGS'), el('small', { textContent: 'DATA MAINTENANCE' }));
+    brand.append(el('img', { src: 'little-kings-logo.jpg', alt: 'Little Kings crown' }), brandText);
+    const nav = el('nav', { 'aria-label': 'Main navigation' });
+    nav.append(el('a', { href: 'index.html', textContent: 'Home' }), el('a', { href: 'index.html#players', textContent: 'Players' }), el('a', { href: 'index.html#stats', textContent: 'Statistics' }));
+    const headerActions = el('div', { className: 'header-actions' });
     if (currentRole === 'approver') {
-      actions.append(text('span', '承認者 / Approver', 'admin-role-badge'));
-      actions.append(button('SIGN OUT / ログアウト', () => { localStorage.removeItem('lk-admin-session'); currentRole = 'admin'; renderWorkspace(); }));
+      headerActions.append(text('span', '承認者 / Approver', 'admin-role-badge'));
+      headerActions.append(button('SIGN OUT / ログアウト', () => { localStorage.removeItem('lk-admin-session'); currentRole = 'admin'; renderWorkspace(); }, 'language-toggle'));
     } else {
-      actions.append(button('APPROVER LOGIN / 承認者ログイン', () => showApproverLogin(), 'primary'));
+      headerActions.append(button('APPROVER LOGIN / 承認者ログイン', () => showApproverLogin(), 'language-toggle'));
     }
-    header.append(brand, actions);
+    header.append(brand, nav, headerActions);
     const tabs = el('nav', { className: 'admin-tabs', ariaLabel: 'Data maintenance sections' });
     tabs.append(tab('matches', 'TRAINING MATCHES / 練習試合'));
     tabs.append(tab('players', 'PLAYERS / 選手'), tab('clubs', 'CLUBS / クラブ'), tab('externalOpponents', 'EXT. OPPONENTS / 外部選手'), tab('tournaments', 'TOURNAMENTS / 大会'), tab('tournamentMatches', 'TOURNAMENT RESULTS / 大会結果'), tab('tournamentProgress', 'TOURNAMENT PROGRESS / 大会進捗'));
