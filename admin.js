@@ -123,6 +123,12 @@
     const nav = el('nav', { 'aria-label': 'Main navigation' });
     nav.append(el('a', { href: 'index.html', textContent: 'Home' }), el('a', { href: 'index.html#players', textContent: 'Players' }), el('a', { href: 'index.html#stats', textContent: 'Statistics' }));
     const headerActions = el('div', { className: 'header-actions' });
+    if (currentRole === 'approver') {
+      headerActions.append(text('span', '承認者 / Approver', 'admin-role-badge'));
+      headerActions.append(button('SIGN OUT / ログアウト', () => { localStorage.removeItem('lk-admin-session'); currentRole = 'admin'; renderWorkspace(); }, 'language-toggle'));
+    } else {
+      headerActions.append(button('APPROVER LOGIN / 承認者ログイン', () => showApproverLogin(), 'language-toggle'));
+    }
     header.append(brand, nav, headerActions);
     const tabs = el('nav', { className: 'admin-tabs', ariaLabel: 'Data maintenance sections' });
     tabs.append(tab('matches', 'TRAINING MATCHES / 練習試合'));
@@ -489,6 +495,12 @@
       const result = await window.LKData.request('/api/pending'); const changes = (result.changes || []).filter(change => change.status === 'pending');
       if (!changes.length) { panel.append(text('p', 'No pending changes. / 承認待ちの変更はありません。', 'admin-empty')); app.append(panel); return; }
       const summary = text('p', `${changes.length} change${changes.length > 1 ? 's' : ''} awaiting review`, 'admin-pending-summary'); panel.append(summary);
+      if (currentRole !== 'approver') {
+        const loginHint = el('div', { className: 'admin-pending-login-hint' });
+        loginHint.append(text('p', 'Sign in as approver to accept or reject changes. / 承認者としてログインすると変更の承認・却下ができます。'));
+        loginHint.append(button('APPROVER LOGIN / 承認者ログイン', () => showApproverLogin(), 'primary'));
+        panel.append(loginHint);
+      }
       changes.forEach(change => {
         const card = el('article', { className: 'admin-pending-card' });
         const actionLabels = { create: 'NEW / 新規', update: 'MODIFIED / 変更', delete: 'DELETE / 削除' };
@@ -529,7 +541,27 @@
             card.append(text('p', 'No changes detected. / 変更は検出されませんでした。', 'admin-empty'));
           }
         }
-        card.append(text('p', 'Awaiting approval / 承認待ち', 'admin-pending-read-only')); panel.append(card);
+        if (currentRole === 'approver') {
+          const actions = el('div', { className: 'admin-pending-actions' });
+          const status = text('span', '', 'admin-pending-action-status');
+          const handleDecision = async (decision, btnA, btnB) => {
+            btnA.disabled = true; btnB.disabled = true; status.textContent = 'Processing... / 処理中...';
+            try {
+              await window.LKData.request('/api/approve', { method: 'POST', body: JSON.stringify({ changeId: change.changeId, decision }) });
+              await loadWorkspace();
+            } catch (error) {
+              status.textContent = `${error.message} / 操作に失敗しました`;
+              btnA.disabled = false; btnB.disabled = false;
+            }
+          };
+          const acceptBtn = button('ACCEPT / 承認', () => { if (!confirm(`Accept this ${change.entityType} change? / この${change.entityType}の変更を承認しますか？\n\nThe change will be applied immediately. / 変更は即座に反映されます。`)) return; handleDecision('accept', acceptBtn, rejectBtn); }, 'primary');
+          const rejectBtn = button('REJECT / 却下', () => { if (!confirm(`Reject this ${change.entityType} change? / この${change.entityType}の変更を却下しますか？\n\nThe change will be discarded. / 変更は破棄されます。`)) return; handleDecision('reject', acceptBtn, rejectBtn); }, 'danger');
+          actions.append(acceptBtn, rejectBtn, status);
+          card.append(actions);
+        } else {
+          card.append(text('p', 'Awaiting approval / 承認待ち', 'admin-pending-read-only'));
+        }
+        panel.append(card);
       });
     } catch (error) { panel.append(text('p', `${error.message} / 読み込みに失敗しました`, 'admin-load-error')); }
     app.append(panel);
