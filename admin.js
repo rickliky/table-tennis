@@ -250,15 +250,15 @@
         card.append(header, meta);
         if (change.action === 'delete' && change.before) {
           const deleted = el('div', { className: 'admin-pending-deleted' }); deleted.append(text('p', 'Record to be deleted / 削除対象レコード', 'admin-pending-section-title'));
-          const table = el('table', { className: 'admin-pending-table' }); table.append(el('thead')).append(el('tr'));
-          table.querySelector('tr').append(text('th', 'Field'), text('th', 'Value'));
+          const table = el('table', { className: 'admin-pending-table' }); const thead1 = el('thead'); const thr1 = el('tr'); thead1.append(thr1); table.append(thead1);
+          thr1.append(text('th', 'Field'), text('th', 'Value'));
           const tbody = el('tbody'); table.append(tbody);
           Object.entries(change.before).forEach(([key, value]) => { if (value === '' || value === null || value === undefined) return; const row = el('tr'); row.append(text('td', key), text('td', String(value))); tbody.append(row); });
           deleted.append(table); card.append(deleted);
         } else if (change.diff && change.diff.length) {
           const diffSection = el('div', { className: 'admin-pending-diff' }); diffSection.append(text('p', 'Changes / 変更内容', 'admin-pending-section-title'));
-          const table = el('table', { className: 'admin-pending-table' }); table.append(el('thead')).append(el('tr'));
-          table.querySelector('tr').append(text('th', 'Field'), text('th', 'Before'), text('th', 'After'));
+          const table = el('table', { className: 'admin-pending-table' }); const thead2 = el('thead'); const thr2 = el('tr'); thead2.append(thr2); table.append(thead2);
+          thr2.append(text('th', 'Field'), text('th', 'Before'), text('th', 'After'));
           const tbody = el('tbody'); table.append(tbody);
           change.diff.forEach(d => {
             const row = el('tr'); row.className = 'admin-pending-diff-row';
@@ -268,8 +268,8 @@
           diffSection.append(table); card.append(diffSection);
         } else if (change.after) {
           const detail = el('div', { className: 'admin-pending-detail' }); detail.append(text('p', 'New record / 新規レコード', 'admin-pending-section-title'));
-          const table = el('table', { className: 'admin-pending-table' }); table.append(el('thead')).append(el('tr'));
-          table.querySelector('tr').append(text('th', 'Field'), text('th', 'Value'));
+          const table = el('table', { className: 'admin-pending-table' }); const thead3 = el('thead'); const thr3 = el('tr'); thead3.append(thr3); table.append(thead3);
+          thr3.append(text('th', 'Field'), text('th', 'Value'));
           const tbody = el('tbody'); table.append(tbody);
           Object.entries(change.after).forEach(([key, value]) => { if (value === '' || value === null || value === undefined) return; const row = el('tr'); row.append(text('td', key), text('td', String(value))); tbody.append(row); });
           detail.append(table); card.append(detail);
