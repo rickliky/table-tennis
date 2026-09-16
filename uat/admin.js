@@ -154,7 +154,7 @@
       if (match) actions.append(button('DELETE / 削除', async () => { if (confirm(`Delete ${match.matchId}? / この試合を削除しますか？`)) { await submitChange('match', match.matchId, null, 'delete'); await loadWorkspace(); } }, 'danger'));
       form.append(actions);
       form.onsubmit = event => {
-        event.preventDefault(); const next = Object.fromEntries(new FormData(form));
+        event.preventDefault(); const next = match ? { ...record, ...Object.fromEntries(new FormData(form)) } : Object.fromEntries(new FormData(form));
         if (!next.player1Id || !next.player2Id || next.player1Id === next.player2Id) { derived.textContent = 'Choose two different players. / 異なる2名の選手を選択してください。'; return; }
         next.player1Sets = Number(next.player1Sets); next.player2Sets = Number(next.player2Sets); next.player1Name = playerName(next.player1Id); next.player2Name = playerName(next.player2Id); next.score = `${next.player1Sets}-${next.player2Sets}`;
         if (next.resultStatus === 'Incomplete' || next.player1Sets === next.player2Sets) { next.winnerId = ''; next.winnerName = ''; } else { next.winnerId = next.player1Sets > next.player2Sets ? next.player1Id : next.player2Id; next.winnerName = playerName(next.winnerId); }
@@ -233,7 +233,7 @@
     if (player) actions.append(button('DELETE / 削除', async () => { if (confirm(`Delete ${record.playerId}? / この選手を削除しますか？`)) { await submitChange('player', record.playerId, null, 'delete'); await loadWorkspace(); } }, 'danger'));
     form.append(actions);
     form.onsubmit = event => {
-      event.preventDefault(); const next = Object.fromEntries(new FormData(form));
+      event.preventDefault(); const next = player ? { ...record, ...Object.fromEntries(new FormData(form)) } : Object.fromEntries(new FormData(form));
       if (player && (next.schoolLevel !== record.schoolLevel || next.grade !== record.grade)) {
         if (!next.gradeHistory) next.gradeHistory = record.gradeHistory || [];
         next.gradeHistory = [...next.gradeHistory, { date: new Date().toISOString().slice(0, 10), schoolLevel: record.schoolLevel || '', grade: record.grade || '' }];
@@ -324,7 +324,7 @@
     }
     form.append(actions);
     form.onsubmit = event => {
-      event.preventDefault(); const next = Object.fromEntries(new FormData(form));
+      event.preventDefault(); const next = record ? { ...record, ...Object.fromEntries(new FormData(form)) } : Object.fromEntries(new FormData(form));
       Object.keys(next).forEach(key => { if (next[key] === '' && fields.find(f => f[0] === key && f[2] === 'number')) next[key] = 0; });
       submitChange(entityType, next[idField], next, record ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
     };
