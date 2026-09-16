@@ -73,29 +73,31 @@
     return box;
   }
   const empty = node => { node.replaceChildren(); return node; };
-  const canEditMatches = () => currentRole === 'admin';
+  const canEditMatches = () => currentRole === 'admin' || currentRole === 'approver';
   const playerName = id => players.find(player => player.playerId === id)?.displayName || '';
 
   function shell() {
-    empty(app);
-    const header = el('header', { className: 'admin-header' });
-    const brand = el('div', { className: 'admin-brand' });
-    brand.append(text('p', 'LITTLE KINGS', 'eyebrow'), text('h1', 'ADMIN'), text('span', '管理画面 / Administration'));
+    currentRole = 'admin';
+    loadWorkspace();
+  }
+
+  function showApproverLogin() {
+    const loginOverlay = el('div', { className: 'admin-login-overlay' });
     const login = el('section', { className: 'admin-login admin-panel' });
-    login.append(text('p', 'ROLE SIGN-IN / ロールログイン', 'eyebrow'), text('h2', 'Secure access / セキュアアクセス'));
+    login.append(text('p', 'APPROVER SIGN-IN / 承認者ログイン', 'eyebrow'), text('h2', 'Secure access / セキュアアクセス'));
     const form = el('form', { className: 'admin-login-form' });
-    const role = el('select', { name: 'role', ariaLabel: 'Role' });
     const password = el('input', { name: 'password', type: 'password', required: true, autocomplete: 'current-password', placeholder: 'Password / パスワード' });
     const submit = el('button', { type: 'submit', className: 'admin-button primary', textContent: 'SIGN IN / ログイン' });
+    const cancelBtn = el('button', { type: 'button', className: 'admin-button secondary', textContent: 'CANCEL / キャンセル' });
     const status = el('p', { className: 'admin-status', role: 'status' });
-    ['admin', 'approver'].forEach(value => role.append(el('option', { value, textContent: value === 'admin' ? '管理者 / Admin' : '承認者 / Approver' })));
-    form.append(role, password, submit); login.append(form, status); app.append(header, login);
+    form.append(password, submit, cancelBtn); login.append(form, status); loginOverlay.append(login); app.append(loginOverlay);
+    cancelBtn.onclick = () => loginOverlay.remove();
     form.addEventListener('submit', async event => {
       event.preventDefault(); status.textContent = 'Verifying... / 確認中...';
       try {
-        const result = await window.LKData.request('/api/login', { method: 'POST', body: JSON.stringify({ role: role.value, password: password.value }) });
-        localStorage.setItem('lk-admin-session', result.token); currentRole = result.role; await loadWorkspace();
-      } catch { status.textContent = 'Sign-in failed. Check your role and password. / ロールまたはパスワードを確認してください。'; }
+        const result = await window.LKData.request('/api/login', { method: 'POST', body: JSON.stringify({ role: 'approver', password: password.value }) });
+        localStorage.setItem('lk-admin-session', result.token); currentRole = result.role; loginOverlay.remove(); renderWorkspace();
+      } catch { status.textContent = 'Sign-in failed. / パスワードを確認してください。'; }
     });
   }
 
@@ -114,19 +116,21 @@
     empty(app);
     const header = el('header', { className: 'admin-header' });
     const brand = el('div', { className: 'admin-brand' });
-    brand.append(text('p', 'LITTLE KINGS', 'eyebrow'), text('h1', 'ADMIN'), text('span', `${currentRole} / ${roleLabel(currentRole)}`));
+    brand.append(text('p', 'LITTLE KINGS', 'eyebrow'), text('h1', 'DATA MAINTENANCE'), text('span', 'データ管理 / Data Maintenance'));
     const actions = el('div', { className: 'admin-header-actions' });
-    actions.append(button('SIGN OUT / ログアウト', () => { localStorage.removeItem('lk-admin-session'); shell(); }));
-    header.append(brand, actions);
-    const tabs = el('nav', { className: 'admin-tabs', ariaLabel: 'Admin sections' });
-    tabs.append(tab('matches', 'TRAINING MATCHES / 練習試合'));
-    if (currentRole === 'admin') {
-      tabs.append(tab('players', 'PLAYERS / 選手'), tab('clubs', 'CLUBS / クラブ'), tab('externalOpponents', 'EXT. OPPONENTS / 外部選手'), tab('tournaments', 'TOURNAMENTS / 大会'), tab('tournamentMatches', 'TOURNAMENT RESULTS / 大会結果'), tab('tournamentProgress', 'TOURNAMENT PROGRESS / 大会進捗'));
+    if (currentRole === 'approver') {
+      actions.append(text('span', '承認者 / Approver', 'admin-role-badge'));
+      actions.append(button('SIGN OUT / ログアウト', () => { localStorage.removeItem('lk-admin-session'); currentRole = 'admin'; renderWorkspace(); }));
+    } else {
+      actions.append(button('APPROVER LOGIN / 承認者ログイン', () => showApproverLogin(), 'primary'));
     }
+    header.append(brand, actions);
+    const tabs = el('nav', { className: 'admin-tabs', ariaLabel: 'Data maintenance sections' });
+    tabs.append(tab('matches', 'TRAINING MATCHES / 練習試合'));
+    tabs.append(tab('players', 'PLAYERS / 選手'), tab('clubs', 'CLUBS / クラブ'), tab('externalOpponents', 'EXT. OPPONENTS / 外部選手'), tab('tournaments', 'TOURNAMENTS / 大会'), tab('tournamentMatches', 'TOURNAMENT RESULTS / 大会結果'), tab('tournamentProgress', 'TOURNAMENT PROGRESS / 大会進捗'));
     tabs.append(tab('pending', 'PENDING CHANGES / 承認待ち'));
     tabs.append(tab('history', 'HISTORY / 変更履歴'));
     app.append(header, tabs);
-    activeTab = activeTab === 'players' && currentRole !== 'admin' ? 'matches' : activeTab;
     if (activeTab === 'players') renderPlayers(); else if (activeTab === 'pending') renderPending(); else if (activeTab === 'history') renderHistory(); else if (activeTab === 'matches') renderMatches(); else renderEntity(activeTab);
   }
   function button(label, onclick, className = '') { const node = el('button', { className: `admin-button ${className}`.trim(), type: 'button', textContent: label }); node.onclick = onclick; return node; }
@@ -209,21 +213,27 @@
   function select(name, options, value) { const node = el('select', { name }); options.forEach(option => node.append(el('option', { value: option, textContent: option }))); node.value = value; return node; }
   function playerSelect(name, value) {
     const activePlayers = players.filter(p => p.status === 'Active').sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja'));
+    const clubName = cid => { const c = (entityData.clubs || []).find(cl => cl.clubId === cid); return c ? (c.nameJa || c.name || '') : ''; };
+    const playerLabel = p => { const parts = [p.displayName]; if (p.englishName) parts.push(p.englishName); parts.push(p.playerId); const cn = clubName(p.clubId); if (cn) parts.push(cn); return parts.join(' · '); };
     const selected = activePlayers.find(p => p.playerId === value);
     const hidden = el('input', { name, type: 'hidden', value: value || '' });
     const listId = `${name}-list`;
-    const input = el('input', { type: 'text', className: 'player-combobox-input', value: selected ? `${selected.displayName} (${selected.playerId})` : '', autocomplete: 'off', placeholder: '選手名で検索 / Search player name' });
+    const input = el('input', { type: 'text', className: 'player-combobox-input', value: selected ? playerLabel(selected) : '', autocomplete: 'off', placeholder: '選手名・ID・クラブ名で検索 / Search name, ID, or club' });
     input.setAttribute('list', listId);
     const datalist = el('datalist', { id: listId });
-    activePlayers.forEach(p => datalist.append(el('option', { value: `${p.displayName} (${p.playerId})` })));
+    activePlayers.forEach(p => datalist.append(el('option', { value: playerLabel(p) })));
     input.append(datalist);
-    const syncHidden = () => { const match = activePlayers.find(p => `${p.displayName} (${p.playerId})` === input.value); hidden.value = match ? match.playerId : ''; };
+    const syncHidden = () => {
+      const q = input.value.toLowerCase();
+      const match = activePlayers.find(p => playerLabel(p) === input.value) || activePlayers.find(p => `${p.displayName} (${p.playerId})` === input.value) || activePlayers.find(p => p.playerId.toLowerCase() === q) || activePlayers.find(p => (p.displayName || '').toLowerCase() === q) || activePlayers.find(p => (p.englishName || '').toLowerCase() === q);
+      hidden.value = match ? match.playerId : '';
+    };
     input.addEventListener('input', syncHidden);
     input.addEventListener('change', syncHidden);
     const wrapper = el('span', { className: 'player-combobox-wrapper' });
     wrapper.style.display = 'contents';
     wrapper.append(hidden, input, datalist);
-    Object.defineProperty(wrapper, 'value', { get() { return hidden.value; }, set(v) { hidden.value = v; const p = activePlayers.find(pl => pl.playerId === v); input.value = p ? `${p.displayName} (${p.playerId})` : ''; } });
+    Object.defineProperty(wrapper, 'value', { get() { return hidden.value; }, set(v) { hidden.value = v; const p = activePlayers.find(pl => pl.playerId === v); input.value = p ? playerLabel(p) : ''; } });
     Object.defineProperty(wrapper, 'onchange', { set(fn) { input.onchange = fn; }, get() { return input.onchange; } });
     Object.defineProperty(wrapper, 'disabled', { set(v) { input.disabled = v; }, get() { return input.disabled; } });
     Object.defineProperty(wrapper, 'required', { set(v) { hidden.required = v; }, get() { return hidden.required; } });
@@ -480,6 +490,13 @@
       const result = await window.LKData.request('/api/pending'); const changes = (result.changes || []).filter(change => change.status === 'pending');
       if (!changes.length) { panel.append(text('p', 'No pending changes. / 承認待ちの変更はありません。', 'admin-empty')); app.append(panel); return; }
       const summary = text('p', `${changes.length} change${changes.length > 1 ? 's' : ''} awaiting review`, 'admin-pending-summary'); panel.append(summary);
+      if (currentRole !== 'approver') {
+        const loginHint = el('div', { className: 'admin-pending-login-hint' });
+        loginHint.append(text('p', 'Sign in as approver to accept or reject changes. / 承認者としてログインすると変更の承認・却下ができます。'));
+        const loginBtn = button('APPROVER LOGIN / 承認者ログイン', () => showApproverLogin(), 'primary');
+        loginHint.append(loginBtn);
+        panel.append(loginHint);
+      }
       changes.forEach(change => {
         const card = el('article', { className: 'admin-pending-card' });
         const actionLabels = { create: 'NEW / 新規', update: 'MODIFIED / 変更', delete: 'DELETE / 削除' };
