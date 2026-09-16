@@ -3,7 +3,7 @@ export function repository(env) {
   const token = env.UPSTASH_REDIS_REST_TOKEN;
   const headers = { Authorization: `Bearer ${token}` };
   const get = (key) => fetch(`${url}/get/${encodeURIComponent(key)}`, { headers }).then(async r => { const d = await r.json(); return d.result; });
-  const set = (key, value) => fetch(`${url}/set/${encodeURIComponent(key)}`, { method: 'POST', headers, body: value }).then(r => r.json());
+  const set = (key, value) => fetch(`${url}/set/${encodeURIComponent(key)}`, { method: 'POST', headers: { ...headers, 'Content-Type': 'text/plain; charset=utf-8' }, body: value }).then(r => r.json());
   const del = (key) => fetch(`${url}/del/${encodeURIComponent(key)}`, { method: 'POST', headers }).then(r => r.json());
   const setnxex = (key, value, ex) => fetch(`${url}/setnxex/${encodeURIComponent(key)}/${encodeURIComponent(value)}/${ex}`, { method: 'POST', headers }).then(r => r.json());
   const key = (environment, type) => `${environment}:${type}`;
