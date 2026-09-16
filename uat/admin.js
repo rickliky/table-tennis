@@ -186,8 +186,6 @@
     const updateDerived = () => {
       const one = Number(sets1.value); const two = Number(sets2.value); const incomplete = resultStatus.value === 'Incomplete';
       derived.textContent = `Score: ${Number.isFinite(one) ? one : 0}-${Number.isFinite(two) ? two : 0} · Winner: ${incomplete || one === two ? 'なし / None' : playerName(one > two ? player1.value : player2.value) || 'Select players'}`;
-      [...player1.options].forEach(option => { option.disabled = option.value && option.value === player2.value; });
-      [...player2.options].forEach(option => { option.disabled = option.value && option.value === player1.value; });
     };
     [player1, player2, sets1, sets2, resultStatus].forEach(input => input.oninput = updateDerived); updateDerived();
     if (!readOnly) {
