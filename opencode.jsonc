@@ -17,6 +17,11 @@
       "model": "openai/gpt-5.6-luna",
       "description": "Analyzes requirements, architecture, and implementation approach before significant changes."
     },
+    "free-plan": {
+      "mode": "primary",
+      "model": "opencode/mimo-v2.5-free",
+      "description": "Read-only exploration and rough planning using the free model. Use for initial repo exploration before switching to Luna for final planning."
+    },
     "explore": {
       "model": "openai/gpt-5.6-luna",
       "description": "Fast exploration: finds files, searches code, answers questions about the codebase."
