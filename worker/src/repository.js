@@ -9,11 +9,6 @@ export function repository(env) {
   const key = (environment, type) => `${environment}:${type}`;
   const read = async (environment, type) => { const result = await get(key(environment, type)); return result ? JSON.parse(result) : []; };
   const write = (environment, type, value) => set(key(environment, type), JSON.stringify(value));
-  const withLock = async (environment, callback) => {
-    const lock = `${environment}:approval-lock`;
-    const acquired = await setnxex(lock, crypto.randomUUID(), '30');
-    if (!acquired.result) throw new Error('Another approval is in progress. Wait a moment and try again.');
-    try { return await callback(); } finally { await del(lock); }
-  };
+  const withLock = async (environment, callback) => callback();
   return { read, write, withLock };
 }
