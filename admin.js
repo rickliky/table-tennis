@@ -3,6 +3,16 @@
 
   const app = document.querySelector('#admin-app');
   const playerFields = [['playerId', '選手ID / Player ID', 'text', true], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマ字表記 / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, ['', 'Male', 'Female', 'Other']], ['schoolLevel', 'カテゴリ / School level', 'select', false, ['', '小学生', '中学生', '高校生', '一般']], ['playingHand', '利き手 / Playing hand', 'text'], ['grip', 'グリップ / Grip', 'text'], ['playingStyle', '戦型 / Playing style', 'text'], ['blade', 'ラケット / Blade', 'text'], ['forehandRubber', 'フォア面ラバー / Forehand rubber', 'text'], ['backhandRubber', 'バック面ラバー / Backhand rubber', 'text'], ['forehandRubberType', 'フォア面種類 / Forehand type', 'text'], ['backhandRubberType', 'バック面種類 / Backhand type', 'text'], ['rating', 'レーティング / Rating', 'text'], ['status', '状態 / Status', 'select', true, ['Active', 'Inactive']]];
+  const entityFields = {
+    club: [['name', '名前 / Name', 'text', true], ['nameJa', '日本語名 / Japanese name', 'text', true], ['logoUrl', 'ロゴURL / Logo URL', 'text']],
+    externalOpponent: [['externalOpponentId', '外部選手ID / External opponent ID', 'text', true], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマジ / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, ['', 'Male', 'Female', 'Other']], ['schoolLevel', 'カテゴリ / Category', 'select', false, ['', '小学生', '中学生', '高校生', '一般']], ['affiliation', '所属 / Affiliation', 'text']],
+    tournament: [['tournamentId', '大会ID / Tournament ID', 'text', true], ['name', '大会名 / Tournament name', 'text', true], ['nameJa', '日本語名 / Japanese name', 'text'], ['date', '日付 / Date', 'text'], ['location', '会場 / Location', 'text'], ['category', 'カテゴリ / Category', 'text'], ['format', '形式 / Format', 'text']],
+    tournamentMatch: [['tournamentMatchId', '大会試合ID / Tournament match ID', 'text', true], ['tournamentId', '大会ID / Tournament ID', 'text', true], ['matchDate', '日付 / Date', 'text', true], ['round', 'ラウンド / Round', 'text'], ['format', '形式 / Format', 'text'], ['player1Name', '選手1 / Player 1', 'text', true], ['player1Sets', '選手1セット / Player 1 sets', 'number'], ['player2Name', '選手2 / Player 2', 'text', true], ['player2Sets', '選手2セット / Player 2 sets', 'number'], ['winnerName', '勝者 / Winner', 'text'], ['score', 'スコア / Score', 'text'], ['resultStatus', '結果ステータス / Result status', 'select', false, ['', 'Completed', 'Incomplete', 'Void']]],
+    tournamentProgress: [['tournamentProgressId', '進捗ID / Progress ID', 'text', true], ['tournamentId', '大会ID / Tournament ID', 'text', true], ['playerId', '選手ID / Player ID', 'text'], ['playerName', '選手名 / Player name', 'text'], ['round', 'ラウンド / Round', 'text'], ['result', '結果 / Result', 'text']]
+  };
+  const entityIdKey = { club: 'name', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId' };
+  const entityStorageKey = { club: 'clubs', externalOpponent: 'externalOpponents', tournament: 'tournaments', tournamentMatch: 'tournamentMatches', tournamentProgress: 'tournamentProgress' };
+  const entityLabel = { club: 'CLUB / クラブ', externalOpponent: 'EXTERNAL OPPONENT / 外部選手', tournament: 'TOURNAMENT / 大会', tournamentMatch: 'TOURNAMENT MATCH / 大会試合', tournamentProgress: 'TOURNAMENT PROGRESS / 大会進捗' };
   let players = [];
   let trainingMatches = [];
   let entityData = {};
@@ -43,9 +53,9 @@
     try {
       const data = await window.LKData.loadPublicData();
       players = data.players || []; trainingMatches = data.matches || [];
-      entityData = { clubs: data.clubs || [], externalOpponents: data.externalOpponents || [], tournaments: data.tournaments || [], tournamentMatches: data.tournamentMatches || [] };
+      entityData = { clubs: data.clubs || [], externalOpponents: data.externalOpponents || [], tournaments: data.tournaments || [], tournamentMatches: data.tournamentMatches || [], tournamentProgress: data.tournamentProgress || [] };
       renderWorkspace();
-    } catch { empty(app).append(text('p', 'Could not load UAT admin data. / UAT管理データを読み込めませんでした。', 'admin-load-error')); }
+    } catch { empty(app).append(text('p', 'Could not load admin data. / 管理データを読み込めませんでした。', 'admin-load-error')); }
   }
 
   function renderWorkspace() {
@@ -58,9 +68,8 @@
     header.append(brand, actions);
     const tabs = el('nav', { className: 'admin-tabs', ariaLabel: 'Admin sections' });
     tabs.append(tab('matches', 'TRAINING MATCHES / 練習試合'));
-    if (currentRole === 'admin') tabs.append(tab('players', 'PLAYERS / 選手'));
     if (currentRole === 'admin') {
-      tabs.append(tab('clubs', 'CLUBS / クラブ'), tab('externalOpponents', 'EXT. OPPONENTS / 外部選手'), tab('tournaments', 'TOURNAMENTS / 大会'), tab('tournamentMatches', 'TOURNAMENT RESULTS / 大会結果'));
+      tabs.append(tab('players', 'PLAYERS / 選手'), tab('clubs', 'CLUBS / クラブ'), tab('externalOpponents', 'EXT. OPPONENTS / 外部選手'), tab('tournaments', 'TOURNAMENTS / 大会'), tab('tournamentMatches', 'TOURNAMENT RESULTS / 大会結果'), tab('tournamentProgress', 'TOURNAMENT PROGRESS / 大会進捗'));
     }
     if (currentRole === 'approver') tabs.append(tab('pending', 'PENDING CHANGES / 承認待ち'));
     app.append(header, tabs);
@@ -120,16 +129,17 @@
     [player1, player2, sets1, sets2, resultStatus].forEach(input => input.oninput = updateDerived); updateDerived();
     if (!readOnly) {
       const actions = el('div', { className: 'admin-editor-actions' });
-      actions.append(button('SAVE IN WORKSPACE / 保存', () => form.requestSubmit(), 'primary'));
-       if (match) actions.append(button('DELETE / 削除', async () => { if (confirm(`Delete ${match.matchId}? / この試合を削除しますか？`)) { await submitChange('match', match.matchId, null, 'delete'); await loadWorkspace(); } }, 'danger'));
+      actions.append(button('SAVE / 保存', () => form.requestSubmit(), 'primary'));
+      actions.append(button(match ? 'RESET / リセット' : 'CLEAR / クリア', () => { form.reset(); updateDerived(); }, 'secondary'));
+      if (match) actions.append(button('DELETE / 削除', async () => { if (confirm(`Delete ${match.matchId}? / この試合を削除しますか？`)) { await submitChange('match', match.matchId, null, 'delete'); await loadWorkspace(); } }, 'danger'));
       form.append(actions);
       form.onsubmit = event => {
         event.preventDefault(); const next = Object.fromEntries(new FormData(form));
         if (!next.player1Id || !next.player2Id || next.player1Id === next.player2Id) { derived.textContent = 'Choose two different players. / 異なる2名の選手を選択してください。'; return; }
         next.player1Sets = Number(next.player1Sets); next.player2Sets = Number(next.player2Sets); next.player1Name = playerName(next.player1Id); next.player2Name = playerName(next.player2Id); next.score = `${next.player1Sets}-${next.player2Sets}`;
         if (next.resultStatus === 'Incomplete' || next.player1Sets === next.player2Sets) { next.winnerId = ''; next.winnerName = ''; } else { next.winnerId = next.player1Sets > next.player2Sets ? next.player1Id : next.player2Id; next.winnerName = playerName(next.winnerId); }
-        next.matchId = match?.matchId || newMatchId(); const index = trainingMatches.findIndex(item => item.matchId === next.matchId);
-         submitChange('match', next.matchId, next, match ? 'update' : 'create').then(loadWorkspace).catch(error => { derived.textContent = `${error.message} / 保存できませんでした`; });
+        next.matchId = match?.matchId || newMatchId();
+        submitChange('match', next.matchId, next, match ? 'update' : 'create').then(loadWorkspace).catch(error => { derived.textContent = `${error.message} / 保存できませんでした`; });
       };
     }
     editor.append(form);
@@ -150,22 +160,87 @@
   function showPlayerEditor(player) {
     const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor); const record = player ? { ...player } : newPlayer(); editor.append(text('p', player ? 'EDIT PLAYER / 選手編集' : 'NEW PLAYER / 新規選手', 'eyebrow'), text('h2', player ? (record.displayName || record.playerId) : 'Add player'));
     const form = el('form', { className: 'admin-player-form' }); playerFields.forEach(([key, label, type, required, options]) => { const labelNode = el('label'); const input = type === 'select' ? select(key, options, record[key] || '') : el('input', { name: key, type: 'text', value: record[key] || '' }); input.required = Boolean(required); input.readOnly = key === 'playerId' && Boolean(player); labelNode.append(text('span', label), input); form.append(labelNode); });
-     const actions = el('div', { className: 'admin-editor-actions' }); actions.append(button('SUBMIT FOR APPROVAL / 承認申請', () => form.requestSubmit(), 'primary')); form.append(actions); form.onsubmit = event => { event.preventDefault(); const next = Object.fromEntries(new FormData(form)); submitChange('player', next.playerId, next, player ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); }); }; editor.append(form);
+    const actions = el('div', { className: 'admin-editor-actions' });
+    actions.append(button('SUBMIT FOR APPROVAL / 承認申請', () => form.requestSubmit(), 'primary'));
+    actions.append(button(player ? 'RESET / リセット' : 'CLEAR / クリア', () => form.reset(), 'secondary'));
+    if (player) actions.append(button('DELETE / 削除', async () => { if (confirm(`Delete ${record.playerId}? / この選手を削除しますか？`)) { await submitChange('player', record.playerId, null, 'delete'); await loadWorkspace(); } }, 'danger'));
+    form.append(actions);
+    form.onsubmit = event => { event.preventDefault(); const next = Object.fromEntries(new FormData(form)); submitChange('player', next.playerId, next, player ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); }); };
+    editor.append(form);
   }
   function newPlayer() { const next = Math.max(0, ...players.map(player => Number((player.playerId || '').match(/\d+$/)?.[0]) || 0)) + 1; return Object.fromEntries(playerFields.map(([key]) => [key, key === 'playerId' ? `LK-${String(next).padStart(4, '0')}` : key === 'status' ? 'Active' : ''])); }
+
   function renderEntity(type) {
-    const records = entityData[type] || [], idField = { clubs:'clubId', externalOpponents:'externalOpponentId', tournaments:'tournamentId', tournamentMatches:'tournamentMatchId' }[type];
-    const panel = el('section', { className: 'admin-panel admin-entity-panel' }); panel.append(text('p', `${type.toUpperCase()} / 管理`, 'eyebrow'), text('h2', `${records.length} records`));
-    const list = el('div', { className:'admin-player-list' }); records.forEach(record => { const row = el('button', { type:'button', className:'admin-player-row' }); row.append(text('b', record[idField] || 'Unnamed'), text('small', record.name || record.displayName || record.matchDate || '')); row.onclick = () => showEntityEditor(panel, type, record); list.append(row); }); panel.append(button('+ ADD / 追加', () => showEntityEditor(panel, type, null), 'primary'), list); app.append(panel); if (records[0]) showEntityEditor(panel, type, records[0]);
+    const records = entityData[type] || [];
+    const idField = entityIdKey[type]; const storageKey = entityStorageKey[type]; const label = entityLabel[type];
+    const workspace = el('section', { className: 'admin-workspace' });
+    const listPanel = el('section', { className: 'admin-panel admin-list-panel' });
+    const listHeader = el('div', { className: 'admin-list-header' });
+    const heading = el('div'); heading.append(text('p', `${label} / 管理`, 'eyebrow'), text('h2', `${records.length} records`));
+    const search = el('input', { type: 'search', placeholder: 'ID・名前で検索 / Search by ID or name', ariaLabel: `Search ${label}` });
+    listHeader.append(heading, search); listPanel.append(listHeader);
+    if (currentRole === 'admin') listPanel.append(button(`+ ADD / ${label.split(' / ')[0]}追加`, () => showEntityEditor(type, null), 'primary'));
+    const list = el('div', { className: 'admin-player-list' }); listPanel.append(list);
+    const editor = el('section', { className: 'admin-panel admin-editor-panel' });
+    workspace.append(listPanel, editor); app.append(workspace);
+    const updateList = () => {
+      empty(list); const query = search.value.trim().toLowerCase();
+      const results = records.filter(record => `${record[idField] || ''} ${record.displayName || record.name || record.matchDate || ''}`.toLowerCase().includes(query));
+      if (!results.length) list.append(text('p', '該当するレコードがありません / No records found.', 'admin-empty'));
+      results.forEach(record => {
+        const row = el('button', { type: 'button', className: `admin-player-row${record[idField] === selectedId ? ' selected' : ''}` });
+        const names = el('span'); names.append(text('b', record[idField] || 'Unnamed'), text('small', record.displayName || record.name || record.matchDate || ''));
+        row.append(names); row.onclick = () => { selectedId = record[idField]; updateList(); showEntityEditor(type, record); }; list.append(row);
+      });
+    };
+    search.oninput = updateList; updateList(); showEntityEditor(type, records.find(record => record[idField] === selectedId) || records[0] || null);
   }
-  function showEntityEditor(panel, type, record) {
-    panel.querySelector('.admin-entity-editor')?.remove(); const idField = { clubs:'clubId', externalOpponents:'externalOpponentId', tournaments:'tournamentId', tournamentMatches:'tournamentMatchId' }[type]; const editor = el('form', { className:'admin-entity-editor' }); const input = el('textarea', { name:'record', rows:14, required:true, value:JSON.stringify(record || { [idField]: `${type.toUpperCase()}-${Date.now()}` }, null, 2) }); input.value = JSON.stringify(record || { [idField]: `${type.toUpperCase()}-${Date.now()}` }, null, 2); editor.append(text('p', 'JSON RECORD / レコード', 'eyebrow'), input); const actions = el('div', { className:'admin-editor-actions' }); actions.append(button('SUBMIT FOR APPROVAL / 承認申請', () => editor.requestSubmit(), 'primary')); if (record) actions.append(button('DELETE / 削除', () => submitChange(type === 'externalOpponents' ? 'externalOpponent' : type === 'tournamentMatches' ? 'tournamentMatch' : type.slice(0, -1), record[idField], null, 'delete').then(loadWorkspace).catch(error => alert(error.message)), 'danger')); editor.append(actions); editor.onsubmit = event => { event.preventDefault(); try { const next = JSON.parse(input.value); const entityType = type === 'externalOpponents' ? 'externalOpponent' : type === 'tournamentMatches' ? 'tournamentMatch' : type.slice(0, -1); submitChange(entityType, next[idField], next, record ? 'update' : 'create').then(loadWorkspace).catch(error => alert(error.message)); } catch { alert('Invalid JSON / JSON形式が正しくありません'); } }; panel.append(editor);
+
+  function showEntityEditor(type, record) {
+    const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
+    const fields = entityFields[type]; const idField = entityIdKey[type];
+    editor.append(text('p', record ? `EDIT ${entityLabel[type]}` : `NEW ${entityLabel[type]}`, 'eyebrow'), text('h2', record ? (record.displayName || record.name || record[idField] || 'Record') : 'Add new record'));
+    const form = el('form', { className: 'admin-player-form' });
+    fields.forEach(([key, label, type, required, options]) => {
+      const labelNode = el('label');
+      const input = type === 'select' ? select(key, options, record?.[key] || '') : el('input', { name: key, type: type === 'number' ? 'number' : 'text', value: record?.[key] || '' });
+      input.required = Boolean(required);
+      if (key === idField && record) input.readOnly = true;
+      if (type === 'number') { input.min = '0'; input.step = '1'; }
+      labelNode.append(text('span', label), input); form.append(labelNode);
+    });
+    const actions = el('div', { className: 'admin-editor-actions' });
+    const entityType = type === 'externalOpponent' ? type : type === 'tournamentMatch' ? type : type.replace(/s$/, '');
+    if (currentRole === 'admin') {
+      actions.append(button('SUBMIT FOR APPROVAL / 承認申請', () => form.requestSubmit(), 'primary'));
+      actions.append(button(record ? 'RESET / リセット' : 'CLEAR / クリア', () => form.reset(), 'secondary'));
+      if (record) actions.append(button('DELETE / 削除', async () => { if (confirm(`Delete ${record[idField]}? / このレコードを削除しますか？`)) { await submitChange(entityType, record[idField], null, 'delete'); await loadWorkspace(); } }, 'danger'));
+    }
+    form.append(actions);
+    form.onsubmit = event => {
+      event.preventDefault(); const next = Object.fromEntries(new FormData(form));
+      Object.keys(next).forEach(key => { if (next[key] === '' && fields.find(f => f[0] === key && f[2] === 'number')) next[key] = 0; });
+      submitChange(entityType, next[idField], next, record ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
+    };
+    editor.append(form);
   }
+
   async function submitChange(entityType, targetId, after, action) { return window.LKData.request('/api/change', { method: 'POST', body: JSON.stringify({ entityType, targetId, after, action }) }); }
+
   async function renderPending() {
     const panel = el('section', { className: 'admin-panel admin-pending-panel' }); panel.append(text('p', 'PENDING CHANGES / 承認待ち', 'eyebrow'), text('h2', 'Review changes / 変更を確認'));
-    try { const result = await window.LKData.request('/api/pending'); const changes = (result.changes || []).filter(change => change.status === 'pending'); if (!changes.length) panel.append(text('p', 'No pending changes. / 承認待ちの変更はありません。', 'admin-empty')); changes.forEach(change => { const row = el('article', { className: 'admin-pending-row' }); row.append(text('h3', `${change.entityType} · ${change.targetId}`), text('small', `${change.createdBy} · ${change.createdAt}`), text('pre', JSON.stringify(change.diff, null, 2))); row.append(button('ACCEPT / 承認', () => window.LKData.request('/api/approve', { method:'POST', body:JSON.stringify({ changeId:change.changeId, decision:'accept' }) }).then(renderWorkspace), 'primary'), button('REJECT / 却下', () => window.LKData.request('/api/approve', { method:'POST', body:JSON.stringify({ changeId:change.changeId, decision:'reject' }) }).then(renderWorkspace, error => alert(error.message)), 'danger')); panel.append(row); }); } catch (error) { panel.append(text('p', `${error.message} / 読み込みに失敗しました`, 'admin-load-error')); }
+    try {
+      const result = await window.LKData.request('/api/pending'); const changes = (result.changes || []).filter(change => change.status === 'pending');
+      if (!changes.length) panel.append(text('p', 'No pending changes. / 承認待ちの変更はありません。', 'admin-empty'));
+      changes.forEach(change => {
+        const row = el('article', { className: 'admin-pending-row' });
+        row.append(text('h3', `${change.entityType} · ${change.targetId}`), text('small', `${change.createdBy} · ${change.createdAt}`), text('pre', JSON.stringify(change.diff, null, 2)));
+        row.append(button('ACCEPT / 承認', () => window.LKData.request('/api/approve', { method:'POST', body:JSON.stringify({ changeId:change.changeId, decision:'accept' }) }).then(renderWorkspace), 'primary'), button('REJECT / 却下', () => window.LKData.request('/api/approve', { method:'POST', body:JSON.stringify({ changeId:change.changeId, decision:'reject' }) }).then(renderWorkspace, error => alert(error.message)), 'danger'));
+        panel.append(row);
+      });
+    } catch (error) { panel.append(text('p', `${error.message} / 読み込みに失敗しました`, 'admin-load-error')); }
     app.append(panel);
   }
+
   if (document.querySelector('#admin-app')) shell();
 })();
