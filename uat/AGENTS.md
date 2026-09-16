@@ -21,17 +21,14 @@ Static bilingual (Japanese/English) website for a table tennis club in Kanagawa,
 GitHub Pages (static hosting)
 ├── index.html          → Main page (leaderboards, calendar, charts, sessions, players)
 ├── player.html?id=     → Individual player profile page
-├── player-profile-supplement.html → Equipment/survey form
-├── player-profile-supplements.html → Survey entries list
-├── admin.html          → Admin CRUD tool (UAT branch only)
-└── data/
-    ├── public-data.json       → Live data snapshot (players + matches)
-    └── player-profile-supplements.json → Survey entries snapshot
+├── admin.html          → Admin CRUD tool (both branches)
+├── data-client.js      → Public data API client
+└── worker/             → Secure admin/API layer for Upstash Redis
 ```
 
-**Data flow**: Google Sheet → Apps Script API (Code.gs) → GitHub Actions workflow (refresh-data.yml) → JSON files committed to repo → static site reads JSON
+**Data flow**: Upstash Redis → Worker API → static site reads approved data
 
-**Admin flow (uat)**: admin.js → client-side editing → manual JSON export → replace data/ files → git commit/push
+**Admin flow**: admin.js → Worker validation → pending change → approver review → Upstash Redis
 
 ## Technology Stack
 
@@ -39,9 +36,9 @@ GitHub Pages (static hosting)
 - **Charts**: Chart.js 4.4.8 with custom `valueLabels` plugin
 - **Fonts**: Barlow Condensed + Noto Sans JP (Google Fonts)
 - **Hosting**: GitHub Pages (production from `main`, UAT from `uat`)
-- **Backend**: Google Apps Script (Code.gs) for data API + password verification
-- **Data source**: Google Sheets (Players, Match Results, Sessions, Player Profile Supplement)
-- **CI/CD**: GitHub Actions (refresh-data.yml every 15min, pages.yml on push)
+- **Backend**: Cloudflare Worker for API, authentication, validation, and approval
+- **Data source**: Upstash Redis with `uat:*` and `prod:*` namespaces
+- **CI/CD**: GitHub Actions pages deployment on push
 
 ## Branches
 
@@ -60,20 +57,22 @@ GitHub Pages (static hosting)
 | `category-colors.js` | Color mapping for player categories (小学生/中学生/高校生/一般) |
 | `Code.gs` | Google Apps Script backend: doGet (publicData), doPost (CRUD) |
 
-### UAT only
+### Admin/API
 | File | Purpose |
 |------|---------|
-| `admin.js` | Client-side admin CRUD for matches and players |
-| `admin.html` | Admin tool page |
-| `data/` | Source JSON files (gitignored: players, training-matches, etc.) |
-| `scripts/build-public-data.js` | Builds public-data.json from data/ files |
-| `uat-roles.json` | UAT role credentials (admin, match-entry, reviewer) |
+| `admin.js` | Admin CRUD and approval UI |
+| `admin.html` | Admin tool page on both branches |
+| `data-client.js` | Public and authenticated API client |
+| `lookups.js` | Normalized bilingual lookup metadata |
+| `worker/` | Secure Worker API implementation |
 
-### Data files
+### Data files and records
 | File | Content |
 |------|---------|
-| `public-data.json` | `{ok, club, players[], matches[], lastUpdated}` — 540KB |
-| `player-profile-supplements.json` | `{ok, entries[]}` — survey data |
+| Upstash `*:players` | Approved player records |
+| Upstash `*:matches` | Approved training match records |
+| Upstash `*:clubs` | Approved club records |
+| Upstash `*:pending-changes` | Pending and reviewed admin changes |
 
 ## Bilingual System
 
@@ -136,13 +135,13 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Important Business Rules
 
-- **Active players only**: public-data.json filters `status === 'Active'`
+- **Active players only**: public API filters `status === 'Active'`
 - **Match completion**: `isComplete()` = `player1Sets >= 3 || player2Sets >= 3`
 - **Training matches only**: filtered by `eventType()` checking for "club|training|練習" in event/division
 - **Minimum matches for ranking**: `gameDays * matchesPerDay` (typically 2 per day)
 - **Category precedence**: 小学生 → 中学生 → 高校生 → 一般 → 未設定
 - **Image fallback**: `img/{playerId}.jpg` → on error → `img/NoProfilePic.jpg`
-- **Password gate**: 7-day localStorage TTL, verified against Google Sheet "Password" tab
+- **Password gate**: site/admin sessions issued by the Worker; no privileged token is exposed to browsers
 
 ## Git Safety
 
@@ -169,14 +168,10 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - No unit tests — review is manual
 - Profile images: `img/{playerId}.jpg` (150-280KB each), originals in `img/original/`
 
-## Google Apps Script API
+## Legacy Migration Files
 
-- **Base URL**: `https://script.google.com/macros/s/AKfycbx6IaN9YT2a4bv_8W76qtNwkFCjZ_-mODBEMTK9IiJlSi91UCIgJ56MQ4WJqeKK3TiUvA/exec`
-- **GET** `?action=publicData` → returns full players + matches JSON
-- **GET** `?action=profileSupplements` → returns survey entries
-- **POST** `action=verifySitePassword` → password check
-- **POST** `action=submitEquipmentSurvey` → save survey response
-- **POST** with `secret` → authenticated CRUD (appendRows, upsertRows, updatePlayers)
+- Google Apps Script, survey pages, repository JSON snapshots, and refresh workflows are temporary rollback/migration sources.
+- Delete them only after Worker deployment, Upstash migration, and manual UAT verification succeed.
 
 ## Known Issues
 
