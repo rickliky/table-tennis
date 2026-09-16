@@ -2,12 +2,12 @@
   'use strict';
 
   const app = document.querySelector('#admin-app');
-  const playerFields = [['playerId', '選手ID / Player ID', 'text', true], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマ字表記 / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, ['', 'Male', 'Female', 'Other']], ['schoolLevel', 'カテゴリ / School level', 'select', false, ['', '小学生', '中学生', '高校生', '一般']], ['grade', '学年 / Grade', 'select', false, []], ['playingHand', '利き手 / Playing hand', 'text'], ['grip', 'グリップ / Grip', 'text'], ['playingStyle', '戦型 / Playing style', 'text'], ['blade', 'ラケット / Blade', 'text'], ['forehandRubber', 'フォア面ラバー / Forehand rubber', 'text'], ['backhandRubber', 'バック面ラバー / Backhand rubber', 'text'], ['forehandRubberType', 'フォア面種類 / Forehand type', 'text'], ['backhandRubberType', 'バック面種類 / Backhand type', 'text'], ['rating', 'レーティング / Rating', 'text'], ['status', '状態 / Status', 'select', true, ['Active', 'Inactive']]];
+  const playerFields = [['playerId', '選手ID / Player ID', 'text', true], ['clubId', 'クラブID / Club ID', 'select', true], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマ字表記 / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, ['', 'Male', 'Female', 'Other']], ['schoolLevel', 'カテゴリ / School level', 'select', false, ['', '小学生', '中学生', '高校生', '一般']], ['grade', '学年 / Grade', 'select', false, []], ['playingHand', '利き手 / Playing hand', 'select', false, ['', '右', '左']], ['grip', 'グリップ / Grip', 'select', false, ['', 'シェークハンド / Shakehand', 'ペンホルダー / Penhold']], ['playingStyle', '戦型 / Playing style', 'select', false, ['', 'ドライブ攻撃型 / Topspin attacker', 'カット主戦型 / Defensive chopper', '攻守兼備型 / All-rounder', '平台攻撃型 / Close-to-table attacker']], ['blade', 'ラケット / Blade', 'text'], ['forehandRubber', 'フォア面ラバー / Forehand rubber', 'text'], ['backhandRubber', 'バック面ラバー / Backhand rubber', 'text'], ['forehandRubberType', 'フォア面種類 / Forehand type', 'select', false, ['', '裏ソフト', '表ソフト', '粒高', 'アンチ', '一枚']], ['backhandRubberType', 'バック面種類 / Backhand type', 'select', false, ['', '裏ソフト', '表ソフト', '粒高', 'アンチ', '一枚']], ['rating', 'レーティング / Rating', 'text'], ['status', '状態 / Status', 'select', true, ['Active', 'Inactive']]];
   const gradeOptions = { '小学生': ['1年生','2年生','3年生','4年生','5年生','6年生'], '中学生': ['1年生','2年生','3年生'], '高校生': ['1年生','2年生','3年生'] };
   const gradeBirthYears = { '小学生': { '1年生':'2019–2020', '2年生':'2018–2019', '3年生':'2017–2018', '4年生':'2016–2017', '5年生':'2015–2016', '6年生':'2014–2015' }, '中学生': { '1年生':'2013–2014', '2年生':'2012–2013', '3年生':'2011–2012' }, '高校生': { '1年生':'2010–2011', '2年生':'2009–2010', '3年生':'2008–2009' } };
   const entityFields = {
     club: [['name', '名前 / Name', 'text', true], ['nameJa', '日本語名 / Japanese name', 'text', true], ['logoUrl', 'ロゴURL / Logo URL', 'text']],
-    externalOpponent: [['externalOpponentId', '外部選手ID / External opponent ID', 'text', true], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマジ / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, ['', 'Male', 'Female', 'Other']], ['schoolLevel', 'カテゴリ / Category', 'select', false, ['', '小学生', '中学生', '高校生', '一般']], ['affiliation', '所属 / Affiliation', 'text']],
+    externalOpponent: [['externalOpponentId', '外部選手ID / External opponent ID', 'text', true], ['clubId', 'クラブID / Club ID', 'select', false], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマジ / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, ['', 'Male', 'Female', 'Other']], ['schoolLevel', 'カテゴリ / Category', 'select', false, ['', '小学生', '中学生', '高校生', '一般']], ['playingHand', '利き手 / Playing hand', 'select', false, ['', '右', '左']], ['grip', 'グリップ / Grip', 'select', false, ['', 'シェークハンド / Shakehand', 'ペンホルダー / Penhold']], ['playingStyle', '戦型 / Playing style', 'select', false, ['', 'ドライブ攻撃型 / Topspin attacker', 'カット主戦型 / Defensive chopper', '攻守兼備型 / All-rounder', '平台攻撃型 / Close-to-table attacker']], ['affiliation', '所属 / Affiliation', 'text']],
     tournament: [['tournamentId', '大会ID / Tournament ID', 'text', true], ['name', '大会名 / Tournament name', 'text', true], ['nameJa', '日本語名 / Japanese name', 'text'], ['date', '日付 / Date', 'text'], ['location', '会場 / Location', 'text'], ['category', 'カテゴリ / Category', 'text'], ['format', '形式 / Format', 'text']],
     tournamentMatch: [['tournamentMatchId', '大会試合ID / Tournament match ID', 'text', true], ['tournamentId', '大会ID / Tournament ID', 'text', true], ['matchDate', '日付 / Date', 'text', true], ['round', 'ラウンド / Round', 'text'], ['format', '形式 / Format', 'text'], ['player1Name', '選手1 / Player 1', 'text', true], ['player1Sets', '選手1セット / Player 1 sets', 'number'], ['player2Name', '選手2 / Player 2', 'text', true], ['player2Sets', '選手2セット / Player 2 sets', 'number'], ['winnerName', '勝者 / Winner', 'text'], ['score', 'スコア / Score', 'text'], ['resultStatus', '結果ステータス / Result status', 'select', false, ['', 'Completed', 'Incomplete', 'Void']]],
     tournamentProgress: [['tournamentProgressId', '進捗ID / Progress ID', 'text', true], ['tournamentId', '大会ID / Tournament ID', 'text', true], ['playerId', '選手ID / Player ID', 'text'], ['playerName', '選手名 / Player name', 'text'], ['round', 'ラウンド / Round', 'text'], ['result', '結果 / Result', 'text']]
@@ -230,7 +230,13 @@
     playerFields.forEach(([key, label, type, required, options]) => {
       if (key === 'grade') return;
       const labelNode = el('label');
-      const input = type === 'select' ? select(key, options, record[key] || '') : el('input', { name: key, type: 'text', value: record[key] || '' });
+      let input;
+      if (key === 'clubId') {
+        const clubOptions = ['', ...(entityData.clubs || []).map(c => c.name)];
+        input = select(key, clubOptions, record[key] || '');
+      } else {
+        input = type === 'select' ? select(key, options, record[key] || '') : el('input', { name: key, type: 'text', value: record[key] || '' });
+      }
       input.required = Boolean(required);
       input.readOnly = key === 'playerId' && Boolean(player);
       if (key === 'schoolLevel') schoolLevelInput = input;
@@ -287,7 +293,7 @@
     editor.append(form);
     if (player) { const pending = findPendingChange('player', player.playerId); if (pending) editor.append(renderPendingInfo(pending)); }
   }
-  function newPlayer() { const next = Math.max(0, ...players.map(player => Number((player.playerId || '').match(/\d+$/)?.[0]) || 0)) + 1; return Object.fromEntries(playerFields.map(([key]) => [key, key === 'playerId' ? `LK-${String(next).padStart(4, '0')}` : key === 'status' ? 'Active' : ''])); }
+  function newPlayer() { const next = Math.max(0, ...players.map(player => Number((player.playerId || '').match(/\d+$/)?.[0]) || 0)) + 1; const record = Object.fromEntries(playerFields.map(([key]) => [key, key === 'playerId' ? `LK-${String(next).padStart(4, '0')}` : key === 'status' ? 'Active' : ''])); record.clubId = 'Little Kings'; return record; }
   function AprilRollover() {
     const gradeProgression = { '1年生':'2年生', '2年生':'3年生', '3年生':'4年生', '4年生':'5年生', '5年生':'6年生' };
     const schoolProgression = { '小学生':'中学生', '中学生':'高校生', '高校生':'' };
@@ -354,7 +360,13 @@
     const form = el('form', { className: 'admin-player-form' });
     fields.forEach(([key, label, type, required, options]) => {
       const labelNode = el('label');
-      const input = type === 'select' ? select(key, options, record?.[key] || '') : el('input', { name: key, type: type === 'number' ? 'number' : 'text', value: record?.[key] || '' });
+      let input;
+      if (key === 'clubId') {
+        const clubOptions = ['', ...(entityData.clubs || []).map(c => c.name)];
+        input = select(key, clubOptions, record?.[key] || '');
+      } else {
+        input = type === 'select' ? select(key, options, record?.[key] || '') : el('input', { name: key, type: type === 'number' ? 'number' : 'text', value: record?.[key] || '' });
+      }
       input.required = Boolean(required);
       if (key === idField && record) input.readOnly = true;
       if (type === 'number') { input.min = '0'; input.step = '1'; }
