@@ -78,9 +78,10 @@
       tabs.append(tab('players', 'PLAYERS / 選手'), tab('clubs', 'CLUBS / クラブ'), tab('externalOpponents', 'EXT. OPPONENTS / 外部選手'), tab('tournaments', 'TOURNAMENTS / 大会'), tab('tournamentMatches', 'TOURNAMENT RESULTS / 大会結果'), tab('tournamentProgress', 'TOURNAMENT PROGRESS / 大会進捗'));
     }
     if (currentRole === 'approver') tabs.append(tab('pending', 'PENDING CHANGES / 承認待ち'));
+    tabs.append(tab('history', 'HISTORY / 変更履歴'));
     app.append(header, tabs);
     activeTab = activeTab === 'players' && currentRole !== 'admin' ? 'matches' : activeTab;
-    if (activeTab === 'players') renderPlayers(); else if (activeTab === 'pending') renderPending(); else if (activeTab === 'matches') renderMatches(); else renderEntity(activeTab);
+    if (activeTab === 'players') renderPlayers(); else if (activeTab === 'pending') renderPending(); else if (activeTab === 'history') renderHistory(); else if (activeTab === 'matches') renderMatches(); else renderEntity(activeTab);
   }
   function button(label, onclick, className = '') { const node = el('button', { className: `admin-button ${className}`.trim(), type: 'button', textContent: label }); node.onclick = onclick; return node; }
   function tab(id, label) { const node = button(label, () => { activeTab = id; selectedId = ''; renderWorkspace(); }, `admin-tab${activeTab === id ? ' active' : ''}`); return node; }
@@ -295,6 +296,67 @@
     app.append(panel);
   }
   function formatPendingDate(iso) { if (!iso) return ''; const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+
+  async function renderHistory() {
+    const panel = el('section', { className: 'admin-panel admin-history-panel' }); panel.append(text('p', 'CHANGE HISTORY / 変更履歴', 'eyebrow'), text('h2', 'Processed changes / 処理済み変更'));
+    try {
+      const result = await window.LKData.request('/api/pending');
+      const processed = (result.changes || []).filter(change => change.status === 'accepted' || change.status === 'rejected');
+      if (!processed.length) { panel.append(text('p', 'No processed changes yet. / 処理済みの変更はありません。', 'admin-empty')); app.append(panel); return; }
+      const controls = el('div', { className: 'admin-history-controls' });
+      const search = el('input', { type: 'search', placeholder: 'ID・種類で検索 / Search by ID or type', ariaLabel: 'Search history' });
+      const statusFilter = el('select', { ariaLabel: 'Filter by status' });
+      ['all', 'accepted', 'rejected'].forEach(v => statusFilter.append(el('option', { value: v, textContent: v === 'all' ? 'ALL / すべて' : v === 'accepted' ? 'ACCEPTED / 承認' : 'REJECTED / 却下' })));
+      const typeFilter = el('select', { ariaLabel: 'Filter by entity type' });
+      const entityTypes = [...new Set(processed.map(c => c.entityType))];
+      typeFilter.append(el('option', { value: 'all', textContent: 'ALL TYPES / すべての種類' }));
+      entityTypes.forEach(t => typeFilter.append(el('option', { value: t, textContent: t })));
+      controls.append(search, statusFilter, typeFilter); panel.append(controls);
+      const list = el('div', { className: 'admin-history-list' }); panel.append(list);
+      const renderList = () => {
+        empty(list); const query = search.value.trim().toLowerCase();
+        const filtered = processed.filter(c => {
+          if (statusFilter.value !== 'all' && c.status !== statusFilter.value) return false;
+          if (typeFilter.value !== 'all' && c.entityType !== typeFilter.value) return false;
+          if (query && !`${c.targetId} ${c.entityType} ${c.changeId}`.toLowerCase().includes(query)) return false;
+          return true;
+        });
+        filtered.sort((a, b) => (b.reviewedAt || '').localeCompare(a.reviewedAt || ''));
+        if (!filtered.length) { list.append(text('p', '該当する履歴がありません / No matching history.', 'admin-empty')); return; }
+        const grouped = {};
+        filtered.forEach(c => { const day = (c.reviewedAt || '').slice(0, 10); if (!grouped[day]) grouped[day] = []; grouped[day].push(c); });
+        Object.entries(grouped).forEach(([day, items]) => {
+          const group = el('div', { className: 'admin-history-group' });
+          const groupHeader = el('div', { className: 'admin-history-group-header' });
+          const d = day ? new Date(day + 'T00:00:00') : null;
+          const dateLabel = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} (${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]})` : day;
+          groupHeader.append(text('h3', dateLabel), text('span', `${items.length} change${items.length > 1 ? 's' : ''}`, 'admin-history-count'));
+          group.append(groupHeader);
+          items.forEach(c => {
+            const card = el('article', { className: `admin-history-card ${c.status}` });
+            const cardHeader = el('div', { className: 'admin-history-card-header' });
+            const actionLabels = { create: 'NEW', update: 'MODIFIED', delete: 'DELETE' };
+            cardHeader.append(text('span', actionLabels[c.action] || c.action, `admin-pending-badge ${c.action}`), text('h4', `${c.entityType} · ${c.targetId}`), text('span', c.status === 'accepted' ? '✓ ACCEPTED' : '✗ REJECTED', `admin-history-status ${c.status}`), text('span', formatPendingDate(c.reviewedAt), 'admin-pending-date'));
+            const meta = el('div', { className: 'admin-pending-meta' });
+            meta.append(text('span', `Submitted: ${c.createdBy} · Reviewed: ${c.reviewedBy || '-'}`, 'admin-pending-by'));
+            card.append(cardHeader, meta);
+            if (c.diff && c.diff.length) {
+              const diffSection = el('div', { className: 'admin-pending-diff' });
+              const table = el('table', { className: 'admin-pending-table' }); const thead = el('thead'); const thr = el('tr'); thead.append(thr); table.append(thead);
+              thr.append(text('th', 'Field'), text('th', 'Before'), text('th', 'After'));
+              const tbody = el('tbody'); table.append(tbody);
+              c.diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : String(d.before)), text('td', d.after === '' || d.after == null ? '—' : String(d.after))); tbody.append(row); });
+              diffSection.append(table); card.append(diffSection);
+            }
+            group.append(card);
+          });
+          list.append(group);
+        });
+      };
+      search.oninput = renderList; statusFilter.onchange = renderList; typeFilter.onchange = renderList; renderList();
+    } catch (error) { panel.append(text('p', `${error.message} / 読み込みに失敗しました`, 'admin-load-error')); }
+    app.append(panel);
+  }
 
   if (document.querySelector('#admin-app')) shell();
 })();

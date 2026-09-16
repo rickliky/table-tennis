@@ -181,3 +181,20 @@ html[lang="ja"] .matchup-axis::after { content:'この用具・利き手との�
  .admin-pending-actions { display: flex; gap: 8px; padding: 14px 18px; border-top: 1px solid var(--line); align-items: center; }
  .admin-pending-action-status { color: #e09288; font: 600 12px "Noto Sans JP", sans-serif; flex: 1; }
  @media (max-width: 760px) { .admin-pending-card-header { flex-direction: column; gap: 6px; } .admin-pending-table { font-size: 11px; } .admin-pending-actions { flex-direction: column; } }
+ .admin-history-controls { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+ .admin-history-controls input, .admin-history-controls select { background: #090a0b; border: 1px solid var(--line); color: var(--cream); font: 600 13px "Noto Sans JP", sans-serif; min-height: 38px; padding: 7px 10px; }
+ .admin-history-controls input { flex: 1 1 200px; }
+ .admin-history-controls select { flex: 0 0 auto; }
+ .admin-history-group { margin-bottom: 20px; }
+ .admin-history-group-header { align-items: center; border-bottom: 1px solid var(--gold); display: flex; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; }
+ .admin-history-group-header h3 { color: var(--gold); font: 700 16px "Barlow Condensed", sans-serif; letter-spacing: .06em; margin: 0; }
+ .admin-history-count { color: var(--muted); font: 600 11px "Noto Sans JP", sans-serif; }
+ .admin-history-card { background: #101214; border: 1px solid var(--line); margin-bottom: 10px; }
+ .admin-history-card.accepted { border-left: 3px solid #81c784; }
+ .admin-history-card.rejected { border-left: 3px solid #c66a61; }
+ .admin-history-card-header { align-items: center; background: linear-gradient(120deg, #2a2109, #101214); display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 14px; }
+ .admin-history-card-header h4 { color: var(--cream); font: 700 14px "Barlow Condensed", sans-serif; letter-spacing: .04em; margin: 0; flex: 1 1 auto; }
+ .admin-history-status { font: 800 10px "Barlow Condensed", sans-serif; letter-spacing: .1em; padding: 2px 8px; white-space: nowrap; }
+ .admin-history-status.accepted { color: #81c784; }
+ .admin-history-status.rejected { color: #c66a61; }
+ @media (max-width: 760px) { .admin-history-controls { flex-direction: column; } .admin-history-controls select { width: 100%; } .admin-history-card-header { flex-direction: column; gap: 4px; } }
