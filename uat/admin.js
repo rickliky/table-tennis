@@ -275,7 +275,17 @@
           detail.append(table); card.append(detail);
         }
         const actions = el('div', { className: 'admin-pending-actions' });
-        actions.append(button('ACCEPT / 承認', async () => { if (!confirm(`Accept this change? / この変更を承認しますか？`)) return; await window.LKData.request('/api/approve', { method: 'POST', body: JSON.stringify({ changeId: change.changeId, decision: 'accept' }) }); renderWorkspace(); }, 'primary'), button('REJECT / 却下', async () => { if (!confirm(`Reject this change? / この変更を却下しますか？`)) return; await window.LKData.request('/api/approve', { method: 'POST', body: JSON.stringify({ changeId: change.changeId, decision: 'reject' }) }); renderWorkspace(); }, 'danger'));
+        const status = text('span', '', 'admin-pending-action-status');
+        const handleDecision = async (decision) => {
+          status.textContent = decision === 'accept' ? 'Processing... / 処理中...' : 'Processing... / 処理中...';
+          try {
+            await window.LKData.request('/api/approve', { method: 'POST', body: JSON.stringify({ changeId: change.changeId, decision }) });
+            renderWorkspace();
+          } catch (error) {
+            status.textContent = `${error.message} / 操作に失敗しました`;
+          }
+        };
+        actions.append(button('ACCEPT / 承認', () => { if (!confirm('Accept this change? / この変更を承認しますか？')) return; handleDecision('accept'); }, 'primary'), button('REJECT / 却下', () => { if (!confirm('Reject this change? / この変更を却下しますか？')) return; handleDecision('reject'); }, 'danger'), status);
         card.append(actions); panel.append(card);
       });
     } catch (error) { panel.append(text('p', `${error.message} / 読み込みに失敗しました`, 'admin-load-error')); }
