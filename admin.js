@@ -37,8 +37,19 @@
   function findPendingChange(entityType, targetId) { return pendingChanges.find(c => c.entityType === entityType && c.targetId === targetId); }
   function renderPendingInfo(change) {
     const box = el('div', { className: 'admin-pending-info' });
+    const header = el('div', { className: 'admin-pending-info-header' });
     const actionLabels = { create: 'NEW / 新規', update: 'MODIFIED / 変更', delete: 'DELETE / 削除' };
-    box.append(text('p', `PENDING ${actionLabels[change.action] || change.action} / 承認待ち`, 'admin-pending-info-title'));
+    header.append(text('p', `PENDING ${actionLabels[change.action] || change.action} / 承認待ち`, 'admin-pending-info-title'));
+    const cancelBtn = button('CANCEL REQUEST / 申請取消', async () => {
+      if (!confirm('Cancel this pending change? / この承認待ちの変更を取消しますか？\n\nThe change will be discarded. / 変更は破棄されます。')) return;
+      try {
+        await window.LKData.request('/api/approve', { method: 'POST', body: JSON.stringify({ changeId: change.changeId, decision: 'reject' }) });
+        await loadPendingChanges();
+        renderWorkspace();
+      } catch (error) { alert(`${error.message} / 操作に失敗しました`); }
+    }, 'danger');
+    header.append(cancelBtn);
+    box.append(header);
     const meta = el('div', { className: 'admin-pending-info-meta' });
     meta.append(text('span', `Submitted by: ${change.createdBy} · ${formatPendingDate(change.createdAt)}`));
     box.append(meta);
