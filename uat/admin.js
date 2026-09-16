@@ -2,7 +2,9 @@
   'use strict';
 
   const app = document.querySelector('#admin-app');
-  const playerFields = [['playerId', '選手ID / Player ID', 'text', true], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマ字表記 / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, ['', 'Male', 'Female', 'Other']], ['schoolLevel', 'カテゴリ / School level', 'select', false, ['', '小学生', '中学生', '高校生', '一般']], ['playingHand', '利き手 / Playing hand', 'text'], ['grip', 'グリップ / Grip', 'text'], ['playingStyle', '戦型 / Playing style', 'text'], ['blade', 'ラケット / Blade', 'text'], ['forehandRubber', 'フォア面ラバー / Forehand rubber', 'text'], ['backhandRubber', 'バック面ラバー / Backhand rubber', 'text'], ['forehandRubberType', 'フォア面種類 / Forehand type', 'text'], ['backhandRubberType', 'バック面種類 / Backhand type', 'text'], ['rating', 'レーティング / Rating', 'text'], ['status', '状態 / Status', 'select', true, ['Active', 'Inactive']]];
+  const playerFields = [['playerId', '選手ID / Player ID', 'text', true], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマ字表記 / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, ['', 'Male', 'Female', 'Other']], ['schoolLevel', 'カテゴリ / School level', 'select', false, ['', '小学生', '中学生', '高校生', '一般']], ['grade', '学年 / Grade', 'select', false, []], ['playingHand', '利き手 / Playing hand', 'text'], ['grip', 'グリップ / Grip', 'text'], ['playingStyle', '戦型 / Playing style', 'text'], ['blade', 'ラケット / Blade', 'text'], ['forehandRubber', 'フォア面ラバー / Forehand rubber', 'text'], ['backhandRubber', 'バック面ラバー / Backhand rubber', 'text'], ['forehandRubberType', 'フォア面種類 / Forehand type', 'text'], ['backhandRubberType', 'バック面種類 / Backhand type', 'text'], ['rating', 'レーティング / Rating', 'text'], ['status', '状態 / Status', 'select', true, ['Active', 'Inactive']]];
+  const gradeOptions = { '小学生': ['1年生','2年生','3年生','4年生','5年生','6年生'], '中学生': ['1年生','2年生','3年生'], '高校生': ['1年生','2年生','3年生'] };
+  const gradeBirthYears = { '小学生': { '1年生':'2019–2020', '2年生':'2018–2019', '3年生':'2017–2018', '4年生':'2016–2017', '5年生':'2015–2016', '6年生':'2014–2015' }, '中学生': { '1年生':'2013–2014', '2年生':'2012–2013', '3年生':'2011–2012' }, '高校生': { '1年生':'2010–2011', '2年生':'2009–2010', '3年生':'2008–2009' } };
   const entityFields = {
     club: [['name', '名前 / Name', 'text', true], ['nameJa', '日本語名 / Japanese name', 'text', true], ['logoUrl', 'ロゴURL / Logo URL', 'text']],
     externalOpponent: [['externalOpponentId', '外部選手ID / External opponent ID', 'text', true], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマジ / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, ['', 'Male', 'Female', 'Other']], ['schoolLevel', 'カテゴリ / Category', 'select', false, ['', '小学生', '中学生', '高校生', '一般']], ['affiliation', '所属 / Affiliation', 'text']],
@@ -59,6 +61,7 @@
     try {
       const data = await window.LKData.loadPublicData();
       players = data.players || []; trainingMatches = data.matches || [];
+      players.forEach(p => { if (!p.gradeHistory) p.gradeHistory = []; });
       entityData = { clubs: data.clubs || [], externalOpponents: data.externalOpponents || [], tournaments: data.tournaments || [], tournamentMatches: data.tournamentMatches || [], tournamentProgress: data.tournamentProgress || [] };
       renderWorkspace();
     } catch { empty(app).append(text('p', 'Could not load admin data. / 管理データを読み込めませんでした。', 'admin-load-error')); }
@@ -124,7 +127,17 @@
     const sets1 = el('input', { name: 'player1Sets', type: 'number', min: '0', step: '1', required: true, value: String(record.player1Sets ?? 0) });
     const sets2 = el('input', { name: 'player2Sets', type: 'number', min: '0', step: '1', required: true, value: String(record.player2Sets ?? 0) });
      const resultStatus = select('resultStatus', ['Completed', 'Incomplete', 'Void', 'Transcribed - review'], record.resultStatus || 'Completed');
+    const p1sl = el('input', { name: 'player1SchoolLevel', type: 'hidden', value: record.player1SchoolLevel || '' });
+    const p1gr = el('input', { name: 'player1Grade', type: 'hidden', value: record.player1Grade || '' });
+    const p2sl = el('input', { name: 'player2SchoolLevel', type: 'hidden', value: record.player2SchoolLevel || '' });
+    const p2gr = el('input', { name: 'player2Grade', type: 'hidden', value: record.player2Grade || '' });
+    const snapshotFromPlayer = (pid, slInput, grInput) => { const p = players.find(pl => pl.playerId === pid); if (p) { slInput.value = p.schoolLevel || ''; grInput.value = p.grade || ''; } else { slInput.value = ''; grInput.value = ''; } };
+    player1.onchange = () => snapshotFromPlayer(player1.value, p1sl, p1gr);
+    player2.onchange = () => snapshotFromPlayer(player2.value, p2sl, p2gr);
+    if (record.player1Id) snapshotFromPlayer(record.player1Id, p1sl, p1gr);
+    if (record.player2Id) snapshotFromPlayer(record.player2Id, p2sl, p2gr);
     addField('日付 / Date', date); addField('イベント / Event', event); addField('部門（任意）/ Division (optional)', division); addField('形式 / Format', format); addField('選手1 / Player 1', player1); addField('選手2 / Player 2', player2); addField('選手1 セット / Player 1 sets', sets1); addField('選手2 セット / Player 2 sets', sets2); addField('結果ステータス / Result status', resultStatus);
+    form.append(p1sl, p1gr, p2sl, p2gr);
     [date, event, division, format, player1, player2, sets1, sets2, resultStatus].forEach(input => { input.disabled = readOnly; });
     const derived = text('p', '', 'admin-derived'); form.append(derived);
     const updateDerived = () => {
@@ -161,18 +174,69 @@
     const listHeader = el('div', { className: 'admin-list-header' }); const heading = el('div'); heading.append(text('p', 'PLAYER DIRECTORY / 選手一覧', 'eyebrow'), text('h2', `${players.length} players`));
     const search = el('input', { type: 'search', placeholder: '名前・IDで検索 / Search name or ID', ariaLabel: 'Search players' }); listHeader.append(heading, search); listPanel.append(listHeader, button('+ ADD PLAYER / 選手追加', () => showPlayerEditor(null), 'primary'));
     const list = el('div', { className: 'admin-player-list' }); listPanel.append(list); const editor = el('section', { className: 'admin-panel admin-editor-panel' }); workspace.append(listPanel, editor); app.append(workspace);
-    const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); players.filter(player => `${player.playerId} ${player.displayName} ${player.englishName || ''}`.toLowerCase().includes(query)).sort((a, b) => a.playerId.localeCompare(b.playerId)).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${player.playerId === selectedId ? ' selected' : ''}` }); const names = el('span'); names.append(text('b', player.displayName || 'No display name'), text('small', `${player.playerId} · ${player.englishName || '-'}`)); row.append(names, text('i', player.status || 'Active')); row.onclick = () => { selectedId = player.playerId; updateList(); showPlayerEditor(player); }; list.append(row); }); };
+    const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); players.filter(player => `${player.playerId} ${player.displayName} ${player.englishName || ''}`.toLowerCase().includes(query)).sort((a, b) => a.playerId.localeCompare(b.playerId)).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${player.playerId === selectedId ? ' selected' : ''}` }); const names = el('span'); const gradeTag = player.grade ? ` · ${player.grade}` : ''; names.append(text('b', player.displayName || 'No display name'), text('small', `${player.playerId} · ${player.englishName || '-'}${gradeTag}`)); row.append(names, text('i', player.status || 'Active')); row.onclick = () => { selectedId = player.playerId; updateList(); showPlayerEditor(player); }; list.append(row); }); };
     search.oninput = updateList; window.adminPlayerListUpdate = updateList; updateList(); showPlayerEditor(players[0] || null);
   }
   function showPlayerEditor(player) {
     const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor); const record = player ? { ...player } : newPlayer(); editor.append(text('p', player ? 'EDIT PLAYER / 選手編集' : 'NEW PLAYER / 新規選手', 'eyebrow'), text('h2', player ? (record.displayName || record.playerId) : 'Add player'));
-    const form = el('form', { className: 'admin-player-form' }); playerFields.forEach(([key, label, type, required, options]) => { const labelNode = el('label'); const input = type === 'select' ? select(key, options, record[key] || '') : el('input', { name: key, type: 'text', value: record[key] || '' }); input.required = Boolean(required); input.readOnly = key === 'playerId' && Boolean(player); labelNode.append(text('span', label), input); form.append(labelNode); });
+    const form = el('form', { className: 'admin-player-form' });
+    let schoolLevelInput, gradeInput, gradeBirthHelper;
+    playerFields.forEach(([key, label, type, required, options]) => {
+      if (key === 'grade') return;
+      const labelNode = el('label');
+      const input = type === 'select' ? select(key, options, record[key] || '') : el('input', { name: key, type: 'text', value: record[key] || '' });
+      input.required = Boolean(required);
+      input.readOnly = key === 'playerId' && Boolean(player);
+      if (key === 'schoolLevel') schoolLevelInput = input;
+      labelNode.append(text('span', label), input); form.append(labelNode);
+    });
+    const gradeLabelNode = el('label');
+    gradeInput = select('grade', [], record.grade || '');
+    gradeInput.required = false;
+    const updateGradeOptions = (slValue, preserveGrade) => {
+      const opts = gradeOptions[slValue] || [];
+      const currentGrade = preserveGrade ? gradeInput.value : '';
+      gradeInput.replaceChildren();
+      gradeInput.append(el('option', { value: '', textContent: '' }));
+      opts.forEach(opt => gradeInput.append(el('option', { value: opt, textContent: opt })));
+      if (currentGrade && opts.includes(currentGrade)) gradeInput.value = currentGrade; else gradeInput.value = '';
+      const showGrade = opts.length > 0;
+      gradeLabelNode.style.display = showGrade ? '' : 'none';
+      updateBirthHelper();
+    };
+    gradeBirthHelper = text('small', '', 'admin-derived');
+    gradeBirthHelper.style.display = 'none';
+    const updateBirthHelper = () => {
+      const sl = schoolLevelInput.value;
+      const gr = gradeInput.value;
+      if (gr && gradeBirthYears[sl] && gradeBirthYears[sl][gr]) { gradeBirthHelper.textContent = `出生年 / Birth year: ${gradeBirthYears[sl][gr]}`; gradeBirthHelper.style.display = ''; } else { gradeBirthHelper.textContent = ''; gradeBirthHelper.style.display = 'none'; }
+    };
+    gradeLabelNode.append(text('span', '学年 / Grade'), gradeInput, gradeBirthHelper);
+    form.append(gradeLabelNode);
+    updateGradeOptions(record.schoolLevel || '', true);
+    schoolLevelInput.onchange = () => { updateGradeOptions(schoolLevelInput.value, false); };
+    gradeInput.onchange = updateBirthHelper;
+    if (player && record.gradeHistory && record.gradeHistory.length) {
+      const histSection = el('div', { className: 'admin-derived' });
+      histSection.append(text('p', '学年履歴 / Grade history'));
+      const histList = el('ul');
+      record.gradeHistory.forEach(h => { histList.append(el('li', { textContent: `${h.date || ''} ${h.schoolLevel || ''} ${h.grade || ''}` })); });
+      histSection.append(histList);
+      form.append(histSection);
+    }
     const actions = el('div', { className: 'admin-editor-actions' });
     actions.append(button('SUBMIT FOR APPROVAL / 承認申請', () => form.requestSubmit(), 'primary'));
-    actions.append(button(player ? 'RESET / リセット' : 'CLEAR / クリア', () => form.reset(), 'secondary'));
+    actions.append(button(player ? 'RESET / リセット' : 'CLEAR / クリア', () => { form.reset(); updateGradeOptions(schoolLevelInput.value, true); }, 'secondary'));
     if (player) actions.append(button('DELETE / 削除', async () => { if (confirm(`Delete ${record.playerId}? / この選手を削除しますか？`)) { await submitChange('player', record.playerId, null, 'delete'); await loadWorkspace(); } }, 'danger'));
     form.append(actions);
-    form.onsubmit = event => { event.preventDefault(); const next = Object.fromEntries(new FormData(form)); submitChange('player', next.playerId, next, player ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); }); };
+    form.onsubmit = event => {
+      event.preventDefault(); const next = Object.fromEntries(new FormData(form));
+      if (player && (next.schoolLevel !== record.schoolLevel || next.grade !== record.grade)) {
+        if (!next.gradeHistory) next.gradeHistory = record.gradeHistory || [];
+        next.gradeHistory = [...next.gradeHistory, { date: new Date().toISOString().slice(0, 10), schoolLevel: record.schoolLevel || '', grade: record.grade || '' }];
+      }
+      submitChange('player', next.playerId, next, player ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
+    };
     editor.append(form);
   }
   function newPlayer() { const next = Math.max(0, ...players.map(player => Number((player.playerId || '').match(/\d+$/)?.[0]) || 0)) + 1; return Object.fromEntries(playerFields.map(([key]) => [key, key === 'playerId' ? `LK-${String(next).padStart(4, '0')}` : key === 'status' ? 'Active' : ''])); }
