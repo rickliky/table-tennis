@@ -30,6 +30,7 @@
 
   const el = (tag, options = {}) => Object.assign(document.createElement(tag), options);
   const text = (tag, value, className) => { const node = el(tag, { textContent: value }); if (className) node.className = className; return node; };
+  function createDiff(before, after) { const keys = new Set([...Object.keys(before || {}), ...Object.keys(after || {})]); return [...keys].filter(key => key === 'gradeHistory' || JSON.stringify(before?.[key]) !== JSON.stringify(after?.[key])).map(field => ({ field, before: before?.[field] ?? '', after: after?.[field] ?? '' })); }
   const empty = node => { node.replaceChildren(); return node; };
   const canEditMatches = () => currentRole === 'admin';
   const playerName = id => players.find(player => player.playerId === id)?.displayName || '';
@@ -355,24 +356,27 @@
           const tbody = el('tbody'); table.append(tbody);
           Object.entries(change.before).forEach(([key, value]) => { if (value === '' || value === null || value === undefined) return; const row = el('tr'); row.append(text('td', key), text('td', String(value))); tbody.append(row); });
           deleted.append(table); card.append(deleted);
-        } else if (change.diff && change.diff.length) {
-          const diffSection = el('div', { className: 'admin-pending-diff' }); diffSection.append(text('p', 'Changes / 変更内容', 'admin-pending-section-title'));
-          const table = el('table', { className: 'admin-pending-table' }); const thead2 = el('thead'); const thr2 = el('tr'); thead2.append(thr2); table.append(thead2);
-          thr2.append(text('th', 'Field'), text('th', 'Before'), text('th', 'After'));
-          const tbody = el('tbody'); table.append(tbody);
-          change.diff.forEach(d => {
-            const row = el('tr'); row.className = 'admin-pending-diff-row';
-            row.append(text('td', d.field), text('td', d.before === '' ? '—' : String(d.before)), text('td', d.after === '' ? '—' : String(d.after)));
-            tbody.append(row);
-          });
-          diffSection.append(table); card.append(diffSection);
         } else if (change.after) {
-          const detail = el('div', { className: 'admin-pending-detail' }); detail.append(text('p', 'New record / 新規レコード', 'admin-pending-section-title'));
-          const table = el('table', { className: 'admin-pending-table' }); const thead3 = el('thead'); const thr3 = el('tr'); thead3.append(thr3); table.append(thead3);
-          thr3.append(text('th', 'Field'), text('th', 'Value'));
-          const tbody = el('tbody'); table.append(tbody);
-          Object.entries(change.after).forEach(([key, value]) => { if (value === '' || value === null || value === undefined) return; const row = el('tr'); row.append(text('td', key), text('td', String(value))); tbody.append(row); });
-          detail.append(table); card.append(detail);
+          const diff = change.before ? createDiff(change.before, change.after) : [];
+          if (diff.length) {
+            const diffSection = el('div', { className: 'admin-pending-diff' }); diffSection.append(text('p', 'Changes / 変更内容', 'admin-pending-section-title'));
+            const table = el('table', { className: 'admin-pending-table' }); const thead2 = el('thead'); const thr2 = el('tr'); thead2.append(thr2); table.append(thead2);
+            thr2.append(text('th', 'Field'), text('th', 'Before'), text('th', 'After'));
+            const tbody = el('tbody'); table.append(tbody);
+            diff.forEach(d => {
+              const row = el('tr'); row.className = 'admin-pending-diff-row';
+              row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : String(d.before)), text('td', d.after === '' || d.after == null ? '—' : String(d.after)));
+              tbody.append(row);
+            });
+            diffSection.append(table); card.append(diffSection);
+          } else if (change.action === 'create') {
+            const detail = el('div', { className: 'admin-pending-detail' }); detail.append(text('p', 'New record / 新規レコード', 'admin-pending-section-title'));
+            const table = el('table', { className: 'admin-pending-table' }); const thead3 = el('thead'); const thr3 = el('tr'); thead3.append(thr3); table.append(thead3);
+            thr3.append(text('th', 'Field'), text('th', 'Value'));
+            const tbody = el('tbody'); table.append(tbody);
+            Object.entries(change.after).forEach(([key, value]) => { if (value === '' || value === null || value === undefined) return; const row = el('tr'); row.append(text('td', key), text('td', String(value))); tbody.append(row); });
+            detail.append(table); card.append(detail);
+          }
         }
         const actions = el('div', { className: 'admin-pending-actions' });
         const status = text('span', '', 'admin-pending-action-status');
@@ -439,12 +443,13 @@
             const meta = el('div', { className: 'admin-pending-meta' });
             meta.append(text('span', `${c.entityType} · ${c.targetId} · Submitted: ${c.createdBy} · Reviewed: ${c.reviewedBy || '-'}`, 'admin-pending-by'));
             card.append(cardHeader, meta);
-            if (c.diff && c.diff.length) {
+            const diff = c.before && c.after ? createDiff(c.before, c.after) : (c.diff || []);
+            if (diff.length) {
               const diffSection = el('div', { className: 'admin-pending-diff' });
               const table = el('table', { className: 'admin-pending-table' }); const thead = el('thead'); const thr = el('tr'); thead.append(thr); table.append(thead);
               thr.append(text('th', 'Field'), text('th', 'Before'), text('th', 'After'));
               const tbody = el('tbody'); table.append(tbody);
-              c.diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : String(d.before)), text('td', d.after === '' || d.after == null ? '—' : String(d.after))); tbody.append(row); });
+              diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : String(d.before)), text('td', d.after === '' || d.after == null ? '—' : String(d.after))); tbody.append(row); });
               diffSection.append(table); card.append(diffSection);
             }
             group.append(card);
