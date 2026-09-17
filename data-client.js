@@ -2,18 +2,23 @@
   'use strict';
 
   const configuredBase = window.LK_API_BASE || '';
-  const environment = /\/uat(?:\/|$)/i.test(location.pathname) ? 'uat' : 'prod';
-  const endpoint = `${configuredBase.replace(/\/$/, '')}/api/public-data?environment=${environment}`;
+  const isUat = /\/uat(?:\/|$)/i.test(location.pathname);
+  const environment = isUat ? 'uat' : 'prod';
+  const endpoint = isUat ? './public-data.json' : `${configuredBase.replace(/\/$/, '')}/api/public-data?environment=${environment}`;
 
   async function loadPublicData() {
     try {
+      if (isUat) {
+        const response = await fetch('./public-data.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('Failed to load public data');
+        return response.json();
+      }
       const response = await fetch(endpoint, { cache: 'no-store' });
       if (!response.ok) throw new Error(`Public API returned ${response.status}`);
       const result = await response.json();
       if (!result.ok) throw new Error('Public API returned an invalid response');
       return result;
     } catch (error) {
-      // Keep the existing snapshot available during the Worker rollout.
       const response = await fetch('./public-data.json', { cache: 'no-store' });
       if (!response.ok) throw error;
       return response.json();
