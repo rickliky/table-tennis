@@ -213,7 +213,11 @@
       };
     }
     editor.append(form);
-    if (match) { const pending = findPendingChange('match', match.matchId); if (pending) editor.append(renderPendingInfo(pending)); }
+    if (match) {
+      const pending = findPendingChange('match', match.matchId);
+      if (pending) editor.append(renderPendingInfo(pending));
+      renderRecordHistory('match', match.matchId).then(history => { if (history.childNodes.length) editor.append(history); });
+    }
   }
   function select(name, options, value) { const node = el('select', { name }); options.forEach(option => node.append(el('option', { value: option, textContent: option }))); node.value = value; return node; }
   function playerSelect(name, value) {
@@ -360,7 +364,11 @@
       submitChange('player', next.playerId, next, player ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
     };
     editor.append(form);
-    if (player) { const pending = findPendingChange('player', player.playerId); if (pending) editor.append(renderPendingInfo(pending)); }
+    if (player) {
+      const pending = findPendingChange('player', player.playerId);
+      if (pending) editor.append(renderPendingInfo(pending));
+      renderRecordHistory('player', player.playerId).then(history => { if (history.childNodes.length) editor.append(history); });
+    }
   }
   function newPlayer() { const next = Math.max(0, ...players.map(player => Number((player.playerId || '').match(/\d+$/)?.[0]) || 0)) + 1; const record = Object.fromEntries(playerFields.map(([key]) => [key, key === 'playerId' ? `LK-${String(next).padStart(4, '0')}` : key === 'status' ? 'Active' : ''])); record.clubId = (entityData.clubs || [])[0]?.clubId || 'CLUB-0001'; return record; }
   function AprilRollover() {
@@ -484,10 +492,54 @@
       submitChange(entityType, next[idField], next, record ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
     };
     editor.append(form);
-    if (record) { const pending = findPendingChange(entityType, record[idField]); if (pending) editor.append(renderPendingInfo(pending)); }
+    if (record) {
+      const pending = findPendingChange(entityType, record[idField]);
+      if (pending) editor.append(renderPendingInfo(pending));
+      renderRecordHistory(entityType, record[idField]).then(history => { if (history.childNodes.length) editor.append(history); });
+    }
   }
 
   async function submitChange(entityType, targetId, after, action) { return window.LKData.request('/api/change', { method: 'POST', body: JSON.stringify({ entityType, targetId, after, action }) }); }
+
+  async function renderRecordHistory(entityType, targetId) {
+    const container = el('div', { className: 'admin-record-history' });
+    try {
+      const result = await window.LKData.request('/api/pending');
+      const all = (result.changes || []).filter(c => c.entityType === entityType && c.targetId === targetId);
+      if (!all.length) return container;
+      const pending = all.filter(c => c.status === 'pending');
+      const processed = all.filter(c => c.status === 'accepted' || c.status === 'rejected');
+      if (pending.length) {
+        const section = el('div', { className: 'admin-record-history-section' });
+        section.append(text('p', `PENDING / 承認待ち (${pending.length})`, 'admin-record-history-title'));
+        pending.forEach(c => section.append(renderPendingInfo(c)));
+        container.append(section);
+      }
+      if (processed.length) {
+        const section = el('div', { className: 'admin-record-history-section' });
+        section.append(text('p', `HISTORY / 履歴 (${processed.length})`, 'admin-record-history-title'));
+        processed.sort((a, b) => (b.reviewedAt || '').localeCompare(a.reviewedAt || ''));
+        processed.forEach(c => {
+          const card = el('article', { className: `admin-history-card ${c.status}` });
+          const cardHeader = el('div', { className: 'admin-history-card-header' });
+          const actionLabels = { create: 'NEW', update: 'MODIFIED', delete: 'DELETE' };
+          cardHeader.append(text('span', actionLabels[c.action] || c.action, `admin-pending-badge ${c.action}`), text('span', c.status === 'accepted' ? '✓ ACCEPTED' : '✗ REJECTED', `admin-history-status ${c.status}`), text('span', formatPendingDate(c.reviewedAt), 'admin-pending-date'));
+          card.append(cardHeader);
+          const diff = computeDiff(c);
+          if (diff.length) {
+            const table = el('table', { className: 'admin-pending-table' }); const thead = el('thead'); const thr = el('tr'); thead.append(thr); table.append(thead);
+            thr.append(text('th', 'Field'), text('th', 'Before'), text('th', 'After'));
+            const tbody = el('tbody'); table.append(tbody);
+            diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : String(d.before)), text('td', d.after === '' || d.after == null ? '—' : String(d.after))); tbody.append(row); });
+            const diffSection = el('div', { className: 'admin-pending-diff' }); diffSection.append(table); card.append(diffSection);
+          }
+          section.append(card);
+        });
+        container.append(section);
+      }
+    } catch {}
+    return container;
+  }
 
   async function renderPending() {
     const panel = el('section', { className: 'admin-panel admin-pending-panel' }); panel.append(text('p', 'PENDING CHANGES / 承認待ち', 'eyebrow'), text('h2', 'Review changes / 変更を確認'));
