@@ -287,15 +287,11 @@
         input = clubSelect;
       } else if (key === 'forehandRubber' || key === 'backhandRubber') {
         const typeKey = key === 'forehandRubber' ? 'forehandRubberType' : 'backhandRubberType';
-        const listId = `${key}-list`;
-        input = el('input', { name: key, type: 'text', value: record[key] || '', autocomplete: 'off', placeholder: 'Select type first / まず種類を選択' });
-        input.setAttribute('list', listId);
-        const datalist = el('datalist', { id: listId });
         const currentType = record[typeKey] || '';
         const rubbers = rubberDB[currentType] || [];
-        datalist.append(el('option', { value: '未設定 / Not specified' }));
-        rubbers.forEach(r => datalist.append(el('option', { value: r })));
-        rubberInputs[key] = { input, datalist, typeKey };
+        const rubberOptions = ['', '未設定 / Not specified', ...rubbers];
+        input = select(key, rubberOptions, record[key] || '');
+        rubberInputs[key] = { input, typeKey };
       } else {
         input = type === 'select' ? select(key, options, record[key] || '') : el('input', { name: key, type: 'text', value: record[key] || '' });
       }
@@ -303,7 +299,6 @@
       input.readOnly = key === 'playerId' && Boolean(player);
       if (key === 'schoolLevel') schoolLevelInput = input;
       labelNode.append(text('span', label), input);
-      if (rubberInputs[key]) labelNode.append(rubberInputs[key].datalist);
       form.append(labelNode);
     });
     const gradeLabelNode = el('label');
@@ -333,16 +328,18 @@
     if (record.grade && gradeOptions[record.schoolLevel]?.includes(record.grade)) gradeInput.value = record.grade;
     schoolLevelInput.onchange = () => { updateGradeOptions(schoolLevelInput.value, false); };
     gradeInput.onchange = updateBirthHelper;
-    Object.entries(rubberInputs).forEach(([rubberKey, { input, datalist, typeKey }]) => {
+    Object.entries(rubberInputs).forEach(([rubberKey, { input, typeKey }]) => {
       const typeSelect = form.querySelector(`[name="${typeKey}"]`);
       const updateRubberOptions = () => {
         const rubberType = typeSelect?.value || '';
         const rubbers = rubberDB[rubberType] || [];
-        empty(datalist);
-        datalist.append(el('option', { value: '未設定 / Not specified' }));
-        rubbers.forEach(r => datalist.append(el('option', { value: r })));
-        if (rubberType && !input.value) input.value = '未設定 / Not specified';
-        input.placeholder = rubberType ? 'Search rubber... / ラバーを検索...' : 'Select type first / まず種類を選択';
+        const currentValue = input.value;
+        input.replaceChildren();
+        input.append(el('option', { value: '', textContent: '' }));
+        input.append(el('option', { value: '未設定 / Not specified', textContent: '未設定 / Not specified' }));
+        rubbers.forEach(r => input.append(el('option', { value: r, textContent: r })));
+        if (rubbers.includes(currentValue)) input.value = currentValue;
+        else if (rubberType && !input.value) input.value = '未設定 / Not specified';
       };
       if (typeSelect) typeSelect.onchange = updateRubberOptions;
     });
@@ -454,15 +451,11 @@
         input = clubSelect;
       } else if (key === 'forehandRubber' || key === 'backhandRubber') {
         const typeKey = key === 'forehandRubber' ? 'forehandRubberType' : 'backhandRubberType';
-        const listId = `entity-${key}-list`;
-        input = el('input', { name: key, type: 'text', value: record?.[key] || '', autocomplete: 'off', placeholder: 'Select type first / まず種類を選択' });
-        input.setAttribute('list', listId);
-        const datalist = el('datalist', { id: listId });
         const currentType = record?.[typeKey] || '';
         const rubbers = rubberDB[currentType] || [];
-        datalist.append(el('option', { value: '未設定 / Not specified' }));
-        rubbers.forEach(r => datalist.append(el('option', { value: r })));
-        entityRubberInputs[key] = { input, datalist, typeKey };
+        const rubberOptions = ['', '未設定 / Not specified', ...rubbers];
+        input = select(key, rubberOptions, record?.[key] || '');
+        entityRubberInputs[key] = { input, typeKey };
       } else {
         input = type === 'select' ? select(key, options, record?.[key] || '') : el('input', { name: key, type: type === 'number' ? 'number' : 'text', value: record?.[key] || '' });
       }
@@ -470,20 +463,23 @@
       if (key === idField && record) input.readOnly = true;
       if (type === 'number') { input.min = '0'; input.step = '1'; }
       labelNode.append(text('span', label), input);
-      if (entityRubberInputs[key]) labelNode.append(entityRubberInputs[key].datalist);
       form.append(labelNode);
     });
-    Object.entries(entityRubberInputs).forEach(([rubberKey, { input, datalist, typeKey }]) => {
+    Object.entries(entityRubberInputs).forEach(([rubberKey, { input, typeKey }]) => {
       const typeSelect = form.querySelector(`[name="${typeKey}"]`);
       const updateRubberOptions = () => {
         const rubberType = typeSelect?.value || '';
         const rubbers = rubberDB[rubberType] || [];
-        empty(datalist);
-        datalist.append(el('option', { value: '未設定 / Not specified' }));
-        rubbers.forEach(r => datalist.append(el('option', { value: r })));
-        if (rubberType && !input.value) input.value = '未設定 / Not specified';
-        input.placeholder = rubberType ? 'Search rubber... / ラバーを検索...' : 'Select type first / まず種類を選択';
+        const currentValue = input.value;
+        input.replaceChildren();
+        input.append(el('option', { value: '', textContent: '' }));
+        input.append(el('option', { value: '未設定 / Not specified', textContent: '未設定 / Not specified' }));
+        rubbers.forEach(r => input.append(el('option', { value: r, textContent: r })));
+        if (rubbers.includes(currentValue)) input.value = currentValue;
+        else if (rubberType && !input.value) input.value = '未設定 / Not specified';
       };
+      if (typeSelect) typeSelect.onchange = updateRubberOptions;
+    });
       if (typeSelect) typeSelect.onchange = updateRubberOptions;
     });
     const actions = el('div', { className: 'admin-editor-actions' });
