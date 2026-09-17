@@ -11,10 +11,11 @@ const matches = [
   ...read('tournament-matches.json')
 ];
 
+const allClubs = read('club.json');
 const publicData = {
   ok: true,
-  club: read('club.json'),
-  clubs: [read('club.json')],
+  club: Array.isArray(allClubs) ? allClubs[0] : allClubs,
+  clubs: Array.isArray(allClubs) ? allClubs : [allClubs],
   players,
   matches,
   externalOpponents: read('external-opponents.json'),
