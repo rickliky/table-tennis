@@ -34,10 +34,7 @@ export default { async fetch(request, env) {
       return json({ ok: true, club: values[0][0] || null, clubs: values[0], players: values[1], matches: values[2], externalOpponents: values[3], tournaments: values[4], tournamentMatches: values[5], lastUpdated: new Date().toISOString() });
     }
     if (url.pathname === '/api/pending' && request.method === 'GET') return json({ ok: true, changes: await repo.read(environment, 'pending-changes') });
-    const actor = await session(request, env);
-    if (actor.role === 'site') throw new Error('Admin or approver role required');
     if (url.pathname === '/api/change' && request.method === 'POST') {
-      if (actor.role !== 'admin') throw new Error('Admin role required');
       const body = await request.json(); const records = {}; for (const type of types.slice(0, 6)) records[type] = await repo.read(environment, type);
       const collection = collectionFor(body.entityType); if (!collection) throw new Error('Unsupported entity type');
       if (body.action !== 'delete') validateEntity(body.entityType, body.after, { players: records.players, tournaments: records.tournaments, externalOpponents: records['external-opponents'] }, body.targetId);
@@ -52,10 +49,12 @@ export default { async fetch(request, env) {
       if (body.action !== 'create' && body.action !== 'delete' && !diff.length) return json({ ok: true, change: null, message: 'No changes detected' });
       const changedFields = diff.map(d => d.field);
       const summary = buildSummary(body.entityType, mergedAfter || before);
-      const change = { changeId: existingIndex >= 0 ? changes[existingIndex].changeId : `CHANGE-${Date.now()}`, entityType: body.entityType, action: body.action || (before ? 'update' : 'create'), targetId: body.targetId, before: refBefore, after: mergedAfter, diff, changedFields, summary, createdBy: actor.role, createdAt: existingIndex >= 0 ? changes[existingIndex].createdAt : new Date().toISOString(), status: 'pending' };
+      const change = { changeId: existingIndex >= 0 ? changes[existingIndex].changeId : `CHANGE-${Date.now()}`, entityType: body.entityType, action: body.action || (before ? 'update' : 'create'), targetId: body.targetId, before: refBefore, after: mergedAfter, diff, changedFields, summary, createdBy: 'admin', createdAt: existingIndex >= 0 ? changes[existingIndex].createdAt : new Date().toISOString(), status: 'pending' };
       const next = [...changes]; if (existingIndex >= 0) next[existingIndex] = change; else next.push(change);
       await repo.write(environment, 'pending-changes', next); return json({ ok: true, change });
     }
+    const actor = await session(request, env);
+    if (actor.role === 'site') throw new Error('Admin or approver role required');
     if (url.pathname === '/api/approve' && request.method === 'POST') {
       if (actor.role !== 'approver' && actor.role !== 'admin') throw new Error('Approver or admin role required');
       const body = await request.json();
