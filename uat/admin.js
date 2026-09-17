@@ -6,6 +6,7 @@
   const rubberDB = window.RUBBER_DB || {};
   const RUBBERS = window.RUBBERS || [];
   const rubberName = id => { if (!id) return ''; const r = RUBBERS.find(x => x.rubberId === id); return r ? r.name : id; };
+  const rubberIdByName = name => { if (!name) return ''; const r = RUBBERS.find(x => x.name === name); return r ? r.rubberId : name; };
   const gradeOptions = { '小学生': ['1年生','2年生','3年生','4年生','5年生','6年生'], '中学生': ['1年生','2年生','3年生'], '高校生': ['1年生','2年生','3年生'] };
   const gradeBirthYears = { '小学生': { '1年生':'2019–2020', '2年生':'2018–2019', '3年生':'2017–2018', '4年生':'2016–2017', '5年生':'2015–2016', '6年生':'2014–2015' }, '中学生': { '1年生':'2013–2014', '2年生':'2012–2013', '3年生':'2011–2012' }, '高校生': { '1年生':'2010–2011', '2年生':'2009–2010', '3年生':'2008–2009' } };
   const entityFields = {
@@ -294,7 +295,7 @@
         const rubberSelect = el('select', { name: key });
         rubberSelect.append(el('option', { value: '', textContent: '' }));
         rubbers.forEach(r => rubberSelect.append(el('option', { value: r.rubberId, textContent: r.name })));
-        rubberSelect.value = record[key] || '';
+        rubberSelect.value = rubberIdByName(record[key]) || '';
         input = rubberSelect;
         rubberInputs[key] = { input, typeKey };
       } else {
@@ -338,7 +339,7 @@
       const updateRubberOptions = () => {
         const rubberType = typeSelect?.value || '';
         const rubbers = rubberDB[rubberType] || [];
-        const currentRubberId = input.value;
+        const currentRubberId = rubberIdByName(input.value);
         input.replaceChildren();
         input.append(el('option', { value: '', textContent: '' }));
         rubbers.forEach(r => input.append(el('option', { value: r.rubberId, textContent: r.name })));
@@ -460,7 +461,7 @@
         const rubberSelect = el('select', { name: key });
         rubberSelect.append(el('option', { value: '', textContent: '' }));
         rubbers.forEach(r => rubberSelect.append(el('option', { value: r.rubberId, textContent: r.name })));
-        rubberSelect.value = record?.[key] || '';
+        rubberSelect.value = rubberIdByName(record?.[key]) || '';
         input = rubberSelect;
         entityRubberInputs[key] = { input, typeKey };
       } else {
@@ -477,7 +478,7 @@
       const updateRubberOptions = () => {
         const rubberType = typeSelect?.value || '';
         const rubbers = rubberDB[rubberType] || [];
-        const currentRubberId = input.value;
+        const currentRubberId = rubberIdByName(input.value);
         input.replaceChildren();
         input.append(el('option', { value: '', textContent: '' }));
         rubbers.forEach(r => input.append(el('option', { value: r.rubberId, textContent: r.name })));
