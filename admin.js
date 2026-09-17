@@ -480,8 +480,6 @@
       };
       if (typeSelect) typeSelect.onchange = updateRubberOptions;
     });
-      if (typeSelect) typeSelect.onchange = updateRubberOptions;
-    });
     const actions = el('div', { className: 'admin-editor-actions' });
     const entityType = entityTypeKey[type] || type;
     if (currentRole === 'admin') {
