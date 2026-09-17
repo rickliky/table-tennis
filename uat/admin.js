@@ -8,7 +8,7 @@
   const gradeBirthYears = { '小学生': { '1年生':'2019–2020', '2年生':'2018–2019', '3年生':'2017–2018', '4年生':'2016–2017', '5年生':'2015–2016', '6年生':'2014–2015' }, '中学生': { '1年生':'2013–2014', '2年生':'2012–2013', '3年生':'2011–2012' }, '高校生': { '1年生':'2010–2011', '2年生':'2009–2010', '3年生':'2008–2009' } };
   const entityFields = {
     club: [['clubId', 'クラブID / Club ID', 'text', true], ['name', '名前 / Name', 'text', true], ['nameJa', '日本語名 / Japanese name', 'text', true], ['logoUrl', 'ロゴURL / Logo URL', 'text']],
-    externalOpponent: [['externalOpponentId', '外部選手ID / External opponent ID', 'text', true], ['clubId', 'クラブID / Club ID', 'select', false], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマジ / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, ['', 'Male', 'Female', 'Other']], ['schoolLevel', 'カテゴリ / Category', 'select', false, ['', '小学生', '中学生', '高校生', '一般']], ['playingHand', '利き手 / Playing hand', 'select', false, ['', '右', '左']], ['grip', 'グリップ / Grip', 'select', false, ['', 'シェークハンド / Shakehand', 'ペンホルダー / Penhold']], ['playingStyle', '戦型 / Playing style', 'select', false, ['', 'ドライブ攻撃型 / Topspin attacker', 'カット主戦型 / Defensive chopper', '攻守兼備型 / All-rounder', '平台攻撃型 / Close-to-table attacker']], ['forehandRubberType', 'フォア面種類 / Forehand type', 'select', false, ['', '裏ソフト', '表ソフト', '粒高', 'アンチ', '一枚']], ['forehandRubber', 'フォア面ラバー / Forehand rubber', 'rubber'], ['backhandRubberType', 'バック面種類 / Backhand type', 'select', false, ['', '裏ソフト', '表ソフト', '粒高', 'アンチ', '一枚']], ['backhandRubber', 'バック面ラバー / Backhand rubber', 'rubber'], ['affiliation', '所属 / Affiliation', 'text']],
+    externalOpponent: [['externalOpponentId', '外部選手ID / External opponent ID', 'text', true], ['clubId', 'クラブID / Club ID', 'select', false], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマジ / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, ['', 'Male', 'Female', 'Other']], ['schoolLevel', 'カテゴリ / Category', 'select', false, ['', '小学生', '中学生', '高校生', '一般']], ['playingHand', '利き手 / Playing hand', 'select', false, ['', '右', '左']], ['grip', 'グリップ / Grip', 'select', false, ['', 'シェークハンド / Shakehand', 'ペンホルダー / Penhold']], ['playingStyle', '戦型 / Playing style', 'select', false, ['', 'ドライブ攻撃型 / Topspin attacker', 'カット主戦型 / Defensive chopper', '攻守兼備型 / All-rounder', '平台攻撃型 / Close-to-table attacker']], ['forehandRubberType', 'フォア面種類 / Forehand type', 'select', false, ['', '裏ソフト', '表ソフト', '粒高', 'アンチ', '一枚']], ['forehandRubber', 'フォア面ラバー / Forehand rubber', 'rubber'], ['backhandRubberType', 'バック面種類 / Backhand type', 'select', false, ['', '裏ソフト', '表ソフト', '粒高', 'アンチ', '一枚']], ['backhandRubber', 'バック面ラバー / Backhand rubber', 'rubber']],
     tournament: [['tournamentId', '大会ID / Tournament ID', 'text', true], ['name', '大会名 / Tournament name', 'text', true], ['nameJa', '日本語名 / Japanese name', 'text'], ['date', '日付 / Date', 'text'], ['location', '会場 / Location', 'text'], ['category', 'カテゴリ / Category', 'text'], ['format', '形式 / Format', 'text']],
     tournamentMatch: [['tournamentMatchId', '大会試合ID / Tournament match ID', 'text', true], ['tournamentId', '大会ID / Tournament ID', 'text', true], ['matchDate', '日付 / Date', 'text', true], ['round', 'ラウンド / Round', 'text'], ['format', '形式 / Format', 'text'], ['player1Name', '選手1 / Player 1', 'text', true], ['player1Sets', '選手1セット / Player 1 sets', 'number'], ['player2Name', '選手2 / Player 2', 'text', true], ['player2Sets', '選手2セット / Player 2 sets', 'number'], ['winnerName', '勝者 / Winner', 'text'], ['score', 'スコア / Score', 'text'], ['resultStatus', '結果ステータス / Result status', 'select', false, ['', 'Completed', 'Incomplete', 'Void']]],
     tournamentProgress: [['tournamentProgressId', '進捗ID / Progress ID', 'text', true], ['tournamentId', '大会ID / Tournament ID', 'text', true], ['playerId', '選手ID / Player ID', 'text'], ['playerName', '選手名 / Player name', 'text'], ['round', 'ラウンド / Round', 'text'], ['result', '結果 / Result', 'text']]
@@ -201,7 +201,6 @@
       const actions = el('div', { className: 'admin-editor-actions' });
       actions.append(button('SAVE / 保存', () => { if (confirm(match ? 'Submit this match change for approval? / この試合の変更を承認申請しますか？\n\nChanges take effect after approval. / 変更は承認後に反映されます。' : 'Submit this new match for approval? / 新規試合を承認申請しますか？\n\nChanges take effect after approval. / 変更は承認後に反映されます。')) form.requestSubmit(); }, 'primary'));
       actions.append(button(match ? 'RESET / リセット' : 'CLEAR / クリア', () => { if (match) { Object.keys(record).forEach(key => { const el = form.elements[key]; if (el) el.value = record[key] ?? ''; }); player1.value = record.player1Id || ''; player2.value = record.player2Id || ''; } else { form.reset(); } updateDerived(); }, 'secondary'));
-      if (match) actions.append(button('DELETE / 削除', async () => { if (confirm(`Submit deletion of ${match.matchId} for approval? / ${match.matchId}の削除を承認申請しますか？\n\nDeletion takes effect after approval. / 削除は承認後に反映されます。`)) { await submitChange('match', match.matchId, null, 'delete'); await loadWorkspace(); } }, 'danger'));
       form.append(actions);
       form.onsubmit = event => {
         event.preventDefault(); const next = match ? { ...record, ...Object.fromEntries(new FormData(form)) } : Object.fromEntries(new FormData(form));
@@ -281,8 +280,11 @@
       const labelNode = el('label');
       let input;
       if (key === 'clubId') {
-        const clubOptions = ['', ...(entityData.clubs || []).map(c => c.clubId || c.name)];
-        input = select(key, clubOptions, record[key] || '');
+        const clubSelect = el('select', { name: key });
+        clubSelect.append(el('option', { value: '', textContent: '' }));
+        (entityData.clubs || []).forEach(c => clubSelect.append(el('option', { value: c.clubId, textContent: c.name ? `${c.name} (${c.clubId})` : c.clubId })));
+        clubSelect.value = record[key] || '';
+        input = clubSelect;
       } else if (key === 'forehandRubber' || key === 'backhandRubber') {
         const typeKey = key === 'forehandRubber' ? 'forehandRubberType' : 'backhandRubberType';
         const listId = `${key}-list`;
@@ -291,6 +293,7 @@
         const datalist = el('datalist', { id: listId });
         const currentType = record[typeKey] || '';
         const rubbers = rubberDB[currentType] || [];
+        datalist.append(el('option', { value: '未設定 / Not specified' }));
         rubbers.forEach(r => datalist.append(el('option', { value: r })));
         rubberInputs[key] = { input, datalist, typeKey };
       } else {
@@ -336,8 +339,9 @@
         const rubberType = typeSelect?.value || '';
         const rubbers = rubberDB[rubberType] || [];
         empty(datalist);
+        datalist.append(el('option', { value: '未設定 / Not specified' }));
         rubbers.forEach(r => datalist.append(el('option', { value: r })));
-        if (rubbers.length && !rubbers.includes(input.value)) input.value = '';
+        if (rubberType && !input.value) input.value = '未設定 / Not specified';
         input.placeholder = rubberType ? 'Search rubber... / ラバーを検索...' : 'Select type first / まず種類を選択';
       };
       if (typeSelect) typeSelect.onchange = updateRubberOptions;
@@ -353,7 +357,6 @@
     const actions = el('div', { className: 'admin-editor-actions' });
     actions.append(button('SUBMIT FOR APPROVAL / 承認申請', () => { if (confirm(player ? 'Submit this player change for approval? / この選手の変更を承認申請しますか？\n\nChanges take effect after approval. / 変更は承認後に反映されます。' : 'Submit this new player for approval? / 新規選手を承認申請しますか？\n\nChanges take effect after approval. / 変更は承認後に反映されます。')) form.requestSubmit(); }, 'primary'));
     actions.append(button(player ? 'RESET / リセット' : 'CLEAR / クリア', () => { if (player) { Object.keys(record).forEach(key => { const el = form.elements[key]; if (el) el.value = record[key] ?? ''; }); updateGradeOptions(record.schoolLevel, false); } else { form.reset(); updateGradeOptions(schoolLevelInput.value, false); } }, 'secondary'));
-    if (player) actions.append(button('DELETE / 削除', async () => { if (confirm(`Submit deletion of ${record.playerId} (${record.displayName}) for approval? / ${record.playerId}（${record.displayName}）の削除を承認申請しますか？\n\nDeletion takes effect after approval. / 削除は承認後に反映されます。`)) { await submitChange('player', record.playerId, null, 'delete'); await loadWorkspace(); } }, 'danger'));
     form.append(actions);
     form.onsubmit = event => {
       event.preventDefault(); const next = player ? { ...record, ...Object.fromEntries(new FormData(form)) } : Object.fromEntries(new FormData(form));
@@ -444,8 +447,11 @@
         input = el('input', { name: key, type: 'text', value: newId });
         input.readOnly = true;
       } else if (key === 'clubId' && key !== idField) {
-        const clubOptions = ['', ...(entityData.clubs || []).map(c => c.clubId || c.name)];
-        input = select(key, clubOptions, record?.[key] || '');
+        const clubSelect = el('select', { name: key });
+        clubSelect.append(el('option', { value: '', textContent: '' }));
+        (entityData.clubs || []).forEach(c => clubSelect.append(el('option', { value: c.clubId, textContent: c.name ? `${c.name} (${c.clubId})` : c.clubId })));
+        clubSelect.value = record?.[key] || '';
+        input = clubSelect;
       } else if (key === 'forehandRubber' || key === 'backhandRubber') {
         const typeKey = key === 'forehandRubber' ? 'forehandRubberType' : 'backhandRubberType';
         const listId = `entity-${key}-list`;
@@ -454,6 +460,7 @@
         const datalist = el('datalist', { id: listId });
         const currentType = record?.[typeKey] || '';
         const rubbers = rubberDB[currentType] || [];
+        datalist.append(el('option', { value: '未設定 / Not specified' }));
         rubbers.forEach(r => datalist.append(el('option', { value: r })));
         entityRubberInputs[key] = { input, datalist, typeKey };
       } else {
@@ -472,8 +479,9 @@
         const rubberType = typeSelect?.value || '';
         const rubbers = rubberDB[rubberType] || [];
         empty(datalist);
+        datalist.append(el('option', { value: '未設定 / Not specified' }));
         rubbers.forEach(r => datalist.append(el('option', { value: r })));
-        if (rubbers.length && !rubbers.includes(input.value)) input.value = '';
+        if (rubberType && !input.value) input.value = '未設定 / Not specified';
         input.placeholder = rubberType ? 'Search rubber... / ラバーを検索...' : 'Select type first / まず種類を選択';
       };
       if (typeSelect) typeSelect.onchange = updateRubberOptions;
@@ -483,7 +491,6 @@
     if (currentRole === 'admin') {
       actions.append(button('SUBMIT FOR APPROVAL / 承認申請', () => { if (confirm(record ? `Submit this ${entityLabel[type]} change for approval? / この${entityLabel[type]}の変更を承認申請しますか？\n\nChanges take effect after approval. / 変更は承認後に反映されます。` : `Submit this new ${entityLabel[type]} for approval? / 新規${entityLabel[type]}を承認申請しますか？\n\nChanges take effect after approval. / 変更は承認後に反映されます。`)) form.requestSubmit(); }, 'primary'));
       actions.append(button(record ? 'RESET / リセット' : 'CLEAR / クリア', () => { if (record) { Object.keys(record).forEach(key => { const el = form.elements[key]; if (el) el.value = record[key] ?? ''; }); } else { form.reset(); } }, 'secondary'));
-      if (record) actions.append(button('DELETE / 削除', async () => { if (confirm(`Submit deletion of ${record[idField]} for approval? / ${record[idField]}の削除を承認申請しますか？\n\nDeletion takes effect after approval. / 削除は承認後に反映されます。`)) { await submitChange(entityType, record[idField], null, 'delete'); await loadWorkspace(); } }, 'danger'));
     }
     form.append(actions);
     form.onsubmit = event => {
