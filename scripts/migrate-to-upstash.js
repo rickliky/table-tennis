@@ -1,35 +1,53 @@
-/* eslint-env node */
+#!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
 
-const root = path.resolve(__dirname, '..');
-const read = file => JSON.parse(fs.readFileSync(path.join(root, file), 'utf8'));
-const sources = {
-  players: read('data/players.json'),
-  matches: read('data/training-matches.json'),
-  clubs: [read('data/club.json')],
-  externalOpponents: read('data/external-opponents.json'),
-  tournaments: read('data/tournaments.json'),
-  tournamentMatches: read('data/tournament-matches.json')
-};
+const WORKER_URL = 'https://little-kings-api.little-kings.workers.dev';
+const ENVIRONMENT = 'uat';
 
-const sourceValue = value => Array.isArray(value) ? value : value?.entries || [];
-const club = { clubId: 'CLUB-0001', ...sources.clubs[0], prefectureId: sources.clubs[0].prefectureId || '14', status: sources.clubs[0].status || 'Active' };
-const output = {
-  schemaVersion: 1,
-  generatedAt: new Date().toISOString(),
-  clubs: [club],
-  players: sourceValue(sources.players).map(player => ({ ...player, clubId: player.clubId || club.clubId })),
-  matches: sourceValue(sources.matches),
-  externalOpponents: sourceValue(sources.externalOpponents),
-  tournaments: sourceValue(sources.tournaments),
-  tournamentMatches: sourceValue(sources.tournamentMatches)
-};
+async function push(collection, entityType, idField, records) {
+  let created = 0, skipped = 0, failed = 0;
+  for (const record of records) {
+    const targetId = record[idField];
+    if (!targetId) { skipped++; continue; }
+    try {
+      const res = await fetch(`${WORKER_URL}/api/change?environment=${ENVIRONMENT}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entityType, targetId, after: record, action: 'create' })
+      });
+      const result = await res.json();
+      if (result.ok) {
+        if (result.change) { created++; process.stdout.write('.'); }
+        else { skipped++; process.stdout.write('-'); }
+      } else {
+        failed++;
+        console.error(`\n  FAIL ${targetId}: ${result.error}`);
+      }
+    } catch (err) {
+      failed++;
+      console.error(`\n  ERROR ${targetId}: ${err.message}`);
+    }
+  }
+  console.log(`\n  ${collection}: ${created} created, ${skipped} skipped (no change), ${failed} failed`);
+  return { created, skipped, failed };
+}
 
-const unmapped = [];
-const lookup = { gender: new Set(['Male', 'Female', 'Other']), schoolLevel: new Set(['小学生', '中学生', '高校生', '一般', '未設定']), playingHand: new Set(['右', '左']), status: new Set(['Active', 'Inactive']) };
-output.players.forEach(player => Object.entries(lookup).forEach(([field, values]) => { if (player[field] && !values.has(player[field])) unmapped.push(`${player.playerId}.${field}=${player[field]}`); }));
-if (unmapped.length) { console.error('Unmapped values:\n' + unmapped.join('\n')); process.exitCode = 1; }
-const outFile = path.join(root, 'migration.json');
-fs.writeFileSync(outFile, JSON.stringify(output, null, 2) + '\n', 'utf8');
-console.log(`Migration data written to ${outFile}`);
+async function main() {
+  const root = path.resolve(__dirname, '..');
+  const clubs = JSON.parse(fs.readFileSync(path.join(root, 'data/club.json'), 'utf8'));
+  const opponents = JSON.parse(fs.readFileSync(path.join(root, 'data/external-opponents.json'), 'utf8'));
+  const tournaments = JSON.parse(fs.readFileSync(path.join(root, 'data/tournaments.json'), 'utf8'));
+  const progress = JSON.parse(fs.readFileSync(path.join(root, 'data/tournament-progress.json'), 'utf8'));
+
+  console.log('Pushing to Upstash Redis via Worker API...\n');
+
+  await push('clubs', 'club', 'clubId', clubs);
+  await push('externalOpponents', 'externalOpponent', 'externalOpponentId', opponents);
+  await push('tournaments', 'tournament', 'tournamentId', tournaments);
+  await push('tournamentProgress', 'tournamentProgress', 'tournamentProgressId', progress);
+
+  console.log('\nDone. Review pending changes in Data Maintenance page and approve.');
+}
+
+main().catch(err => { console.error(err); process.exit(1); });
