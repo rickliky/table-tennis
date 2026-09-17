@@ -200,7 +200,7 @@
     if (!readOnly) {
       const actions = el('div', { className: 'admin-editor-actions' });
       actions.append(button('SAVE / 保存', () => { if (confirm(match ? 'Submit this match change for approval? / この試合の変更を承認申請しますか？\n\nChanges take effect after approval. / 変更は承認後に反映されます。' : 'Submit this new match for approval? / 新規試合を承認申請しますか？\n\nChanges take effect after approval. / 変更は承認後に反映されます。')) form.requestSubmit(); }, 'primary'));
-      actions.append(button(match ? 'RESET / リセット' : 'CLEAR / クリア', () => { form.reset(); updateDerived(); }, 'secondary'));
+      actions.append(button(match ? 'RESET / リセット' : 'CLEAR / クリア', () => { if (match) { Object.keys(record).forEach(key => { const el = form.elements[key]; if (el) el.value = record[key] ?? ''; }); player1.value = record.player1Id || ''; player2.value = record.player2Id || ''; } else { form.reset(); } updateDerived(); }, 'secondary'));
       if (match) actions.append(button('DELETE / 削除', async () => { if (confirm(`Submit deletion of ${match.matchId} for approval? / ${match.matchId}の削除を承認申請しますか？\n\nDeletion takes effect after approval. / 削除は承認後に反映されます。`)) { await submitChange('match', match.matchId, null, 'delete'); await loadWorkspace(); } }, 'danger'));
       form.append(actions);
       form.onsubmit = event => {
@@ -352,7 +352,7 @@
     }
     const actions = el('div', { className: 'admin-editor-actions' });
     actions.append(button('SUBMIT FOR APPROVAL / 承認申請', () => { if (confirm(player ? 'Submit this player change for approval? / この選手の変更を承認申請しますか？\n\nChanges take effect after approval. / 変更は承認後に反映されます。' : 'Submit this new player for approval? / 新規選手を承認申請しますか？\n\nChanges take effect after approval. / 変更は承認後に反映されます。')) form.requestSubmit(); }, 'primary'));
-    actions.append(button(player ? 'RESET / リセット' : 'CLEAR / クリア', () => { form.reset(); updateGradeOptions(schoolLevelInput.value, false); if (record.grade && gradeOptions[record.schoolLevel]?.includes(record.grade)) gradeInput.value = record.grade; }, 'secondary'));
+    actions.append(button(player ? 'RESET / リセット' : 'CLEAR / クリア', () => { if (player) { Object.keys(record).forEach(key => { const el = form.elements[key]; if (el) el.value = record[key] ?? ''; }); updateGradeOptions(record.schoolLevel, false); } else { form.reset(); updateGradeOptions(schoolLevelInput.value, false); } }, 'secondary'));
     if (player) actions.append(button('DELETE / 削除', async () => { if (confirm(`Submit deletion of ${record.playerId} (${record.displayName}) for approval? / ${record.playerId}（${record.displayName}）の削除を承認申請しますか？\n\nDeletion takes effect after approval. / 削除は承認後に反映されます。`)) { await submitChange('player', record.playerId, null, 'delete'); await loadWorkspace(); } }, 'danger'));
     form.append(actions);
     form.onsubmit = event => {
@@ -482,7 +482,7 @@
     const entityType = entityTypeKey[type] || type;
     if (currentRole === 'admin') {
       actions.append(button('SUBMIT FOR APPROVAL / 承認申請', () => { if (confirm(record ? `Submit this ${entityLabel[type]} change for approval? / この${entityLabel[type]}の変更を承認申請しますか？\n\nChanges take effect after approval. / 変更は承認後に反映されます。` : `Submit this new ${entityLabel[type]} for approval? / 新規${entityLabel[type]}を承認申請しますか？\n\nChanges take effect after approval. / 変更は承認後に反映されます。`)) form.requestSubmit(); }, 'primary'));
-      actions.append(button(record ? 'RESET / リセット' : 'CLEAR / クリア', () => form.reset(), 'secondary'));
+      actions.append(button(record ? 'RESET / リセット' : 'CLEAR / クリア', () => { if (record) { Object.keys(record).forEach(key => { const el = form.elements[key]; if (el) el.value = record[key] ?? ''; }); } else { form.reset(); } }, 'secondary'));
       if (record) actions.append(button('DELETE / 削除', async () => { if (confirm(`Submit deletion of ${record[idField]} for approval? / ${record[idField]}の削除を承認申請しますか？\n\nDeletion takes effect after approval. / 削除は承認後に反映されます。`)) { await submitChange(entityType, record[idField], null, 'delete'); await loadWorkspace(); } }, 'danger'));
     }
     form.append(actions);
