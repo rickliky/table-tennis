@@ -554,6 +554,27 @@
       const result = await window.LKData.request('/api/pending'); const changes = (result.changes || []).filter(change => change.status === 'pending');
       if (!changes.length) { panel.append(text('p', 'No pending changes. / 承認待ちの変更はありません。', 'admin-empty')); app.append(panel); return; }
       const summary = text('p', `${changes.length} change${changes.length > 1 ? 's' : ''} awaiting review`, 'admin-pending-summary'); panel.append(summary);
+      if (currentRole === 'approver') {
+        const bulkActions = el('div', { className: 'admin-pending-bulk-actions' });
+        const bulkStatus = text('span', '', 'admin-pending-action-status');
+        const handleBulk = async (decision) => {
+          const label = decision === 'accept' ? 'approve' : 'reject';
+          if (!confirm(`Are you sure you want to ${label} ALL ${changes.length} pending changes? / 保留中の変更をすべて${label === 'accept' ? '承認' : '却下'}しますか？\n\nThis cannot be undone. / 元に戻せません。`)) return;
+          bulkStatus.textContent = `Processing ${changes.length} changes... / ${changes.length}件の変更を処理中...`;
+          let done = 0, failed = 0;
+          for (const change of changes) {
+            try {
+              await window.LKData.request('/api/approve', { method: 'POST', body: JSON.stringify({ changeId: change.changeId, decision }) });
+              done++;
+              bulkStatus.textContent = `${done + failed}/${changes.length} processed...`;
+            } catch { failed++; }
+          }
+          bulkStatus.textContent = `Done: ${done} ${label}d, ${failed} failed. / 完了: ${done}件${label === 'accept' ? '承認' : '却下'}、${failed}件失敗。`;
+          await loadWorkspace();
+        };
+        bulkActions.append(button('APPROVE ALL / すべて承認', () => handleBulk('accept'), 'primary'), button('REJECT ALL / すべて却下', () => handleBulk('reject'), 'danger'), bulkStatus);
+        panel.append(bulkActions);
+      }
       if (currentRole !== 'approver') {
         const loginHint = el('div', { className: 'admin-pending-login-hint' });
         loginHint.append(text('p', 'Sign in as approver to accept or reject changes. / 承認者としてログインすると変更の承認・却下ができます。'));

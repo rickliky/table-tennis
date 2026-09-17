@@ -13,7 +13,6 @@
       if (!result.ok) throw new Error('Public API returned an invalid response');
       return result;
     } catch (error) {
-      // Keep the existing snapshot available during the Worker rollout.
       const response = await fetch('./public-data.json', { cache: 'no-store' });
       if (!response.ok) throw error;
       return response.json();
