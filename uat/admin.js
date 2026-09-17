@@ -3,7 +3,7 @@
 
   const app = document.querySelector('#admin-app');
   const playerFields = [['playerId', '選手ID / Player ID', 'text', true], ['clubId', 'クラブID / Club ID', 'select', true], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマ字表記 / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, ['', 'Male', 'Female', 'Other']], ['schoolLevel', 'カテゴリ / School level', 'select', false, ['', '小学生', '中学生', '高校生', '一般']], ['grade', '学年 / Grade', 'select', false, []], ['playingHand', '利き手 / Playing hand', 'select', false, ['', '右', '左']], ['grip', 'グリップ / Grip', 'select', false, ['', 'シェークハンド / Shakehand', 'ペンホルダー / Penhold']], ['playingStyle', '戦型 / Playing style', 'select', false, ['', 'ドライブ攻撃型 / Topspin attacker', 'カット主戦型 / Defensive chopper', '攻守兼備型 / All-rounder', '平台攻撃型 / Close-to-table attacker']], ['forehandRubberType', 'フォア面種類 / Forehand type', 'select', false, ['', '裏ソフト', '表ソフト', '粒高', 'アンチ', '一枚']], ['forehandRubber', 'フォア面ラバー / Forehand rubber', 'rubber'], ['backhandRubberType', 'バック面種類 / Backhand type', 'select', false, ['', '裏ソフト', '表ソフト', '粒高', 'アンチ', '一枚']], ['backhandRubber', 'バック面ラバー / Backhand rubber', 'rubber'], ['status', '状態 / Status', 'select', true, ['Active', 'Inactive']]];
-  const rubberDB = {"裏ソフト":["Butterfly Zyre 03","Butterfly Dignics 09C","Butterfly Dignics 05","Butterfly Dignics 64","Butterfly Dignics 80","Butterfly Dignics 3","Butterfly Tenergy 05","Butterfly Tenergy 05 FX","Butterfly Tenergy 05 Hard","Butterfly Tenergy 19","Butterfly Tenergy 25","Butterfly Tenergy 25 FX","Butterfly Tenergy 64","Butterfly Tenergy 64 FX","Butterfly Tenergy 80","Butterfly Tenergy 80 FX","Butterfly Rozena","Butterfly Glayzer","Butterfly Glayzer 09C","Butterfly Sriver","Butterfly Sriver FX","Butterfly Sriver EL","Butterfly Bryce High Speed","Butterfly Roundell","Butterfly Roundell Soft","Butterfly Impartial XB","Butterfly Impartial XS","Butterfly Bugller","Yasaka Radar","Yasaka Rising Dragon","Yasaka Force Pro","Yasaka Extra Schnell","Yasaka Ma Lin Extra Hard","Yasaka Ma Lin Soft","Yasaka VRPower","Yasaka Craton","DHS Hurricane 3 (National)","DHS Hurricane 3 (Provincial)","DHS Hurricane 3 (Commercial)","DHS Hurricane 3 Neo (National)","DHS Hurricane 3 Neo (Provincial)","DHS Hurricane 3 Neo (Commercial)","DHS Hurricane 8","DHS Hurricane 8-80","DHS Dynasty Hurricane 3","DHS TG21-ABP","DHS Skyline TG3","Nittaku Fastarc G-1","Nittaku Fastarc S-1","Nittaku Fastarc N-1","Nittaku Fastarc P-1","Nittaku Moristo SP","Nittaku Moristo SP AX","Nittaku Accurate Speed","Nittaku Acoustic","Nittaku Gray Fondarga","Tibhar Evolution EL-S","Tibhar Evolution FX-P","Tibhar Evolution MX-P","Tibhar Evolution MX-S","Tibhar Quantum X5","Tibhar Quantix Speed","Tibhar Stratus Power Wood","Xiom Omega VII Tour","Xiom Omega VII Asia","Xiom Omega VII Hydra","Xiom Vega Europe","Xiom Vega Japan","Xiom Vega X","Xiom Hyena","Xiom Strato","Andro Rasant","Andro Rasant Turbo","Andro Rasant Power Sponge","Andro Rxton 3","Andro Megaton","Andro Novus","Andro TempTEC","Victas V>15 Extra","Victas V>01 Stiff","Victas V>01 Limber","Victas S1 Latex","Victas CX09","Victas FX Prime","729 Battle II (Provincial)","729 Battle II (Commercial)","729 Eclipse II","729 Hurricane 3","Palio Energy 03","Palio Arc5","Palio CN 325","Donic Bluestorm Z1","Donic Bluestorm Z2","Donic Bluestorm Z3","Donic Baracuda","Donic Coppa X3","Donic Coppa X1","Donic Acuda S1","Donic Acuda S2","Donic Acuda S3","Stiga Caliber","Stiga Mantra M","Stiga Mantra S","Stiga Mantra H","Stiga Boost TX","Stiga DNA","Stiga Morpheus","friendship 729"],"表ソフト":["Butterfly Flexair","Butterfly Moristo SP","Butterfly Tackiness D","Butterfly Tackiness C","Butterfly Speedy Po","Butterfly Rayton","Yasaka Phantom Tezzer","Yasaka Escada","Yasaka Talon","DHS C-8","DHS PF4","DHS PF4-50","Nittaku Sarasa","Nittaku Factor Rubick","Tibhar Genuis","Tibhar Ozmatic","Xiom Flext","Xiom H3","Andro Hexer","Andro Steer","Victas KS-1 Signum","Victas Triple Double Extra","729 563","729 563-1","Palio Energy 03 Hard","Donic Werner Schlager Formel","Stiga Genius","Stiga Ultra HD"],"粒高":["Butterfly Harmonic BDefense","Butterfly Dtecs","Butterfly Terror","Yasaka Phantom CNT","Yasaka Super Curl","DHS Cloud C3","DHS Cloud C5","DHS Hurricane Long 3","DHS Skyline TG3-60","Nittaku Super Courier","Nittaku Rusan","Tibhar ICS","Tibhar Angara","Xiom Classic","Xiom Miracle S","Andro Defender","Andro Tick","Victas Defensive","729 802-40","Palio Hexer","Donic Defplay","Donic Acuda P3","Stiga MP"],"アンチ":["Butterfly Anti-Spin","Butterfly Neutron","Yasaka Antiwood","Yasaka Phantom O-X","DHS Hurricane 3 Anti","Nittaku Secretary","Nittaku Acoustic Anti","Tibhar I.S.T.","Xiom Slalom","Andro Anti","Victas Defensive O-X","729 Anti","Palio Energy 03 Anti","Donic Destruct","Stiga Ability"],"一枚":["Butterfly Dignics 09C OX","Butterfly Dignics 3 OX","Butterfly Tenergy 05 OX","Butterfly Rayton OX","Yasaka Phantom CNT OX","Yasaka Super Curl OX","DHS Cloud C3 OX","DHS Cloud C5 OX","DHS Hurricane Long 3 OX","Nittaku Super Courier OX","Nittaku Rusan OX","Tibhar ICS OX","Tibhar Angara OX","Xiom Classic OX","Xiom Miracle S OX","Andro Defender OX","Andro Tick OX","Victas Defensive OX","729 802-40 OX","Donic Defplay OX","Donic Acuda P3 OX","Stiga MP OX"]};
+  const rubberDB = {"裏ソフト":["Butterfly Zyre 03","Butterfly Dignics 09C","Butterfly Dignics 05","Butterfly Dignics 64","Butterfly Dignics 80","Butterfly Dignics 3","Butterfly Tenergy 05","Butterfly Tenergy 05 FX","Butterfly Tenergy 05 Hard","Butterfly Tenergy 19","Butterfly Tenergy 25","Butterfly Tenergy 25 FX","Butterfly Tenergy 64","Butterfly Tenergy 64 FX","Butterfly Tenergy 80","Butterfly Tenergy 80 FX","Butterfly Rozena","Butterfly Glayzer","Butterfly Glayzer 09C","Butterfly Sriver","Butterfly Sriver FX","Butterfly Sriver EL","Butterfly Bryce High Speed","Butterfly Roundell","Butterfly Roundell Soft","Butterfly Impartial XB","Butterfly Impartial XS","Butterfly Bugller","Yasaka Radar","Yasaka Rising Dragon","Yasaka Force Pro","Yasaka Extra Schnell","Yasaka Ma Lin Extra Hard","Yasaka Ma Lin Soft","Yasaka VRPower","Yasaka Craton","DHS Hurricane 3 (National)","DHS Hurricane 3 (Provincial)","DHS Hurricane 3 (Commercial)","DHS Hurricane 3 Neo (National)","DHS Hurricane 3 Neo (Provincial)","DHS Hurricane 3 Neo (Commercial)","DHS Hurricane 8","DHS Hurricane 8-80","DHS Dynasty Hurricane 3","DHS TG21-ABP","DHS Skyline TG3","Nittaku Fastarc G-1","Nittaku Fastarc S-1","Nittaku Fastarc N-1","Nittaku Fastarc P-1","Nittaku Fastarc C-1","Nittaku Moristo SP","Nittaku Moristo SP AX","Nittaku Accurate Speed","Nittaku Acoustic","Nittaku Gray Fondarga","Tibhar Evolution EL-S","Tibhar Evolution FX-P","Tibhar Evolution MX-P","Tibhar Evolution MX-S","Tibhar Quantum X5","Tibhar Quantix Speed","Tibhar Stratus Power Wood","Xiom Omega VII Tour","Xiom Omega VII Asia","Xiom Omega VII Hydra","Xiom Vega Europe","Xiom Vega Japan","Xiom Vega X","Xiom Hyena","Xiom Strato","Andro Rasant","Andro Rasant Turbo","Andro Rasant Power Sponge","Andro Rxton 3","Andro Megaton","Andro Novus","Andro TempTEC","Victas V>15 Extra","Victas V>01 Stiff","Victas V>01 Limber","Victas S1 Latex","Victas CX09","Victas FX Prime","729 Battle II (Provincial)","729 Battle II (Commercial)","729 Eclipse II","729 Hurricane 3","Palio Energy 03","Palio Arc5","Palio CN 325","Donic Bluestorm Z1","Donic Bluestorm Z2","Donic Bluestorm Z3","Donic Baracuda","Donic Coppa X3","Donic Coppa X1","Donic Acuda S1","Donic Acuda S2","Donic Acuda S3","Stiga Caliber","Stiga Mantra M","Stiga Mantra S","Stiga Mantra H","Stiga Boost TX","Stiga DNA","Stiga Morpheus","friendship 729"],"表ソフト":["Butterfly Flexair","Butterfly Moristo SP","Butterfly Tackiness D","Butterfly Tackiness C","Butterfly Speedy Po","Butterfly Rayton","Yasaka Phantom Tezzer","Yasaka Escada","Yasaka Talon","DHS C-8","DHS PF4","DHS PF4-50","Nittaku Sarasa","Nittaku Factor Rubick","Tibhar Genuis","Tibhar Ozmatic","Xiom Flext","Xiom H3","Andro Hexer","Andro Steer","Victas KS-1 Signum","Victas Triple Double Extra","729 563","729 563-1","Palio Energy 03 Hard","Donic Werner Schlager Formel","Stiga Genius","Stiga Ultra HD"],"粒高":["Butterfly Harmonic BDefense","Butterfly Dtecs","Butterfly Terror","Yasaka Phantom CNT","Yasaka Super Curl","DHS Cloud C3","DHS Cloud C5","DHS Hurricane Long 3","DHS Skyline TG3-60","Nittaku Super Courier","Nittaku Rusan","Tibhar ICS","Tibhar Angara","Tibhar Grass D.Tecs","Xiom Classic","Xiom Miracle S","Andro Defender","Andro Tick","Victas Defensive","729 802-40","Palio Hexer","Donic Defplay","Donic Acuda P3","Stiga MP"],"アンチ":["Butterfly Anti-Spin","Butterfly Neutron","Yasaka Antiwood","Yasaka Phantom O-X","DHS Hurricane 3 Anti","Nittaku Secretary","Nittaku Acoustic Anti","Tibhar I.S.T.","Xiom Slalom","Andro Anti","Victas Defensive O-X","729 Anti","Palio Energy 03 Anti","Donic Destruct","Stiga Ability"],"一枚":["Butterfly Dignics 09C OX","Butterfly Dignics 3 OX","Butterfly Tenergy 05 OX","Butterfly Rayton OX","Yasaka Phantom CNT OX","Yasaka Super Curl OX","DHS Cloud C3 OX","DHS Cloud C5 OX","DHS Hurricane Long 3 OX","Nittaku Super Courier OX","Nittaku Rusan OX","Tibhar ICS OX","Tibhar Angara OX","Xiom Classic OX","Xiom Miracle S OX","Andro Defender OX","Andro Tick OX","Victas Defensive OX","729 802-40 OX","Donic Defplay OX","Donic Acuda P3 OX","Stiga MP OX"]};
   const gradeOptions = { '小学生': ['1年生','2年生','3年生','4年生','5年生','6年生'], '中学生': ['1年生','2年生','3年生'], '高校生': ['1年生','2年生','3年生'] };
   const gradeBirthYears = { '小学生': { '1年生':'2019–2020', '2年生':'2018–2019', '3年生':'2017–2018', '4年生':'2016–2017', '5年生':'2015–2016', '6年生':'2014–2015' }, '中学生': { '1年生':'2013–2014', '2年生':'2012–2013', '3年生':'2011–2012' }, '高校生': { '1年生':'2010–2011', '2年生':'2009–2010', '3年生':'2008–2009' } };
   const entityFields = {
@@ -287,15 +287,11 @@
         input = clubSelect;
       } else if (key === 'forehandRubber' || key === 'backhandRubber') {
         const typeKey = key === 'forehandRubber' ? 'forehandRubberType' : 'backhandRubberType';
-        const listId = `${key}-list`;
-        input = el('input', { name: key, type: 'text', value: record[key] || '', autocomplete: 'off', placeholder: 'Select type first / まず種類を選択' });
-        input.setAttribute('list', listId);
-        const datalist = el('datalist', { id: listId });
         const currentType = record[typeKey] || '';
         const rubbers = rubberDB[currentType] || [];
-        datalist.append(el('option', { value: '未設定 / Not specified' }));
-        rubbers.forEach(r => datalist.append(el('option', { value: r })));
-        rubberInputs[key] = { input, datalist, typeKey };
+        const rubberOptions = ['', '未設定 / Not specified', ...rubbers];
+        input = select(key, rubberOptions, record[key] || '');
+        rubberInputs[key] = { input, typeKey };
       } else {
         input = type === 'select' ? select(key, options, record[key] || '') : el('input', { name: key, type: 'text', value: record[key] || '' });
       }
@@ -303,7 +299,6 @@
       input.readOnly = key === 'playerId' && Boolean(player);
       if (key === 'schoolLevel') schoolLevelInput = input;
       labelNode.append(text('span', label), input);
-      if (rubberInputs[key]) labelNode.append(rubberInputs[key].datalist);
       form.append(labelNode);
     });
     const gradeLabelNode = el('label');
@@ -333,16 +328,18 @@
     if (record.grade && gradeOptions[record.schoolLevel]?.includes(record.grade)) gradeInput.value = record.grade;
     schoolLevelInput.onchange = () => { updateGradeOptions(schoolLevelInput.value, false); };
     gradeInput.onchange = updateBirthHelper;
-    Object.entries(rubberInputs).forEach(([rubberKey, { input, datalist, typeKey }]) => {
+    Object.entries(rubberInputs).forEach(([rubberKey, { input, typeKey }]) => {
       const typeSelect = form.querySelector(`[name="${typeKey}"]`);
       const updateRubberOptions = () => {
         const rubberType = typeSelect?.value || '';
         const rubbers = rubberDB[rubberType] || [];
-        empty(datalist);
-        datalist.append(el('option', { value: '未設定 / Not specified' }));
-        rubbers.forEach(r => datalist.append(el('option', { value: r })));
-        if (rubberType && !input.value) input.value = '未設定 / Not specified';
-        input.placeholder = rubberType ? 'Search rubber... / ラバーを検索...' : 'Select type first / まず種類を選択';
+        const currentValue = input.value;
+        input.replaceChildren();
+        input.append(el('option', { value: '', textContent: '' }));
+        input.append(el('option', { value: '未設定 / Not specified', textContent: '未設定 / Not specified' }));
+        rubbers.forEach(r => input.append(el('option', { value: r, textContent: r })));
+        if (rubbers.includes(currentValue)) input.value = currentValue;
+        else if (rubberType && !input.value) input.value = '未設定 / Not specified';
       };
       if (typeSelect) typeSelect.onchange = updateRubberOptions;
     });
@@ -454,15 +451,11 @@
         input = clubSelect;
       } else if (key === 'forehandRubber' || key === 'backhandRubber') {
         const typeKey = key === 'forehandRubber' ? 'forehandRubberType' : 'backhandRubberType';
-        const listId = `entity-${key}-list`;
-        input = el('input', { name: key, type: 'text', value: record?.[key] || '', autocomplete: 'off', placeholder: 'Select type first / まず種類を選択' });
-        input.setAttribute('list', listId);
-        const datalist = el('datalist', { id: listId });
         const currentType = record?.[typeKey] || '';
         const rubbers = rubberDB[currentType] || [];
-        datalist.append(el('option', { value: '未設定 / Not specified' }));
-        rubbers.forEach(r => datalist.append(el('option', { value: r })));
-        entityRubberInputs[key] = { input, datalist, typeKey };
+        const rubberOptions = ['', '未設定 / Not specified', ...rubbers];
+        input = select(key, rubberOptions, record?.[key] || '');
+        entityRubberInputs[key] = { input, typeKey };
       } else {
         input = type === 'select' ? select(key, options, record?.[key] || '') : el('input', { name: key, type: type === 'number' ? 'number' : 'text', value: record?.[key] || '' });
       }
@@ -470,19 +463,20 @@
       if (key === idField && record) input.readOnly = true;
       if (type === 'number') { input.min = '0'; input.step = '1'; }
       labelNode.append(text('span', label), input);
-      if (entityRubberInputs[key]) labelNode.append(entityRubberInputs[key].datalist);
       form.append(labelNode);
     });
-    Object.entries(entityRubberInputs).forEach(([rubberKey, { input, datalist, typeKey }]) => {
+    Object.entries(entityRubberInputs).forEach(([rubberKey, { input, typeKey }]) => {
       const typeSelect = form.querySelector(`[name="${typeKey}"]`);
       const updateRubberOptions = () => {
         const rubberType = typeSelect?.value || '';
         const rubbers = rubberDB[rubberType] || [];
-        empty(datalist);
-        datalist.append(el('option', { value: '未設定 / Not specified' }));
-        rubbers.forEach(r => datalist.append(el('option', { value: r })));
-        if (rubberType && !input.value) input.value = '未設定 / Not specified';
-        input.placeholder = rubberType ? 'Search rubber... / ラバーを検索...' : 'Select type first / まず種類を選択';
+        const currentValue = input.value;
+        input.replaceChildren();
+        input.append(el('option', { value: '', textContent: '' }));
+        input.append(el('option', { value: '未設定 / Not specified', textContent: '未設定 / Not specified' }));
+        rubbers.forEach(r => input.append(el('option', { value: r, textContent: r })));
+        if (rubbers.includes(currentValue)) input.value = currentValue;
+        else if (rubberType && !input.value) input.value = '未設定 / Not specified';
       };
       if (typeSelect) typeSelect.onchange = updateRubberOptions;
     });
