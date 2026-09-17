@@ -33,9 +33,9 @@ export default { async fetch(request, env) {
       const values = await Promise.all(types.slice(0, 6).map(type => repo.read(environment, type)));
       return json({ ok: true, club: values[0][0] || null, clubs: values[0], players: values[1], matches: values[2], externalOpponents: values[3], tournaments: values[4], tournamentMatches: values[5], lastUpdated: new Date().toISOString() });
     }
+    if (url.pathname === '/api/pending' && request.method === 'GET') return json({ ok: true, changes: await repo.read(environment, 'pending-changes') });
     const actor = await session(request, env);
     if (actor.role === 'site') throw new Error('Admin or approver role required');
-    if (url.pathname === '/api/pending' && request.method === 'GET') return json({ ok: true, changes: await repo.read(environment, 'pending-changes') });
     if (url.pathname === '/api/change' && request.method === 'POST') {
       if (actor.role !== 'admin') throw new Error('Admin role required');
       const body = await request.json(); const records = {}; for (const type of types.slice(0, 6)) records[type] = await repo.read(environment, type);
