@@ -1,8 +1,154 @@
-{
-  "clubId": "CLUB-0001",
-  "name": "Little Kings",
-  "nameJa": "リトルキングス",
-  "logoUrl": "https://ritokin.gosyuugi.com/img/3.jpg",
-  "prefectureId": "14",
-  "status": "Active"
-}
+[
+  {
+    "clubId": "CLUB-0001",
+    "name": "Little Kings",
+    "nameJa": "リトルキングス",
+    "logoUrl": "https://ritokin.gosyuugi.com/img/3.jpg",
+    "prefectureId": "14",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0002",
+    "name": "たなかクラブ",
+    "nameJa": "たなかクラブ",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0003",
+    "name": "R&M",
+    "nameJa": "R&M",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0004",
+    "name": "岸田クラブ",
+    "nameJa": "岸田クラブ",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0005",
+    "name": "Tortoise",
+    "nameJa": "トータス",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0006",
+    "name": "NewStar卓球",
+    "nameJa": "ニュースターサイクウ",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0007",
+    "name": "相模原ジュニア",
+    "nameJa": "相模原ジュニア",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0008",
+    "name": "木下アカデミー",
+    "nameJa": "木下アカデミー",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0009",
+    "name": "丸子橋卓球スタジオ",
+    "nameJa": "丸子橋卓球スタジオ",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0010",
+    "name": "S&S",
+    "nameJa": "S&S",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0011",
+    "name": "MDttl",
+    "nameJa": "MDttl",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0012",
+    "name": "フォート卓球スタール",
+    "nameJa": "フォート卓球スタール",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0013",
+    "name": "結クラブ",
+    "nameJa": "結クラブ",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0014",
+    "name": "RIN RIN 卓球",
+    "nameJa": "RIN RIN 卓球",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0015",
+    "name": "VIRGO",
+    "nameJa": "VIRGO",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0016",
+    "name": "アンカー",
+    "nameJa": "アンカー",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0017",
+    "name": "アマテラス卓球場",
+    "nameJa": "アマテラス卓球場",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0018",
+    "name": "LE COURS",
+    "nameJa": "LE COURS",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  },
+  {
+    "clubId": "CLUB-0019",
+    "name": "HabiiTable",
+    "nameJa": "HabiiTable",
+    "logoUrl": "",
+    "prefectureId": "",
+    "status": "Active"
+  }
+]
