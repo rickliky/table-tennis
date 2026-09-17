@@ -339,7 +339,7 @@
         input.append(el('option', { value: '未設定 / Not specified', textContent: '未設定 / Not specified' }));
         rubbers.forEach(r => input.append(el('option', { value: r, textContent: r })));
         if (rubbers.includes(currentValue)) input.value = currentValue;
-        else if (rubberType && !input.value) input.value = '未設定 / Not specified';
+        else input.value = '';
       };
       if (typeSelect) typeSelect.onchange = updateRubberOptions;
     });
@@ -476,7 +476,7 @@
         input.append(el('option', { value: '未設定 / Not specified', textContent: '未設定 / Not specified' }));
         rubbers.forEach(r => input.append(el('option', { value: r, textContent: r })));
         if (rubbers.includes(currentValue)) input.value = currentValue;
-        else if (rubberType && !input.value) input.value = '未設定 / Not specified';
+        else input.value = '';
       };
       if (typeSelect) typeSelect.onchange = updateRubberOptions;
     });
