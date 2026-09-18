@@ -303,7 +303,7 @@
       } else if (key === 'forehandRubber' || key === 'backhandRubber') {
         const typeKey = key === 'forehandRubber' ? 'forehandRubberType' : 'backhandRubberType';
         const currentType = record[typeKey] || '';
-        const rubbers = (window.RUBBER_DB || {})[currentType] || [];
+        const rubbers = currentType ? ((window.RUBBER_DB || {})[currentType] || []) : (window.RUBBERS || []);
         const rubberSelect = el('select', { name: key });
         rubberSelect.append(el('option', { value: '', textContent: '' }));
         rubbers.forEach(r => rubberSelect.append(el('option', { value: r.rubberId, textContent: r.name })));
@@ -350,7 +350,7 @@
       const typeSelect = form.querySelector(`[name="${typeKey}"]`);
       const updateRubberOptions = () => {
         const rubberType = typeSelect?.value || '';
-        const rubbers = (window.RUBBER_DB || {})[rubberType] || [];
+        const rubbers = rubberType ? ((window.RUBBER_DB || {})[rubberType] || []) : (window.RUBBERS || []);
         const currentRubberId = rubberIdByName(input.value);
         input.replaceChildren();
         input.append(el('option', { value: '', textContent: '' }));
@@ -489,7 +489,7 @@
       const typeSelect = form.querySelector(`[name="${typeKey}"]`);
       const updateRubberOptions = () => {
         const rubberType = typeSelect?.value || '';
-        const rubbers = (window.RUBBER_DB || {})[rubberType] || [];
+        const rubbers = rubberType ? ((window.RUBBER_DB || {})[rubberType] || []) : (window.RUBBERS || []);
         const currentRubberId = rubberIdByName(input.value);
         input.replaceChildren();
         input.append(el('option', { value: '', textContent: '' }));
