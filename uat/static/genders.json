@@ -1,5 +1,5 @@
 [
-  { "id": "GD-001", "name": "Male", "nameJa": "男性" },
-  { "id": "GD-002", "name": "Female", "nameJa": "女性" },
-  { "id": "GD-003", "name": "Other", "nameJa": "その他" }
+  { "id": "GD-001", "name": "Male", "nameJa": "男性", "nameEn": "Male" },
+  { "id": "GD-002", "name": "Female", "nameJa": "女性", "nameEn": "Female" },
+  { "id": "GD-003", "name": "Other", "nameJa": "その他", "nameEn": "Other" }
 ]

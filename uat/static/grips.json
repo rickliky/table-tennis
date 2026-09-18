@@ -1,4 +1,4 @@
 [
-  { "id": "GH-001", "name": "シェークハンド / Shakehand" },
-  { "id": "GH-002", "name": "ペンホルダー / Penhold" }
+  { "id": "GH-001", "name": "シェークハンド / Shakehand", "nameJa": "シェークハンド", "nameEn": "Shakehand" },
+  { "id": "GH-002", "name": "ペンホルダー / Penhold", "nameJa": "ペンホルダー", "nameEn": "Penhold" }
 ]

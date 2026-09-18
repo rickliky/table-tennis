@@ -1,10 +1,10 @@
 [
-  { "id": "TR-001", "name": "1回戦", "nameEn": "Round 1" },
-  { "id": "TR-002", "name": "2回戦", "nameEn": "Round 2" },
-  { "id": "TR-003", "name": "3回戦", "nameEn": "Round 3" },
-  { "id": "TR-004", "name": "4回戦", "nameEn": "Round 4" },
-  { "id": "TR-005", "name": "5回戦", "nameEn": "Round 5" },
-  { "id": "TR-006", "name": "6回戦", "nameEn": "Round 6" },
-  { "id": "TR-007", "name": "最終ラウンド", "nameEn": "Finals" },
-  { "id": "TR-008", "name": "グループステージ", "nameEn": "Group stage" }
+  { "id": "TR-001", "name": "1回戦", "nameJa": "1回戦", "nameEn": "Round 1" },
+  { "id": "TR-002", "name": "2回戦", "nameJa": "2回戦", "nameEn": "Round 2" },
+  { "id": "TR-003", "name": "3回戦", "nameJa": "3回戦", "nameEn": "Round 3" },
+  { "id": "TR-004", "name": "4回戦", "nameJa": "4回戦", "nameEn": "Round 4" },
+  { "id": "TR-005", "name": "5回戦", "nameJa": "5回戦", "nameEn": "Round 5" },
+  { "id": "TR-006", "name": "6回戦", "nameJa": "6回戦", "nameEn": "Round 6" },
+  { "id": "TR-007", "name": "最終ラウンド", "nameJa": "最終ラウンド", "nameEn": "Finals" },
+  { "id": "TR-008", "name": "グループステージ", "nameJa": "グループステージ", "nameEn": "Group stage" }
 ]

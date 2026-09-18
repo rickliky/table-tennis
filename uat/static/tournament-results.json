@@ -1,12 +1,12 @@
 [
-  { "id": "TP-001", "name": "未設定 / Not specified" },
-  { "id": "TP-002", "name": "優勝", "nameEn": "Champion" },
-  { "id": "TP-003", "name": "準優勝", "nameEn": "Runner-up" },
-  { "id": "TP-004", "name": "3位", "nameEn": "3rd place" },
-  { "id": "TP-005", "name": "4位", "nameEn": "4th place" },
-  { "id": "TP-006", "name": "5位", "nameEn": "5th place" },
-  { "id": "TP-007", "name": "6位", "nameEn": "6th place" },
-  { "id": "TP-008", "name": "7位", "nameEn": "7th place" },
-  { "id": "TP-009", "name": "8位", "nameEn": "8th place" },
-  { "id": "TP-010", "name": "デフォルト", "nameEn": "Default" }
+  { "id": "TP-001", "name": "未設定", "nameJa": "未設定", "nameEn": "Not specified" },
+  { "id": "TP-002", "name": "優勝", "nameJa": "優勝", "nameEn": "Champion" },
+  { "id": "TP-003", "name": "準優勝", "nameJa": "準優勝", "nameEn": "Runner-up" },
+  { "id": "TP-004", "name": "3位", "nameJa": "3位", "nameEn": "3rd place" },
+  { "id": "TP-005", "name": "4位", "nameJa": "4位", "nameEn": "4th place" },
+  { "id": "TP-006", "name": "5位", "nameJa": "5位", "nameEn": "5th place" },
+  { "id": "TP-007", "name": "6位", "nameJa": "6位", "nameEn": "6th place" },
+  { "id": "TP-008", "name": "7位", "nameJa": "7位", "nameEn": "7th place" },
+  { "id": "TP-009", "name": "8位", "nameJa": "8位", "nameEn": "8th place" },
+  { "id": "TP-010", "name": "デフォルト", "nameJa": "デフォルト", "nameEn": "Default" }
 ]
