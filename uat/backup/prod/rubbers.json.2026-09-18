@@ -320,13 +320,13 @@
   {
     "rubberId": "RB-0054",
     "name": "Nittaku Moristo SP",
-    "type": "裏ソフト",
+    "type": "表ソフト",
     "brand": "Nittaku"
   },
   {
     "rubberId": "RB-0055",
     "name": "Nittaku Moristo SP AX",
-    "type": "裏ソフト",
+    "type": "表ソフト",
     "brand": "Nittaku"
   },
   {
@@ -446,7 +446,7 @@
   {
     "rubberId": "RB-0075",
     "name": "STIGA バーティカル20 / Vertical 20",
-    "type": "裏ソフト",
+    "type": "粒高",
     "brand": "STIGA"
   },
   {
