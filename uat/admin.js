@@ -348,7 +348,7 @@
     const stats = {};
     allPlayers.forEach(p => { const id = p.playerId || p.externalOpponentId; stats[id] = { played: 0, wins: 0, losses: 0 }; });
     (trainingMatches || []).forEach(m => {
-      if (m.resultStatus && m.resultStatus !== 'Completed' && m.resultStatus !== '完了') return;
+      if (m.resultStatus === 'Incomplete' || m.resultStatus === '未完了') return;
       const s1 = stats[m.player1Id]; const s2 = stats[m.player2Id];
       if (s1) s1.played++;
       if (s2) s2.played++;
