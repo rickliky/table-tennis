@@ -180,7 +180,7 @@
       activeTab = 'pending';
     } else {
       tabs.append(tab('matches', 'TRAINING MATCHES / 練習試合'));
-      tabs.append(tab('players', 'PLAYERS / 選手'), tab('clubs', 'CLUBS / クラブ'), tab('externalOpponents', 'EXT. OPPONENTS / 外部選手'), tab('tournaments', 'TOURNAMENTS / 大会'), tab('tournamentMatches', 'TOURNAMENT RESULTS / 大会結果'), tab('tournamentProgress', 'TOURNAMENT PROGRESS / 大会進捗'));
+      tabs.append(tab('players', 'PLAYERS / 選手'), tab('clubs', 'CLUBS / クラブ'), tab('tournaments', 'TOURNAMENTS / 大会'), tab('tournamentMatches', 'TOURNAMENT RESULTS / 大会結果'), tab('tournamentProgress', 'TOURNAMENT PROGRESS / 大会進捗'));
       tabs.append(tab('pending', 'PENDING CHANGES / 承認待ち'));
       tabs.append(tab('history', 'HISTORY / 変更履歴'));
     }
@@ -310,49 +310,58 @@
 
   function renderPlayers() {
     const workspace = el('section', { className: 'admin-workspace' }); const listPanel = el('section', { className: 'admin-panel admin-list-panel' });
-    const listHeader = el('div', { className: 'admin-list-header' }); const heading = el('div'); heading.append(text('p', 'PLAYER DIRECTORY / 選手一覧', 'eyebrow'), text('h2', `${players.length} players`));
+    const listHeader = el('div', { className: 'admin-list-header' }); const heading = el('div'); heading.append(text('p', 'PLAYER DIRECTORY / 選手一覧', 'eyebrow'), text('h2', `${players.length + (entityData.externalOpponents || []).length} players`));
     const search = el('input', { type: 'search', placeholder: '名前・ID・カテゴリ等で検索 / Search by name, ID, category, equipment...', ariaLabel: 'Search players' }); listHeader.append(heading, search);
     const addBtn = button('+ ADD PLAYER / 選手追加', () => showPlayerEditor(null), 'primary');
     const rolloverBtn = button('APRIL ROLLOVER / 4月繰り上げ', () => { if (confirm(language === 'en' ? 'Submit grade advancement for all students for approval?\n\nEach change will require approval before taking effect.' : '全選手の学年繰り上げを承認申請しますか？\n\n各変更は承認後に反映されます。')) { AprilRollover(); } }, 'secondary');
     listPanel.append(listHeader, addBtn, rolloverBtn);
     const list = el('div', { className: 'admin-player-list' }); listPanel.append(list); const editor = el('section', { className: 'admin-panel admin-editor-panel' }); workspace.append(listPanel, editor); app.append(workspace);
-    const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); players.filter(player => `${player.playerId} ${player.displayName} ${player.englishName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query)).sort((a, b) => a.playerId.localeCompare(b.playerId)).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${player.playerId === selectedId ? ' selected' : ''}` }); const names = el('span'); const gradeTag = player.grade ? ` · ${player.grade}` : ''; names.append(text('b', player.displayName || 'No display name'), text('small', `${player.playerId} · ${player.englishName || '-'}${gradeTag}`)); row.append(names, text('i', player.status || 'Active')); row.onclick = () => { selectedId = player.playerId; updateList(); showPlayerEditor(player); }; list.append(row); }); };
-    search.oninput = updateList; window.adminPlayerListUpdate = updateList; updateList(); showPlayerEditor(players[0] || null);
+    const allPlayers = [...players.map(p => ({ ...p, _entityType: 'player' })), ...(entityData.externalOpponents || []).map(p => ({ ...p, _entityType: 'externalOpponent' }))];
+    const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); allPlayers.filter(player => `${player.playerId || player.externalOpponentId || ''} ${player.displayName} ${player.englishName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query)).sort((a, b) => (a.playerId || a.externalOpponentId || '').localeCompare(b.playerId || b.externalOpponentId || '')).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${(player.playerId || player.externalOpponentId) === selectedId ? ' selected' : ''}` }); const names = el('span'); const gradeTag = player.grade ? ` · ${player.grade}` : ''; const id = player.playerId || player.externalOpponentId; const isExternal = player._entityType === 'externalOpponent'; names.append(text('b', player.displayName || 'No display name'), text('small', `${id} · ${player.englishName || '-'}${gradeTag}${isExternal ? ' · EXT' : ''}`)); row.append(names, text('i', player.status || 'Active')); row.onclick = () => { selectedId = id; updateList(); showPlayerEditor(player); }; list.append(row); }); };
+    search.oninput = updateList; window.adminPlayerListUpdate = updateList; updateList(); showPlayerEditor(allPlayers[0] || null);
   }
   function showPlayerEditor(player) {
-    const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor); const record = player ? { ...player } : newPlayer(); editor.append(text('p', player ? 'EDIT PLAYER / 選手編集' : 'NEW PLAYER / 新規選手', 'eyebrow'), text('h2', player ? (record.displayName || record.playerId) : 'Add player'));
+    const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
+    const isExternal = player?._entityType === 'externalOpponent' || (player && !player.playerId && player.externalOpponentId);
+    const entityType = isExternal ? 'externalOpponent' : 'player';
+    const idField = isExternal ? 'externalOpponentId' : 'playerId';
+    const record = player ? { ...player } : newPlayer();
+    const recordId = record[idField] || record.playerId || record.externalOpponentId || '';
+    editor.append(text('p', player ? `EDIT ${isExternal ? 'EXT. OPPONENT' : 'PLAYER'} / ${isExternal ? '外部選手編集' : '選手編集'}` : 'NEW PLAYER / 新規選手', 'eyebrow'), text('h2', player ? (record.displayName || recordId) : 'Add player'));
     const form = el('form', { className: 'admin-player-form' });
     let schoolLevelInput, gradeInput, gradeBirthHelper;
     const rubberInputs = {};
     playerFields.forEach(([key, label, type, required, options]) => {
       if (key === 'grade') return;
+      const actualKey = (key === 'playerId' && isExternal) ? 'externalOpponentId' : key;
+      const actualLabel = (key === 'playerId' && isExternal) ? '外部選手ID / External opponent ID' : label;
       const labelNode = el('label');
       let input;
-      if (key === 'clubId') {
-        const clubSelect = el('select', { name: key });
+      if (actualKey === 'clubId') {
+        const clubSelect = el('select', { name: actualKey });
         clubSelect.append(el('option', { value: '', textContent: '' }));
         (entityData.clubs || []).forEach(c => clubSelect.append(el('option', { value: c.clubId, textContent: c.name ? `${c.name} (${c.clubId})` : c.clubId })));
-        clubSelect.value = record[key] || '';
+        clubSelect.value = record[actualKey] || record[key] || '';
         input = clubSelect;
       } else if (key === 'forehandRubber' || key === 'backhandRubber') {
         const typeKey = key === 'forehandRubber' ? 'forehandRubberType' : 'backhandRubberType';
         const currentType = record[typeKey] || '';
         const rubbers = currentType ? ((window.RUBBER_DB || {})[currentType] || []) : (window.RUBBERS || []);
-        const rubberSelect = el('select', { name: key });
+        const rubberSelect = el('select', { name: actualKey });
         rubberSelect.append(el('option', { value: '', textContent: '' }));
         rubbers.forEach(r => rubberSelect.append(el('option', { value: r.rubberId, textContent: r.name })));
-        rubberSelect.value = rubberIdByName(record[key]) || '';
+        rubberSelect.value = rubberIdByName(record[actualKey] || record[key]) || '';
         input = rubberSelect;
-        rubberInputs[key] = { input, typeKey };
+        rubberInputs[actualKey] = { input, typeKey };
       } else {
-        const fieldTable = { gender: 'genders', schoolLevel: 'schoolLevels', playingHand: 'playingHands', grip: 'grips', playingStyle: 'playingStyles', status: 'statuses', grade: 'grades', round: 'tournamentRounds', result: 'tournamentResults', resultStatus: 'resultStatuses' }[key];
-        const resolvedValue = fieldTable ? resolveFieldValue(fieldTable, record[key]) : (record[key] || '');
-        input = type === 'select' ? select(key, options, resolvedValue) : el('input', { name: key, type: 'text', value: record[key] || '' });
+        const fieldTable = { gender: 'genders', schoolLevel: 'schoolLevels', playingHand: 'playingHands', grip: 'grips', playingStyle: 'playingStyles', status: 'statuses', grade: 'grades', round: 'tournamentRounds', result: 'tournamentResults', resultStatus: 'resultStatuses' }[actualKey];
+        const resolvedValue = fieldTable ? resolveFieldValue(fieldTable, record[actualKey] || record[key]) : (record[actualKey] || record[key] || '');
+        input = type === 'select' ? select(actualKey, options, resolvedValue) : el('input', { name: actualKey, type: 'text', value: record[actualKey] || record[key] || '' });
       }
       input.required = Boolean(required);
-      input.readOnly = key === 'playerId' && Boolean(player);
+      input.readOnly = (actualKey === 'playerId' || actualKey === 'externalOpponentId') && Boolean(player);
       if (key === 'schoolLevel') schoolLevelInput = input;
-      labelNode.append(text('span', label), input);
+      labelNode.append(text('span', actualLabel), input);
       form.append(labelNode);
     });
     const gradeLabelNode = el('label');
@@ -410,17 +419,20 @@
     form.append(actions);
     form.onsubmit = event => {
       event.preventDefault(); const next = player ? { ...record, ...Object.fromEntries(new FormData(form)) } : Object.fromEntries(new FormData(form));
+      const submitEntityType = isExternal ? 'externalOpponent' : 'player';
+      const submitIdField = isExternal ? 'externalOpponentId' : 'playerId';
+      const submitId = next[submitIdField] || next.playerId || next.externalOpponentId;
       if (player && (next.schoolLevel !== record.schoolLevel || next.grade !== record.grade)) {
         if (!next.gradeHistory) next.gradeHistory = record.gradeHistory || [];
         next.gradeHistory = [...next.gradeHistory, { date: new Date().toISOString().slice(0, 10), schoolLevel: record.schoolLevel || '', grade: record.grade || '' }];
       }
-      submitChange('player', next.playerId, next, player ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
+      submitChange(submitEntityType, submitId, next, player ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
     };
     editor.append(form);
     if (player) {
-      const pending = findPendingChange('player', player.playerId);
+      const pending = findPendingChange(entityType, recordId);
       if (pending) editor.append(renderPendingInfo(pending));
-      renderRecordHistory('player', player.playerId).then(history => { if (history.childNodes.length) editor.append(history); });
+      renderRecordHistory(entityType, recordId).then(history => { if (history.childNodes.length) editor.append(history); });
     }
   }
   function newPlayer() { const next = Math.max(0, ...players.map(player => Number((player.playerId || '').match(/\d+$/)?.[0]) || 0)) + 1; const record = Object.fromEntries(playerFields.map(([key]) => [key, key === 'playerId' ? `LK-${String(next).padStart(4, '0')}` : key === 'status' ? 'Active' : ''])); record.clubId = (entityData.clubs || [])[0]?.clubId || 'CLUB-0001'; return record; }
