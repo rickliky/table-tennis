@@ -683,11 +683,30 @@
             const tbody = el('tbody'); table.append(tbody);
             diff.forEach(d => {
               const row = el('tr'); row.className = 'admin-pending-diff-row';
-              const fieldTable = { gender: 'genders', schoolLevel: 'schoolLevels', playingHand: 'playingHands', grip: 'grips', playingStyle: 'playingStyles', status: 'statuses', grade: 'grades', forehandRubberType: 'rubberTypes', backhandRubberType: 'rubberTypes', round: 'tournamentRounds', result: 'tournamentResults', resultStatus: 'resultStatuses' }[d.field];
               const resolveDisplay = val => {
                 if (val === '' || val == null) return String(val);
                 if (d.field === 'forehandRubber' || d.field === 'backhandRubber') return rubberName(val);
-                if (fieldTable) return lookupName(fieldTable, val);
+                // Resolve lookup IDs to bilingual display names
+                const tableMap = { gender: 'genders', schoolLevel: 'schoolLevels', playingHand: 'playingHands', grip: 'grips', playingStyle: 'playingStyles', status: 'statuses', grade: 'grades', forehandRubberType: 'rubberTypes', backhandRubberType: 'rubberTypes', round: 'tournamentRounds', result: 'tournamentResults', resultStatus: 'resultStatuses' };
+                const tbl = tableMap[d.field];
+                if (tbl) {
+                  const entries = window.LK_STATIC?.[tbl] || [];
+                  const entry = entries.find(x => x.id === val);
+                  if (entry) {
+                    if (entry.nameJa && entry.nameEn) return `${entry.nameJa} / ${entry.nameEn}`;
+                    if (entry.nameJa) return entry.nameJa;
+                    if (entry.nameEn) return entry.nameEn;
+                    return entry.name || val;
+                  }
+                  // Backward compat: val might be old text
+                  const byName = entries.find(x => x.name === val || x.nameJa === val || x.nameEn === val);
+                  if (byName) {
+                    if (byName.nameJa && byName.nameEn) return `${byName.nameJa} / ${byName.nameEn}`;
+                    if (byName.nameJa) return byName.nameJa;
+                    if (byName.nameEn) return byName.nameEn;
+                    return byName.name || val;
+                  }
+                }
                 return String(val);
               };
               row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : resolveDisplay(d.before)), text('td', d.after === '' || d.after == null ? '—' : resolveDisplay(d.after)));
@@ -781,7 +800,7 @@
               const table = el('table', { className: 'admin-pending-table' }); const thead = el('thead'); const thr = el('tr'); thead.append(thr); table.append(thead);
               thr.append(text('th', 'Field'), text('th', 'Before'), text('th', 'After'));
               const tbody = el('tbody'); table.append(tbody);
-            diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; const fieldTable = { gender: 'genders', schoolLevel: 'schoolLevels', playingHand: 'playingHands', grip: 'grips', playingStyle: 'playingStyles', status: 'statuses', grade: 'grades', forehandRubberType: 'rubberTypes', backhandRubberType: 'rubberTypes', round: 'tournamentRounds', result: 'tournamentResults', resultStatus: 'resultStatuses' }[d.field]; const resolveDisplay = val => { if (val === '' || val == null) return String(val); if (d.field === 'forehandRubber' || d.field === 'backhandRubber') return rubberName(val); if (fieldTable) return lookupName(fieldTable, val); return String(val); }; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : resolveDisplay(d.before)), text('td', d.after === '' || d.after == null ? '—' : resolveDisplay(d.after))); tbody.append(row); });
+            diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; const resolveDisplay = val => { if (val === '' || val == null) return String(val); if (d.field === 'forehandRubber' || d.field === 'backhandRubber') return rubberName(val); const tableMap = { gender: 'genders', schoolLevel: 'schoolLevels', playingHand: 'playingHands', grip: 'grips', playingStyle: 'playingStyles', status: 'statuses', grade: 'grades', forehandRubberType: 'rubberTypes', backhandRubberType: 'rubberTypes', round: 'tournamentRounds', result: 'tournamentResults', resultStatus: 'resultStatuses' }; const tbl = tableMap[d.field]; if (tbl) { const entries = window.LK_STATIC?.[tbl] || []; const entry = entries.find(x => x.id === val); if (entry) { if (entry.nameJa && entry.nameEn) return `${entry.nameJa} / ${entry.nameEn}`; if (entry.nameJa) return entry.nameJa; if (entry.nameEn) return entry.nameEn; return entry.name || val; } const byName = entries.find(x => x.name === val || x.nameJa === val || x.nameEn === val); if (byName) { if (byName.nameJa && byName.nameEn) return `${byName.nameJa} / ${byName.nameEn}`; if (byName.nameJa) return byName.nameJa; if (byName.nameEn) return byName.nameEn; return byName.name || val; } } return String(val); }; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : resolveDisplay(d.before)), text('td', d.after === '' || d.after == null ? '—' : resolveDisplay(d.after))); tbody.append(row); });
               diffSection.append(table); card.append(diffSection);
             }
             group.append(card);
