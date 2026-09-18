@@ -249,7 +249,10 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
   - `toOpts()` builds `{id, name}` objects from `static-data.js` instead of stripping IDs
   - `resolveFieldValue()` converts old text values to IDs for backward compat
   - `lookupName()` resolves IDs to bilingual display names for diffs/history
+  - `displayValue()` shared function for all diff/create displays
   - All fields: gender, schoolLevel, playingHand, grip, playingStyle, status, grade, round, result, resultStatus, rubberType
+  - All static/*.json source files now have both `nameJa` and `nameEn` fields
+  - `bilingual()` detects pre-bilingual `name` fields (containing " / ")
   - Old Upstash data (text values) still works — resolved to IDs on load
 - **Static data**: `static-data.js` is the single source for all lookup values (IDs + bilingual names)
 - **Rubber system**: 203 rubbers with IDs, bilingual canonical names, type, brand
