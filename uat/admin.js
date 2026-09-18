@@ -383,8 +383,14 @@
     const gradeLabelNode = el('label');
     gradeInput = select('grade', [], '');
     gradeInput.required = false;
+    const resolveSchoolLevelText = slId => {
+      if (!slId) return '';
+      const entry = (S.schoolLevels || []).find(x => x.id === slId);
+      return entry ? (entry.nameJa || entry.name || slId) : slId;
+    };
     const updateGradeOptions = (slValue, preserveGrade) => {
-      const opts = gradeOptions[slValue] || [];
+      const slText = resolveSchoolLevelText(slValue);
+      const opts = gradeOptions[slText] || gradeOptions[slValue] || [];
       const savedGrade = preserveGrade ? gradeInput.value : '';
       gradeInput.replaceChildren();
       gradeInput.append(el('option', { value: '', textContent: '' }));
@@ -397,14 +403,14 @@
     gradeBirthHelper = text('small', '', 'admin-derived');
     gradeBirthHelper.style.display = 'none';
     const updateBirthHelper = () => {
-      const sl = schoolLevelInput.value;
+      const sl = resolveSchoolLevelText(schoolLevelInput.value);
       const gr = gradeInput.value;
       if (gr && gradeBirthYears[sl] && gradeBirthYears[sl][gr]) { gradeBirthHelper.textContent = `出生年 / Birth year: ${gradeBirthYears[sl][gr]}`; gradeBirthHelper.style.display = ''; } else { gradeBirthHelper.textContent = ''; gradeBirthHelper.style.display = 'none'; }
     };
     gradeLabelNode.append(text('span', '学年 / Grade'), gradeInput, gradeBirthHelper);
     form.append(gradeLabelNode);
     updateGradeOptions(record.schoolLevel || '', false);
-    if (record.grade && gradeOptions[record.schoolLevel]?.includes(record.grade)) gradeInput.value = record.grade;
+    if (record.grade && (gradeOptions[resolveSchoolLevelText(record.schoolLevel)] || gradeOptions[record.schoolLevel] || []).includes(record.grade)) gradeInput.value = record.grade;
     schoolLevelInput.onchange = () => { updateGradeOptions(schoolLevelInput.value, false); };
     gradeInput.onchange = updateBirthHelper;
     Object.entries(rubberInputs).forEach(([rubberKey, { input, typeKey }]) => {
