@@ -3,22 +3,47 @@
 
   const app = document.querySelector('#admin-app');
   const S = window.LK_STATIC || {};
-  const opt = (list, empty) => empty !== false ? ['', ...list.map(x => x.name)] : list.map(x => x.name);
-  const genderOpts = opt(S.genders || []);
-  const schoolLevelOpts = opt(S.schoolLevels || []);
-  const playingHandOpts = opt(S.playingHands || []);
-  const gripOpts = opt(S.grips || []);
-  const playingStyleOpts = opt(S.playingStyles || []);
-  const rubberTypeOpts = [{ id: '', name: '' }, ...(S.rubberTypes || []).map(rt => ({ id: rt.id, name: rt.name }))];
-  const statusOpts = opt(S.statuses || [], false);
-  const gradeOpts = opt(S.grades || []);
-  const roundOpts = opt(S.tournamentRounds || []);
-  const resultOpts = opt(S.tournamentResults || []);
-  const resultStatusOpts = opt(S.resultStatuses || []);
+  const bilingual = item => {
+    if (item.nameJa && item.nameEn) return `${item.nameJa} / ${item.nameEn}`;
+    if (item.nameJa) return item.nameJa;
+    if (item.nameEn) return item.nameEn;
+    return item.name || item.id;
+  };
+  const toOpts = (list, empty) => {
+    const opts = (list || []).map(x => ({ id: x.id, name: bilingual(x) }));
+    return empty !== false ? [{ id: '', name: '' }, ...opts] : opts;
+  };
+  const genderOpts = toOpts(S.genders);
+  const schoolLevelOpts = toOpts(S.schoolLevels);
+  const playingHandOpts = toOpts(S.playingHands);
+  const gripOpts = toOpts(S.grips);
+  const playingStyleOpts = toOpts(S.playingStyles);
+  const rubberTypeOpts = toOpts(S.rubberTypes);
+  const statusOpts = toOpts(S.statuses, false);
+  const gradeOpts = toOpts(S.grades);
+  const roundOpts = toOpts(S.tournamentRounds);
+  const resultOpts = toOpts(S.tournamentResults);
+  const resultStatusOpts = toOpts(S.resultStatuses);
 
   const playerFields = [['playerId', '選手ID / Player ID', 'text', true], ['clubId', 'クラブID / Club ID', 'select', true], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマ字表記 / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, genderOpts], ['schoolLevel', 'カテゴリ / School level', 'select', false, schoolLevelOpts], ['grade', '学年 / Grade', 'select', false, gradeOpts], ['playingHand', '利き手 / Playing hand', 'select', false, playingHandOpts], ['grip', 'グリップ / Grip', 'select', false, gripOpts], ['playingStyle', '戦型 / Playing style', 'select', false, playingStyleOpts], ['forehandRubberType', 'フォア面種類 / Forehand type', 'select', false, rubberTypeOpts], ['forehandRubber', 'フォア面ラバー / Forehand rubber', 'rubber'], ['backhandRubberType', 'バック面種類 / Backhand type', 'select', false, rubberTypeOpts], ['backhandRubber', 'バック面ラバー / Backhand rubber', 'rubber'], ['status', '状態 / Status', 'select', true, statusOpts]];
   const rubberName = id => { if (!id) return ''; const r = (window.RUBBERS || []).find(x => x.rubberId === id); return r ? r.name : id; };
   const rubberIdByName = name => { if (!name) return ''; const r = (window.RUBBERS || []).find(x => x.name === name); return r ? r.rubberId : name; };
+  const lookupName = (table, id) => {
+    if (!id) return '';
+    const entry = (S[table] || []).find(x => x.id === id);
+    if (entry) return bilingual(entry);
+    // Backward compat: if id is a display text, try to find it
+    const byName = (S[table] || []).find(x => x.name === id || x.nameJa === id || x.nameEn === id);
+    return byName ? bilingual(byName) : id;
+  };
+  const resolveFieldValue = (table, value) => {
+    if (!value) return '';
+    // Already an ID
+    if ((S[table] || []).some(x => x.id === value)) return value;
+    // Backward compat: text value → find ID
+    const byName = (S[table] || []).find(x => x.name === value || x.nameJa === value || x.nameEn === value || `${x.nameJa || ''} / ${x.nameEn || ''}` === value);
+    return byName ? byName.id : value;
+  };
   const gradeOptions = { '小学生': ['1年生','2年生','3年生','4年生','5年生','6年生'], '中学生': ['1年生','2年生','3年生'], '高校生': ['1年生','2年生','3年生'] };
   const gradeBirthYears = { '小学生': { '1年生':'2019–2020', '2年生':'2018–2019', '3年生':'2017–2018', '4年生':'2016–2017', '5年生':'2015–2016', '6年生':'2014–2015' }, '中学生': { '1年生':'2013–2014', '2年生':'2012–2013', '3年生':'2011–2012' }, '高校生': { '1年生':'2010–2011', '2年生':'2009–2010', '3年生':'2008–2009' } };
   const entityFields = {
@@ -320,7 +345,9 @@
         input = rubberSelect;
         rubberInputs[key] = { input, typeKey };
       } else {
-        input = type === 'select' ? select(key, options, record[key] || '') : el('input', { name: key, type: 'text', value: record[key] || '' });
+        const fieldTable = { gender: 'genders', schoolLevel: 'schoolLevels', playingHand: 'playingHands', grip: 'grips', playingStyle: 'playingStyles', status: 'statuses', grade: 'grades', round: 'tournamentRounds', result: 'tournamentResults', resultStatus: 'resultStatuses' }[key];
+        const resolvedValue = fieldTable ? resolveFieldValue(fieldTable, record[key]) : (record[key] || '');
+        input = type === 'select' ? select(key, options, resolvedValue) : el('input', { name: key, type: 'text', value: record[key] || '' });
       }
       input.required = Boolean(required);
       input.readOnly = key === 'playerId' && Boolean(player);
@@ -486,7 +513,9 @@
         input = rubberSelect;
         entityRubberInputs[key] = { input, typeKey };
       } else {
-        input = type === 'select' ? select(key, options, record?.[key] || '') : el('input', { name: key, type: type === 'number' ? 'number' : 'text', value: record?.[key] || '' });
+        const fieldTable = { gender: 'genders', schoolLevel: 'schoolLevels', playingHand: 'playingHands', grip: 'grips', playingStyle: 'playingStyles', round: 'tournamentRounds', result: 'tournamentResults', resultStatus: 'resultStatuses' }[key];
+        const resolvedValue = fieldTable ? resolveFieldValue(fieldTable, record?.[key]) : (record?.[key] || '');
+        input = type === 'select' ? select(key, options, resolvedValue) : el('input', { name: key, type: type === 'number' ? 'number' : 'text', value: record?.[key] || '' });
       }
       input.required = Boolean(required);
       if (key === idField && record) input.readOnly = true;
@@ -628,8 +657,14 @@
             const tbody = el('tbody'); table.append(tbody);
             diff.forEach(d => {
               const row = el('tr'); row.className = 'admin-pending-diff-row';
-              const resolveRubber = val => (d.field === 'forehandRubber' || d.field === 'backhandRubber') ? rubberName(val) : String(val);
-              row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : resolveRubber(d.before)), text('td', d.after === '' || d.after == null ? '—' : resolveRubber(d.after)));
+              const fieldTable = { gender: 'genders', schoolLevel: 'schoolLevels', playingHand: 'playingHands', grip: 'grips', playingStyle: 'playingStyles', status: 'statuses', grade: 'grades', forehandRubberType: 'rubberTypes', backhandRubberType: 'rubberTypes', round: 'tournamentRounds', result: 'tournamentResults', resultStatus: 'resultStatuses' }[d.field];
+              const resolveDisplay = val => {
+                if (val === '' || val == null) return String(val);
+                if (d.field === 'forehandRubber' || d.field === 'backhandRubber') return rubberName(val);
+                if (fieldTable) return lookupName(fieldTable, val);
+                return String(val);
+              };
+              row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : resolveDisplay(d.before)), text('td', d.after === '' || d.after == null ? '—' : resolveDisplay(d.after)));
               tbody.append(row);
             });
             diffSection.append(table); card.append(diffSection);
@@ -720,7 +755,7 @@
               const table = el('table', { className: 'admin-pending-table' }); const thead = el('thead'); const thr = el('tr'); thead.append(thr); table.append(thead);
               thr.append(text('th', 'Field'), text('th', 'Before'), text('th', 'After'));
               const tbody = el('tbody'); table.append(tbody);
-            diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; const resolveRubber = val => (d.field === 'forehandRubber' || d.field === 'backhandRubber') ? rubberName(val) : String(val); row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : resolveRubber(d.before)), text('td', d.after === '' || d.after == null ? '—' : resolveRubber(d.after))); tbody.append(row); });
+            diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; const fieldTable = { gender: 'genders', schoolLevel: 'schoolLevels', playingHand: 'playingHands', grip: 'grips', playingStyle: 'playingStyles', status: 'statuses', grade: 'grades', forehandRubberType: 'rubberTypes', backhandRubberType: 'rubberTypes', round: 'tournamentRounds', result: 'tournamentResults', resultStatus: 'resultStatuses' }[d.field]; const resolveDisplay = val => { if (val === '' || val == null) return String(val); if (d.field === 'forehandRubber' || d.field === 'backhandRubber') return rubberName(val); if (fieldTable) return lookupName(fieldTable, val); return String(val); }; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : resolveDisplay(d.before)), text('td', d.after === '' || d.after == null ? '—' : resolveDisplay(d.after))); tbody.append(row); });
               diffSection.append(table); card.append(diffSection);
             }
             group.append(card);
