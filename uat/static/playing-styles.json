@@ -1,0 +1,8 @@
+[
+  { "id": "PS-001", "name": "ドライブ攻撃型 / Topspin attacker" },
+  { "id": "PS-002", "name": "カット主戦型 / Defensive chopper" },
+  { "id": "PS-003", "name": "表ソフト攻撃型 / Short-pips attacker" },
+  { "id": "PS-004", "name": "前陣速攻型 / Close-to-table attacker" },
+  { "id": "PS-005", "name": "異質攻撃型 / Combination attacker" },
+  { "id": "PS-006", "name": "オールラウンド型 / All-round" }
+]
