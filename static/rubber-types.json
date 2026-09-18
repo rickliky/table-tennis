@@ -1,0 +1,7 @@
+[
+  { "id": "RT-001", "name": "裏ソフト", "nameEn": "Inverted" },
+  { "id": "RT-002", "name": "表ソフト", "nameEn": "Short pips" },
+  { "id": "RT-003", "name": "粒高", "nameEn": "Long pips" },
+  { "id": "RT-004", "name": "アンチ", "nameEn": "Anti-spin" },
+  { "id": "RT-005", "name": "一枚", "nameEn": "OX pips" }
+]

@@ -1,0 +1,9 @@
+[
+  { "id": "RS-001", "name": "Completed", "nameJa": "完了" },
+  { "id": "RS-002", "name": "Incomplete", "nameJa": "未完了" },
+  { "id": "RS-003", "name": "Void", "nameJa": "無効" },
+  { "id": "RS-004", "name": "Verified", "nameJa": "確認済み" },
+  { "id": "RS-005", "name": "Transcribed - review", "nameJa": "転記済み - 要確認" },
+  { "id": "RS-006", "name": "Complete", "nameJa": "完了" },
+  { "id": "RS-007", "name": "Draw", "nameJa": "引き分け" }
+]
