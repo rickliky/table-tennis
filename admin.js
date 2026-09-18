@@ -99,15 +99,18 @@
   function showApproverLogin() {
     const loginOverlay = el('div', { className: 'admin-login-overlay' });
     const login = el('section', { className: 'admin-login admin-panel' });
-    login.append(text('p', 'APPROVER SIGN-IN / 承認者ログイン', 'eyebrow'), text('h2', 'Secure access / セキュアアクセス'));
+    login.append(text('p', 'APPROVER SIGN-IN / 承認者ログイン', 'eyebrow'), text('h2', '承認者アクセス'), text('p', '承認待ちの変更を確認・承認できます。管理者権限はありません。', 'admin-login-desc'));
     const form = el('form', { className: 'admin-login-form' });
     const password = el('input', { name: 'password', type: 'password', required: true, autocomplete: 'current-password', placeholder: 'Password / パスワード' });
+    const actions = el('div', { className: 'admin-login-actions' });
     const submit = el('button', { type: 'submit', className: 'admin-button primary', textContent: 'SIGN IN / ログイン' });
     const cancelBtn = el('button', { type: 'button', className: 'admin-button secondary', textContent: 'CANCEL / キャンセル' });
+    actions.append(submit, cancelBtn);
     const status = el('p', { className: 'admin-status', role: 'status' });
-    form.append(password, submit, cancelBtn); login.append(form, status);     loginOverlay.append(login); app.append(loginOverlay);
+    form.append(password, actions); login.append(form, status); loginOverlay.append(login); app.append(loginOverlay);
     loginOverlay.addEventListener('click', e => { if (e.target === loginOverlay) loginOverlay.remove(); });
     cancelBtn.onclick = () => loginOverlay.remove();
+    password.focus();
     form.addEventListener('submit', async event => {
       event.preventDefault(); status.textContent = 'Verifying... / 確認中...';
       try {
@@ -146,10 +149,16 @@
     }
     header.append(brand, nav, headerActions);
     const tabs = el('nav', { className: 'admin-tabs', ariaLabel: 'Data maintenance sections' });
-    tabs.append(tab('matches', 'TRAINING MATCHES / 練習試合'));
-    tabs.append(tab('players', 'PLAYERS / 選手'), tab('clubs', 'CLUBS / クラブ'), tab('externalOpponents', 'EXT. OPPONENTS / 外部選手'), tab('tournaments', 'TOURNAMENTS / 大会'), tab('tournamentMatches', 'TOURNAMENT RESULTS / 大会結果'), tab('tournamentProgress', 'TOURNAMENT PROGRESS / 大会進捗'));
-    tabs.append(tab('pending', 'PENDING CHANGES / 承認待ち'));
-    tabs.append(tab('history', 'HISTORY / 変更履歴'));
+    if (currentRole === 'approver') {
+      tabs.append(tab('pending', 'PENDING CHANGES / 承認待ち'));
+      tabs.append(tab('history', 'HISTORY / 変更履歴'));
+      activeTab = 'pending';
+    } else {
+      tabs.append(tab('matches', 'TRAINING MATCHES / 練習試合'));
+      tabs.append(tab('players', 'PLAYERS / 選手'), tab('clubs', 'CLUBS / クラブ'), tab('externalOpponents', 'EXT. OPPONENTS / 外部選手'), tab('tournaments', 'TOURNAMENTS / 大会'), tab('tournamentMatches', 'TOURNAMENT RESULTS / 大会結果'), tab('tournamentProgress', 'TOURNAMENT PROGRESS / 大会進捗'));
+      tabs.append(tab('pending', 'PENDING CHANGES / 承認待ち'));
+      tabs.append(tab('history', 'HISTORY / 変更履歴'));
+    }
     app.append(header, tabs);
     if (activeTab === 'players') renderPlayers(); else if (activeTab === 'pending') renderPending(); else if (activeTab === 'history') renderHistory(); else if (activeTab === 'matches') renderMatches(); else renderEntity(activeTab);
   }
