@@ -47,6 +47,10 @@ async function main() {
   await push('tournaments', 'tournament', 'tournamentId', tournaments);
   await push('tournamentProgress', 'tournamentProgress', 'tournamentProgressId', progress);
 
+  // Push players
+  const allPlayers = JSON.parse(fs.readFileSync(path.join(root, 'data/players.json'), 'utf8'));
+  await push('players', 'player', 'playerId', allPlayers);
+
   console.log('\nDone. Review pending changes in Data Maintenance page and approve.');
 }
 
