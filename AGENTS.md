@@ -245,13 +245,18 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Until then, user must push manually after agent commits
 
 ### Recent Changes (This Session)
-- Replaced `<datalist>` with `<select>` for rubber dropdowns (iPad Safari fix)
-- Created `data/rubbers.json` with 203 unique rubbers and IDs
-- Consolidated duplicate rubber names (English-only + bilingual) into single canonical bilingual names
-- Updated all 83 player records to use rubber IDs instead of text names
-- Added `rubberIdByName()` backward compat for old Upstash data
-- Added `rubberName()` for displaying rubber names from IDs in admin diffs and player profiles
-- Updated `build-public-data.js` to generate `rubbers.js` and include rubbers in `public-data.json`
-- Added `rubbers.js` script tag to `admin.html` and `player.html`
-- Deployed Worker with latest changes
-- Pushed 28 players with rubber data to Upstash (pending approval)
+- **Major rubber database redesign** — 200 → 171 rubbers
+  - Removed 28 entries: 5 blades (Acoustic, Stratus Power Wood, Strato, Hurricane Long 3, Defplay), 4 fakes (Gray Fondarga, Quantix Speed, friendship 729, Acoustic Anti), 19 OX entries
+  - Merged 1 duplicate: RB-0156 → RB-0155 (Tibhar Grass D.TecS)
+  - Reclassified 6 rubbers: Impartial XB/XS/Bugller → SHORT_PIPS, VO>102 → SHORT_PIPS, C-8 → LONG_PIPS, 802-40 → SHORT_PIPS
+  - Converted all types to English enums: INVERTED, SHORT_PIPS, LONG_PIPS, ANTI (removed 一枚/OU type)
+  - Normalized brand names (STIGA→Stiga, TIBHAR→Tibhar, XIOM→Xiom, etc.)
+  - Fixed typo: Tibhar Genuis → Genius
+  - Created `scripts/rebuild-rubbers.js` for direct Upstash rebuild
+  - Created `scripts/convert-player-types.js` for player type migration
+- **Worker updates**: Added `/api/bulk-rubbers` endpoint, fixed rubber validation in `validation.js`
+- **Frontend fixes**: Added `rubberName()` to `app.js` (was showing raw RB-xxxx IDs), updated `lookups.js` and `static/rubber-types.json` to new 4-type model
+- **Player data**: Converted 28 players' rubber types from Japanese to English enums
+- **Upstash secrets**: Stored as env vars now available via `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (extracted via temp Worker endpoint)
+- All data pushed to both UAT and Prod
+- 4 rubbers flagged for REVIEW: RB-0001 (Zyre 03), RB-0114 (Flexair), RB-0131 (Xiom H3), RB-0163 (Palio Hexer)

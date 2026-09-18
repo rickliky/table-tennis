@@ -49,29 +49,24 @@ window.LK_STATIC = {
   ],
   "rubberTypes": [
     {
-      "id": "RT-001",
-      "name": "裏ソフト",
+      "id": "INVERTED",
+      "name": "裏ソフト / Inverted",
       "nameEn": "Inverted"
     },
     {
-      "id": "RT-002",
-      "name": "表ソフト",
+      "id": "SHORT_PIPS",
+      "name": "表ソフト / Short pips",
       "nameEn": "Short pips"
     },
     {
-      "id": "RT-003",
-      "name": "粒高",
+      "id": "LONG_PIPS",
+      "name": "粒高 / Long pips",
       "nameEn": "Long pips"
     },
     {
-      "id": "RT-004",
-      "name": "アンチ",
+      "id": "ANTI",
+      "name": "アンチ / Anti",
       "nameEn": "Anti-spin"
-    },
-    {
-      "id": "RT-005",
-      "name": "一枚",
-      "nameEn": "OX pips"
     }
   ],
   "schoolLevels": [

@@ -1,8 +1,8 @@
 const lookupTables = new Set(['gender', 'category', 'playingHand', 'grip', 'playingStyle', 'rubberType', 'playerStatus', 'matchFormat', 'matchStatus', 'tournamentWinner']);
 
-export function validateEntity(entityType, record, data, targetId = record?.[({ club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId' }[entityType])]) {
+export function validateEntity(entityType, record, data, targetId = record?.[({ club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId' }[entityType])]) {
   if (!record || typeof record !== 'object') throw new Error('Record is required');
-  const idField = { club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId' }[entityType];
+  const idField = { club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId' }[entityType];
   if (!idField || !record[idField]) throw new Error('A valid record ID is required');
   if (record[idField] !== targetId) throw new Error('Target ID does not match record ID');
   if (entityType === 'match') {

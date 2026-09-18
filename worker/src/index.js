@@ -81,6 +81,16 @@ export default { async fetch(request, env) {
         return { ok: true };
       }));
     }
+    if (url.pathname === '/api/bulk-rubbers' && request.method === 'POST') {
+      const actor = await session(request, env);
+      if (actor.role !== 'admin' && actor.role !== 'approver') throw new Error('Admin or approver role required');
+      const body = await request.json();
+      const { rubbers, environment: envParam } = body;
+      if (!Array.isArray(rubbers) || rubbers.length === 0) throw new Error('rubbers array is required');
+      const targetEnv = validateEnvironment(envParam || url.searchParams.get('environment') || 'prod');
+      await repo.write(targetEnv, 'rubbers', rubbers);
+      return json({ ok: true, count: rubbers.length, environment: targetEnv });
+    }
     throw new Error('Not found');
   } catch (error) { const status = error.message === 'Authentication required' ? 401 : 400; return new Response(JSON.stringify({ ok: false, error: error.message }), { status, headers: JSON_HEADERS }); }
 } };
