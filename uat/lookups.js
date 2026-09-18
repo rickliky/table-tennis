@@ -12,7 +12,7 @@
     playingHand: [['右', '右', 'Right'], ['左', '左', 'Left']],
     grip: [['シェークハンド / Shakehand', 'シェークハンド', 'Shakehand'], ['ペンホルダー / Penhold', 'ペンホルダー', 'Penhold']],
     playingStyle: [['ドライブ攻撃型 / Topspin attacker', 'ドライブ攻撃型', 'Topspin attacker']],
-    rubberType: [['裏ソフト', '裏ソフト', 'Inverted'], ['表ソフト', '表ソフト', 'Short pips'], ['粒高', '粒高', 'Long pips'], ['アンチ', 'アンチ', 'Anti'], ['一枚', '一枚 / OX', 'OX pips']],
+    rubberType: [['INVERTED', '裏ソフト / Inverted', 'Inverted'], ['SHORT_PIPS', '表ソフト / Short pips', 'Short pips'], ['LONG_PIPS', '粒高 / Long pips', 'Long pips'], ['ANTI', 'アンチ / Anti', 'Anti']],
     playerStatus: [['Active', '有効', 'Active'], ['Inactive', '無効', 'Inactive']],
     matchFormat: [['Singles', 'シングルス', 'Singles'], ['Doubles', 'ダブルス', 'Doubles']],
     matchStatus: [['Completed', '完了', 'Completed'], ['Incomplete', '未完了', 'Incomplete'], ['Void', '無効', 'Void'], ['Transcribed - review', '要確認', 'Transcribed - review']],
