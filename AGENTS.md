@@ -178,3 +178,59 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - `Code.gs` `submitEquipmentSurvey_` validates rubber types as `['裏ソフト','表ソフト','粒高','アンチ']` but the survey form also offers `一枚 / OX pips` — OX submissions would be rejected server-side
 - `admin.js` is client-side only — data must be manually exported and committed
 - No error boundaries — a single JS error can break the entire page render
+
+---
+
+## Session Context
+
+### Data Rules (CRITICAL)
+- **Upstash is the golden source of truth** — never load from local `data/*.json` in the browser
+- Local `data/*.json` files are only used by `build-public-data.js` to generate fallback `public-data.json` and `rubbers.js`
+- Always push data changes to Upstash via Worker API (`/api/change`) after modifying local data files
+- Always commit and push code changes to git so the other PC can pick them up
+- When the agent modifies data, it should push to Upstash AND commit to git, then tell the user to push
+
+### Rubber System (Implemented)
+- `data/rubbers.json` — 203 unique rubbers with IDs (`RB-0001` etc.), bilingual canonical names, type, brand
+- `rubbers.js` — Generated globals: `RUBBER_DB` (by type), `RUBBERS` (all), `RUBBER_NAME_TO_ID`
+- Player data stores rubber IDs (e.g., `RB-0002`), not free-text names
+- Admin editor uses `<select>` dropdowns (not `<datalist>`) — works on iPad Safari
+- `rubberIdByName()` helper resolves old text names from Upstash to IDs for backward compatibility
+- `rubberName()` helper resolves IDs to display names in admin diffs and player profiles
+- Build script generates `rubbers.js` from `data/rubbers.json`
+- All pages load `rubbers.js` via `<script>` tag for rubber lookup globals
+
+### Rubber Data Flow
+1. `data/rubbers.json` (source, git-tracked)
+2. `build-public-data.js` → generates `rubbers.js` + includes rubbers in `public-data.json`
+3. `rubbers.js` loaded as `<script>` → sets `window.RUBBER_DB`, `window.RUBBERS`, `window.RUBBER_NAME_TO_ID`
+4. `admin.js` and `player.js` use these globals for rubber selects and name resolution
+
+### Admin Data Loading
+- Admin page loads ALL data from Upstash via `loadPublicData()` → Worker `/api/public-data`
+- Worker supports entity types: `clubs`, `players`, `matches`, `externalOpponents`, `tournaments`, `tournamentMatches`, `tournamentProgress`
+- Training matches entity type (`trainingMatch`) is NOT supported by the Worker — cannot push via migration script
+- Pending changes require approver login to accept; reject is public
+
+### Migration Script
+- `scripts/migrate-to-upstash.js` — pushes local `data/*.json` to Upstash via Worker API
+- Supports: clubs, external opponents, tournaments, tournament progress, players
+- Does NOT support training matches (Worker entity type not registered)
+- Each push creates a pending change that must be approved in the Data Maintenance page
+
+### SSH Not Configured
+- `git push` hangs on credential prompt — user must set up SSH keys
+- Run: `git remote set-url origin git@github.com:rickliky/table-tennis.git`
+- Until then, user must push manually after agent commits
+
+### Recent Changes (This Session)
+- Replaced `<datalist>` with `<select>` for rubber dropdowns (iPad Safari fix)
+- Created `data/rubbers.json` with 203 unique rubbers and IDs
+- Consolidated duplicate rubber names (English-only + bilingual) into single canonical bilingual names
+- Updated all 83 player records to use rubber IDs instead of text names
+- Added `rubberIdByName()` backward compat for old Upstash data
+- Added `rubberName()` for displaying rubber names from IDs in admin diffs and player profiles
+- Updated `build-public-data.js` to generate `rubbers.js` and include rubbers in `public-data.json`
+- Added `rubbers.js` script tag to `admin.html` and `player.html`
+- Deployed Worker with latest changes
+- Pushed 28 players with rubber data to Upstash (pending approval)
