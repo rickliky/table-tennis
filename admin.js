@@ -9,7 +9,7 @@
   const playingHandOpts = opt(S.playingHands || []);
   const gripOpts = opt(S.grips || []);
   const playingStyleOpts = opt(S.playingStyles || []);
-  const rubberTypeOpts = opt(S.rubberTypes || []);
+  const rubberTypeOpts = [{ id: '', name: '' }, ...(S.rubberTypes || []).map(rt => ({ id: rt.id, name: rt.name }))];
   const statusOpts = opt(S.statuses || [], false);
   const gradeOpts = opt(S.grades || []);
   const roundOpts = opt(S.tournamentRounds || []);
@@ -233,7 +233,7 @@
       renderRecordHistory('match', match.matchId).then(history => { if (history.childNodes.length) editor.append(history); });
     }
   }
-  function select(name, options, value) { const node = el('select', { name }); options.forEach(option => node.append(el('option', { value: option, textContent: option }))); node.value = value; return node; }
+  function select(name, options, value) { const node = el('select', { name }); options.forEach(option => { const val = typeof option === 'object' ? option.id : option; const txt = typeof option === 'object' ? (option.name || option.id) : option; node.append(el('option', { value: val, textContent: txt })); }); node.value = value; return node; }
   function playerSelect(name, value) {
     const activePlayers = players.filter(p => p.status === 'Active').sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja'));
     const clubName = cid => { const c = (entityData.clubs || []).find(cl => cl.clubId === cid); return c ? (c.nameJa || c.name || '') : ''; };
@@ -469,7 +469,7 @@
       } else if (key === 'forehandRubber' || key === 'backhandRubber') {
         const typeKey = key === 'forehandRubber' ? 'forehandRubberType' : 'backhandRubberType';
         const currentType = record?.[typeKey] || '';
-        const rubbers = (window.RUBBER_DB || {})[currentType] || [];
+        const rubbers = currentType ? ((window.RUBBER_DB || {})[currentType] || []) : (window.RUBBERS || []);
         const rubberSelect = el('select', { name: key });
         rubberSelect.append(el('option', { value: '', textContent: '' }));
         rubbers.forEach(r => rubberSelect.append(el('option', { value: r.rubberId, textContent: r.name })));
