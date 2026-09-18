@@ -260,3 +260,10 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - **Upstash secrets**: Stored as env vars now available via `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (extracted via temp Worker endpoint)
 - All data pushed to both UAT and Prod
 - 4 rubbers flagged for REVIEW: RB-0001 (Zyre 03), RB-0114 (Flexair), RB-0131 (Xiom H3), RB-0163 (Palio Hexer)
+- **Admin UI fixes**: 
+  - Fixed rubber type dropdown (was empty — `opt()` used `x.name` instead of `x.id` for option values)
+  - `select()` now handles object options with `{id, name}` for bilingual labels
+  - Entity editor rubber dropdown now falls back to all rubbers when type is empty
+  - Approver role now only sees "PENDING CHANGES" and "HISTORY" tabs (not all tabs)
+  - Approver login overlay redesigned: vertical layout, larger inputs, description text, backdrop blur
+  - LK-0086 rubber reference fixed (RB-0156 → RB-0155 after merge)
