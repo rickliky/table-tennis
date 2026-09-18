@@ -349,16 +349,19 @@
     const dropdown = el('div', { className: 'player-combobox-dropdown' });
     dropdown.style.display = 'none';
     let highlighted = -1;
+    let originalValue = value || '';
+    let originalLabel = selected ? playerLabel(selected) : '';
+    let justSelected = false;
     const renderDropdown = (query) => {
       dropdown.replaceChildren();
       const q = (query || '').toLowerCase();
       const matches = q ? activePlayers.filter(p => {
         const hay = `${p.displayName} ${p.englishName || ''} ${p.playerId} ${clubName(p.clubId)}`.toLowerCase();
         return hay.includes(q);
-      }) : activePlayers.slice(0, 20);
+      }) : activePlayers;
       if (!matches.length) { dropdown.style.display = 'none'; return; }
       highlighted = -1;
-      matches.forEach((p, i) => {
+      matches.forEach((p) => {
         const item = el('div', { className: 'player-combobox-item' });
         const nameSpan = el('span', { className: 'player-combobox-name' });
         nameSpan.textContent = p.displayName;
@@ -370,25 +373,42 @@
           e.preventDefault();
           hidden.value = p.playerId;
           input.value = playerLabel(p);
+          originalValue = p.playerId;
+          originalLabel = playerLabel(p);
+          justSelected = true;
           dropdown.style.display = 'none';
         });
         dropdown.append(item);
       });
       dropdown.style.display = '';
     };
-    input.addEventListener('input', () => { renderDropdown(input.value); hidden.value = ''; });
-    input.addEventListener('focus', () => { renderDropdown(input.value); });
-    input.addEventListener('blur', () => { setTimeout(() => { dropdown.style.display = 'none'; }, 150); });
+    const restoreOriginal = () => {
+      hidden.value = originalValue;
+      input.value = originalLabel;
+      dropdown.style.display = 'none';
+    };
+    input.addEventListener('input', () => { justSelected = false; renderDropdown(input.value); hidden.value = ''; });
+    input.addEventListener('focus', () => {
+      justSelected = false;
+      input.select();
+      renderDropdown('');
+    });
+    input.addEventListener('blur', () => {
+      setTimeout(() => {
+        if (!justSelected && hidden.value !== originalValue) restoreOriginal();
+        dropdown.style.display = 'none';
+      }, 150);
+    });
     input.addEventListener('keydown', (e) => {
       const items = dropdown.querySelectorAll('.player-combobox-item');
-      if (e.key === 'ArrowDown') { e.preventDefault(); highlighted = Math.min(highlighted + 1, items.length - 1); items.forEach((it, i) => it.classList.toggle('highlighted', i === highlighted)); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); highlighted = Math.max(highlighted - 1, 0); items.forEach((it, i) => it.classList.toggle('highlighted', i === highlighted)); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); highlighted = Math.min(highlighted + 1, items.length - 1); items.forEach((it, i) => it.classList.toggle('highlighted', i === highlighted)); if (items[highlighted]) items[highlighted].scrollIntoView({ block: 'nearest' }); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); highlighted = Math.max(highlighted - 1, 0); items.forEach((it, i) => it.classList.toggle('highlighted', i === highlighted)); if (items[highlighted]) items[highlighted].scrollIntoView({ block: 'nearest' }); }
       else if (e.key === 'Enter' && highlighted >= 0 && items[highlighted]) { e.preventDefault(); items[highlighted].dispatchEvent(new Event('mousedown')); }
-      else if (e.key === 'Escape') { dropdown.style.display = 'none'; }
+      else if (e.key === 'Escape') { restoreOriginal(); input.blur(); }
     });
     const wrapper = el('span', { className: 'player-combobox-wrapper' });
     wrapper.append(hidden, input, dropdown);
-    Object.defineProperty(wrapper, 'value', { get() { return hidden.value; }, set(v) { hidden.value = v; const p = activePlayers.find(pl => pl.playerId === v); input.value = p ? playerLabel(p) : ''; } });
+    Object.defineProperty(wrapper, 'value', { get() { return hidden.value; }, set(v) { hidden.value = v; originalValue = v; const p = activePlayers.find(pl => pl.playerId === v); originalLabel = p ? playerLabel(p) : ''; input.value = originalLabel; } });
     Object.defineProperty(wrapper, 'onchange', { set(fn) { input.onchange = fn; }, get() { return input.onchange; } });
     Object.defineProperty(wrapper, 'disabled', { set(v) { input.disabled = v; }, get() { return input.disabled; } });
     return wrapper;
