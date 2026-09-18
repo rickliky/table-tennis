@@ -344,7 +344,21 @@
     const allPlayers = isExtTab
       ? (entityData.externalOpponents || []).map(p => ({ ...p, _entityType: 'externalOpponent' }))
       : players.map(p => ({ ...p, _entityType: 'player' }));
-    const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); allPlayers.filter(player => `${player.playerId || player.externalOpponentId || ''} ${player.displayName} ${player.englishName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query)).sort((a, b) => (a.playerId || a.externalOpponentId || '').localeCompare(b.playerId || b.externalOpponentId || '')).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${(player.playerId || player.externalOpponentId) === selectedId ? ' selected' : ''}` }); const names = el('span'); const gradeTag = player.grade ? ` · ${player.grade}` : ''; const id = player.playerId || player.externalOpponentId; names.append(text('b', player.displayName || 'No display name'), text('small', `${id} · ${player.englishName || '-'}${gradeTag}`)); row.append(names, text('i', player.status || 'Active')); row.onclick = () => { selectedId = id; updateList(); showPlayerEditor(player); }; list.append(row); }); };
+    // Calculate match stats for each player
+    const stats = {};
+    allPlayers.forEach(p => { const id = p.playerId || p.externalOpponentId; stats[id] = { played: 0, wins: 0, losses: 0 }; });
+    (trainingMatches || []).forEach(m => {
+      if (m.resultStatus && m.resultStatus !== 'Completed' && m.resultStatus !== '完了') return;
+      const s1 = stats[m.player1Id]; const s2 = stats[m.player2Id];
+      if (s1) s1.played++;
+      if (s2) s2.played++;
+      if (m.winnerId) {
+        if (stats[m.winnerId]) stats[m.winnerId].wins++;
+        const loserId = m.winnerId === m.player1Id ? m.player2Id : m.player1Id;
+        if (stats[loserId]) stats[loserId].losses++;
+      }
+    });
+    const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); allPlayers.filter(player => `${player.playerId || player.externalOpponentId || ''} ${player.displayName} ${player.englishName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query)).sort((a, b) => { const idA = a.playerId || a.externalOpponentId; const idB = b.playerId || b.externalOpponentId; return (stats[idB]?.played || 0) - (stats[idA]?.played || 0) || idA.localeCompare(idB); }).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${(player.playerId || player.externalOpponentId) === selectedId ? ' selected' : ''}` }); const names = el('span'); const id = player.playerId || player.externalOpponentId; const gradeTag = player.grade ? ` · ${player.grade}` : ''; const s = stats[id] || { played: 0, wins: 0, losses: 0 }; const statsTag = s.played > 0 ? ` · ${s.played}G ${s.wins}W ${s.losses}L` : ''; names.append(text('b', player.displayName || 'No display name'), text('small', `${id} · ${player.englishName || '-'}${gradeTag}${statsTag}`)); row.append(names, text('i', player.status || 'Active')); row.onclick = () => { selectedId = id; updateList(); showPlayerEditor(player); }; list.append(row); }); };
     search.oninput = updateList; window.adminPlayerListUpdate = updateList; updateList(); showPlayerEditor(allPlayers[0] || null);
   }
   function showPlayerEditor(player) {
