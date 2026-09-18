@@ -83,6 +83,7 @@
   let trainingMatches = [];
   let entityData = {};
   let pendingChanges = [];
+  let allPlayersList = [];
   let currentRole = '';
   let activeTab = 'matches';
   let selectedId = '';
@@ -341,9 +342,10 @@
     listPanel.append(listHeader, addBtn);
     if (rolloverBtn) listPanel.append(rolloverBtn);
     const list = el('div', { className: 'admin-player-list' }); listPanel.append(list); const editor = el('section', { className: 'admin-panel admin-editor-panel' }); workspace.append(listPanel, editor); app.append(workspace);
-    const allPlayers = isExtTab
+    allPlayersList = isExtTab
       ? (entityData.externalOpponents || []).map(p => ({ ...p, _entityType: 'externalOpponent' }))
       : players.map(p => ({ ...p, _entityType: 'player' }));
+    const allPlayers = allPlayersList;
     // Calculate match stats for each player
     const stats = {};
     allPlayers.forEach(p => { const id = p.playerId || p.externalOpponentId; stats[id] = { played: 0, wins: 0, losses: 0 }; });
@@ -473,7 +475,17 @@
         if (!next.gradeHistory) next.gradeHistory = record.gradeHistory || [];
         next.gradeHistory = [...next.gradeHistory, { date: new Date().toISOString().slice(0, 10), schoolLevel: record.schoolLevel || '', grade: record.grade || '' }];
       }
-      submitChange(submitEntityType, submitId, next, player ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
+      submitChange(submitEntityType, submitId, next, player ? 'update' : 'create').then(async () => {
+        await loadWorkspace();
+        // Stay on the same player after submit
+        const stayId = submitId;
+        if (stayId && window.adminPlayerListUpdate) {
+          selectedId = stayId;
+          window.adminPlayerListUpdate();
+          const refreshed = allPlayersList.find(p => (p.playerId || p.externalOpponentId) === stayId);
+          if (refreshed) showPlayerEditor(refreshed);
+        }
+      }).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
     };
     editor.append(form);
     if (player) {
