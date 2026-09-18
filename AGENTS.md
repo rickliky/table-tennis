@@ -7,6 +7,13 @@
 - When work is complete, commit the intended files and run `git push` so the other PC can pick up the changes.
 - Do not overwrite, revert, or discard work that originated on the other PC without approval.
 
+## Agent Self-Rule
+
+At the end of every conversation (or at natural stopping points), the agent MUST:
+1. Update the "Session Context" section of this file with key decisions, new rules, and current status
+2. Commit this file so the other PC can pick up the context
+3. Remind the user to `git push` if SSH is not configured
+
 ---
 
 # Project: Little Kings Table Tennis
