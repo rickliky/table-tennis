@@ -1,4 +1,4 @@
 [
-  { "id": "PH-001", "name": "右", "nameEn": "Right" },
-  { "id": "PH-002", "name": "左", "nameEn": "Left" }
+  { "id": "PH-001", "name": "右", "nameJa": "右", "nameEn": "Right" },
+  { "id": "PH-002", "name": "左", "nameJa": "左", "nameEn": "Left" }
 ]

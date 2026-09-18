@@ -5,6 +5,8 @@
   let language = localStorage.getItem('lk-language') || 'ja';
   const S = window.LK_STATIC || {};
   const bilingual = item => {
+    // If name already contains " / " it's pre-bilingual (e.g. "ドライブ攻撃型 / Topspin attacker")
+    if (item.name && item.name.includes(' / ')) return item.name;
     if (item.nameJa && item.nameEn) return `${item.nameJa} / ${item.nameEn}`;
     if (item.nameJa) return item.nameJa;
     if (item.nameEn) return item.nameEn;
