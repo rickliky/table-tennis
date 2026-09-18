@@ -345,26 +345,52 @@
     const playerLabel = p => { const parts = [p.displayName]; if (p.englishName) parts.push(p.englishName); parts.push(p.playerId); const cn = clubName(p.clubId); if (cn) parts.push(cn); return parts.join(' · '); };
     const selected = activePlayers.find(p => p.playerId === value);
     const hidden = el('input', { name, type: 'hidden', value: value || '' });
-    const listId = `${name}-list`;
-    const input = el('input', { type: 'text', className: 'player-combobox-input', value: selected ? playerLabel(selected) : '', autocomplete: 'off', placeholder: '選手名・ID・クラブ名で検索 / Search name, ID, or club' });
-    input.setAttribute('list', listId);
-    const datalist = el('datalist', { id: listId });
-    activePlayers.forEach(p => datalist.append(el('option', { value: playerLabel(p) })));
-    input.append(datalist);
-    const syncHidden = () => {
-      const q = input.value.toLowerCase();
-      const match = activePlayers.find(p => playerLabel(p) === input.value) || activePlayers.find(p => `${p.displayName} (${p.playerId})` === input.value) || activePlayers.find(p => p.playerId.toLowerCase() === q) || activePlayers.find(p => (p.displayName || '').toLowerCase() === q) || activePlayers.find(p => (p.englishName || '').toLowerCase() === q);
-      hidden.value = match ? match.playerId : '';
+    const input = el('input', { type: 'text', className: 'player-combobox-input', value: selected ? playerLabel(selected) : '', autocomplete: 'off', placeholder: '選手名で検索 / Type to search players...' });
+    const dropdown = el('div', { className: 'player-combobox-dropdown' });
+    dropdown.style.display = 'none';
+    let highlighted = -1;
+    const renderDropdown = (query) => {
+      dropdown.replaceChildren();
+      const q = (query || '').toLowerCase();
+      const matches = q ? activePlayers.filter(p => {
+        const hay = `${p.displayName} ${p.englishName || ''} ${p.playerId} ${clubName(p.clubId)}`.toLowerCase();
+        return hay.includes(q);
+      }) : activePlayers.slice(0, 20);
+      if (!matches.length) { dropdown.style.display = 'none'; return; }
+      highlighted = -1;
+      matches.forEach((p, i) => {
+        const item = el('div', { className: 'player-combobox-item' });
+        const nameSpan = el('span', { className: 'player-combobox-name' });
+        nameSpan.textContent = p.displayName;
+        if (p.englishName) nameSpan.append(el('small', { textContent: ` ${p.englishName}` }));
+        const idSpan = el('span', { className: 'player-combobox-id' });
+        idSpan.textContent = p.playerId;
+        item.append(nameSpan, idSpan);
+        item.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          hidden.value = p.playerId;
+          input.value = playerLabel(p);
+          dropdown.style.display = 'none';
+        });
+        dropdown.append(item);
+      });
+      dropdown.style.display = '';
     };
-    input.addEventListener('input', syncHidden);
-    input.addEventListener('change', syncHidden);
+    input.addEventListener('input', () => { renderDropdown(input.value); hidden.value = ''; });
+    input.addEventListener('focus', () => { renderDropdown(input.value); });
+    input.addEventListener('blur', () => { setTimeout(() => { dropdown.style.display = 'none'; }, 150); });
+    input.addEventListener('keydown', (e) => {
+      const items = dropdown.querySelectorAll('.player-combobox-item');
+      if (e.key === 'ArrowDown') { e.preventDefault(); highlighted = Math.min(highlighted + 1, items.length - 1); items.forEach((it, i) => it.classList.toggle('highlighted', i === highlighted)); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); highlighted = Math.max(highlighted - 1, 0); items.forEach((it, i) => it.classList.toggle('highlighted', i === highlighted)); }
+      else if (e.key === 'Enter' && highlighted >= 0 && items[highlighted]) { e.preventDefault(); items[highlighted].dispatchEvent(new Event('mousedown')); }
+      else if (e.key === 'Escape') { dropdown.style.display = 'none'; }
+    });
     const wrapper = el('span', { className: 'player-combobox-wrapper' });
-    wrapper.style.display = 'contents';
-    wrapper.append(hidden, input, datalist);
+    wrapper.append(hidden, input, dropdown);
     Object.defineProperty(wrapper, 'value', { get() { return hidden.value; }, set(v) { hidden.value = v; const p = activePlayers.find(pl => pl.playerId === v); input.value = p ? playerLabel(p) : ''; } });
     Object.defineProperty(wrapper, 'onchange', { set(fn) { input.onchange = fn; }, get() { return input.onchange; } });
     Object.defineProperty(wrapper, 'disabled', { set(v) { input.disabled = v; }, get() { return input.disabled; } });
-    Object.defineProperty(wrapper, 'required', { set(v) { hidden.required = v; }, get() { return hidden.required; } });
     return wrapper;
   }
   function newMatch() { return { matchDate: new Date().toISOString().slice(0, 10), event: 'Club Training', division: '', format: 'Singles', player1Id: '', player1Name: '', player1Sets: 0, player2Id: '', player2Name: '', player2Sets: 0, winnerId: '', winnerName: '', score: '0-0', resultStatus: 'Completed' }; }
