@@ -33,13 +33,13 @@ Investigate difficult bugs by tracing root causes. Do not apply superficial fixe
 ## Project Context
 
 - Static bilingual (JA/EN) site for a table tennis club
-- Data source: `public-data.json` (540KB, 83 players, 1507 matches)
+- Data source: Upstash Redis via Worker API (`/api/public-data`)
 - Key files: `app.js` (main page), `player.js` (profile page), `styles.css` (all styling)
-- Data loading: `fetch('./public-data.json')` then `render()` — no framework, no state management
+- Data loading: `LKData.loadPublicData()` → Worker API → Upstash Redis
 - Charts: Chart.js 4.4.8 with custom `valueLabels` plugin
 - Bilingual: `words.en` / `words.ja` objects, `language` variable, `t(key)` function
-- Password gate: `access-gate.js` with 7-day localStorage TTL
-- Admin (uat only): `admin.js` with client-side CRUD + manual JSON export
+- Password gate: `access-gate.js` with Worker auth
+- Admin (uat only): `admin.js` with Worker API CRUD + approval workflow
 
 ## Common Bug Patterns in This Codebase
 

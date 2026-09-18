@@ -1,0 +1,99 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "instructions": ["AGENTS.md"],
+
+  "compaction": {
+    "auto": true,
+    "tail_turns": 15
+  },
+
+  "provider": {
+    "google": {
+      "npm": "@ai-sdk/google",
+      "name": "Google Gemini",
+      "options": {
+        "apiKey": "{env:GOOGLE_API_KEY}"
+      },
+      "models": {
+        "gemini-3.8-flash": {
+          "name": "Gemini 3.8 Flash",
+          "limit": { "context": 1048576, "output": 65536 }
+        },
+        "gemini-3.5-flash-lite": {
+          "name": "Gemini 3.5 Flash Lite",
+          "limit": { "context": 1048576, "output": 65536 }
+        }
+      }
+    }
+  },
+
+  "agent": {
+    "build": {
+      "mode": "primary",
+      "model": "google/gemini-3.8-flash",
+      "description": "DEFAULT: everyday development — features, refactoring, docs, UI work, bug fixes. Escalates to reviewer after edits in critical areas.",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow"
+      }
+    },
+    "plan": {
+      "mode": "primary",
+      "model": "google/gemini-3.5-flash-lite",
+      "description": "Read-only planning and analysis using the lightweight model.",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny"
+      }
+    },
+    "gemini-flash": {
+      "description": "Best coding quality — use for complex multi-file work, tricky bugs, security-sensitive changes.",
+      "mode": "primary",
+      "model": "google/gemini-3.8-flash",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow"
+      }
+    },
+    "gemini-lite": {
+      "description": "High volume lightweight tasks — exploration, drafts, rough planning.",
+      "mode": "primary",
+      "model": "google/gemini-3.5-flash-lite",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow"
+      }
+    }
+  },
+
+  "permission": {
+    "read": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "list": "allow",
+    "edit": "ask",
+    "bash": {
+      "git status": "allow",
+      "git diff": "allow",
+      "git log": "allow",
+      "git branch": "allow",
+      "git show": "allow",
+      "git pull": "allow",
+      "git stash": "allow",
+      "git stash list": "allow",
+      "git remote -v": "allow",
+      "node": "ask",
+      "npm": "ask",
+      "npx": "ask",
+      "curl": "ask",
+      "*": "ask"
+    },
+    "task": "allow",
+    "todowrite": "allow",
+    "question": "allow",
+    "webfetch": "allow",
+    "websearch": "allow",
+    "external_directory": "deny"
+  }
+}

@@ -15,7 +15,7 @@ if (!url || !token) {
   process.exit(1);
 }
 const data = JSON.parse(fs.readFileSync(path.resolve(file), 'utf8').replace(/^\uFEFF/, ''));
-const collections = { clubs: data.clubs, players: data.players, matches: data.matches, 'external-opponents': data.externalOpponents, tournaments: data.tournaments, 'tournament-matches': data.tournamentMatches };
+const collections = { clubs: data.clubs, players: data.players, matches: data.matches, 'external-opponents': data.externalOpponents, tournaments: data.tournaments, 'tournament-matches': data.tournamentMatches, rubbers: data.rubbers };
 (async () => {
   for (const [name, value] of Object.entries(collections)) {
     const key = `${environment}:${name}`;

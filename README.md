@@ -1,7 +1,8 @@
 # Little Kings Table Tennis
 
-Static bilingual club statistics site powered by repository-managed data.
+Static bilingual club statistics site powered by Upstash Redis via Cloudflare Worker API.
 
-Source data lives in `data/`. Run `node scripts/build-public-data.js` after changing it to regenerate `public-data.json` for the static site.
+**Golden source**: Upstash Redis (`https://little-kings-api.little-kings.workers.dev`)
+**Data flow**: Browser → Worker API → Upstash Redis
 
 Deploy this repository with GitHub Pages from the `main` branch and `/ (root)` folder.
