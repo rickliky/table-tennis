@@ -264,4 +264,4 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
   - Approver role now only sees "PENDING CHANGES" and "HISTORY" tabs (not all tabs)
   - Approver login overlay redesigned: vertical layout, larger inputs, description text, backdrop blur
   - LK-0086 rubber reference fixed (RB-0156 → RB-0155 after merge)
-- **Player/External player merge**: NOT YET DONE — plan is to use one editor with clubId distinguishing Little Kings (CLUB-0001) from external opponents
+- **Player/External player merge**: DONE — one "PLAYERS" tab shows both Little Kings players and external opponents, distinguished by clubId and "EXT" badge. Same editor handles both entity types.
