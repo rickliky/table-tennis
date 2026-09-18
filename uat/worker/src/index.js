@@ -4,9 +4,9 @@ import { repository } from './repository.js';
 import { validateEntity, validateEnvironment } from './validation.js';
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
-const types = ['clubs', 'players', 'matches', 'external-opponents', 'tournaments', 'tournament-matches', 'tournament-progress', 'pending-changes'];
-const singular = type => ({ clubs: 'club', players: 'player', matches: 'match', 'external-opponents': 'externalOpponent', tournaments: 'tournament', 'tournament-matches': 'tournamentMatch', 'tournament-progress': 'tournamentProgress' }[type]);
-const collectionFor = entityType => ({ club: 'clubs', player: 'players', match: 'matches', externalOpponent: 'external-opponents', tournament: 'tournaments', tournamentMatch: 'tournament-matches', tournamentProgress: 'tournament-progress' }[entityType]);
+const types = ['clubs', 'players', 'matches', 'external-opponents', 'tournaments', 'tournament-matches', 'tournament-progress', 'rubbers', 'pending-changes'];
+const singular = type => ({ clubs: 'club', players: 'player', matches: 'match', 'external-opponents': 'externalOpponent', tournaments: 'tournament', 'tournament-matches': 'tournamentMatch', 'tournament-progress': 'tournamentProgress', rubbers: 'rubber' }[type]);
+const collectionFor = entityType => ({ club: 'clubs', player: 'players', match: 'matches', externalOpponent: 'external-opponents', tournament: 'tournaments', tournamentMatch: 'tournament-matches', tournamentProgress: 'tournament-progress', rubber: 'rubbers' }[entityType]);
 
 const CORS_HEADERS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' };
 const JSON_HEADERS = { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' };
@@ -30,15 +30,15 @@ export default { async fetch(request, env) {
     const url = new URL(request.url); const repo = repository(env); const environment = validateEnvironment(url.searchParams.get('environment') || 'prod');
     if (url.pathname === '/api/login' && request.method === 'POST') { const body = await request.json(); const role = body.role || 'site'; return json({ ok: true, token: await login(role, body.password, env), role }); }
     if (url.pathname === '/api/public-data' && request.method === 'GET') {
-      const values = await Promise.all(types.slice(0, 7).map(type => repo.read(environment, type)));
-      return json({ ok: true, club: values[0][0] || null, clubs: values[0], players: values[1], matches: values[2], externalOpponents: values[3], tournaments: values[4], tournamentMatches: values[5], tournamentProgress: values[6], lastUpdated: new Date().toISOString() });
+      const values = await Promise.all(types.slice(0, 8).map(type => repo.read(environment, type)));
+      return json({ ok: true, club: values[0][0] || null, clubs: values[0], players: values[1], matches: values[2], externalOpponents: values[3], tournaments: values[4], tournamentMatches: values[5], tournamentProgress: values[6], rubbers: values[7], lastUpdated: new Date().toISOString() });
     }
     if (url.pathname === '/api/pending' && request.method === 'GET') return json({ ok: true, changes: await repo.read(environment, 'pending-changes') });
     if (url.pathname === '/api/change' && request.method === 'POST') {
-      const body = await request.json(); const records = {}; for (const type of types.slice(0, 7)) records[type] = await repo.read(environment, type);
+      const body = await request.json(); const records = {}; for (const type of types.slice(0, 8)) records[type] = await repo.read(environment, type);
       const collection = collectionFor(body.entityType); if (!collection) throw new Error('Unsupported entity type');
       if (body.action !== 'delete') validateEntity(body.entityType, body.after, { players: records.players, tournaments: records.tournaments, externalOpponents: records['external-opponents'] }, body.targetId);
-      const idField = { club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId' }[body.entityType];
+      const idField = { club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId' }[body.entityType];
       const before = records[collection].find(item => item[idField] === body.targetId) || null;
       if (!before && body.action === 'delete') throw new Error('Record not found');
       const mergedAfter = (body.action !== 'delete' && before && body.after) ? { ...before, ...body.after } : body.after;
@@ -72,7 +72,7 @@ export default { async fetch(request, env) {
         if (!change) throw new Error('Pending change not found');
         const collection = collectionFor(change.entityType);
         const current = await repo.read(environment, collection);
-        const idField = { club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId' }[change.entityType];
+        const idField = { club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId' }[change.entityType];
         if (change.before && JSON.stringify(current.find(item => item[idField] === change.targetId)) !== JSON.stringify(change.before)) throw new Error('Change is stale and must be resubmitted');
         const next = current.filter(item => item[idField] !== change.targetId);
         if (change.action !== 'delete') next.push(change.after);

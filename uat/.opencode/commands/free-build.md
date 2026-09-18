@@ -21,7 +21,7 @@ This command is restricted to trivial, isolated changes. Do NOT use it for:
 - GitHub Actions workflows
 - `access-gate.js` (password gate)
 - `admin.js` CRUD logic
-- Data schema or `public-data.json` structure
+- Data schema or Upstash data structure
 - Multi-file refactors
 
 ## What IS allowed

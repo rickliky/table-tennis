@@ -3,10 +3,8 @@
 
   const app = document.querySelector('#admin-app');
   const playerFields = [['playerId', '選手ID / Player ID', 'text', true], ['clubId', 'クラブID / Club ID', 'select', true], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマ字表記 / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, ['', 'Male', 'Female', 'Other']], ['schoolLevel', 'カテゴリ / School level', 'select', false, ['', '小学生', '中学生', '高校生', '一般']], ['grade', '学年 / Grade', 'select', false, []], ['playingHand', '利き手 / Playing hand', 'select', false, ['', '右', '左']], ['grip', 'グリップ / Grip', 'select', false, ['', 'シェークハンド / Shakehand', 'ペンホルダー / Penhold']], ['playingStyle', '戦型 / Playing style', 'select', false, ['', 'ドライブ攻撃型 / Topspin attacker', 'カット主戦型 / Defensive chopper', '攻守兼備型 / All-rounder', '平台攻撃型 / Close-to-table attacker']], ['forehandRubberType', 'フォア面種類 / Forehand type', 'select', false, ['', '裏ソフト', '表ソフト', '粒高', 'アンチ', '一枚']], ['forehandRubber', 'フォア面ラバー / Forehand rubber', 'rubber'], ['backhandRubberType', 'バック面種類 / Backhand type', 'select', false, ['', '裏ソフト', '表ソフト', '粒高', 'アンチ', '一枚']], ['backhandRubber', 'バック面ラバー / Backhand rubber', 'rubber'], ['status', '状態 / Status', 'select', true, ['Active', 'Inactive']]];
-  const rubberDB = window.RUBBER_DB || {};
-  const RUBBERS = window.RUBBERS || [];
-  const rubberName = id => { if (!id) return ''; const r = RUBBERS.find(x => x.rubberId === id); return r ? r.name : id; };
-  const rubberIdByName = name => { if (!name) return ''; const r = RUBBERS.find(x => x.name === name); return r ? r.rubberId : name; };
+  const rubberName = id => { if (!id) return ''; const r = (window.RUBBERS || []).find(x => x.rubberId === id); return r ? r.name : id; };
+  const rubberIdByName = name => { if (!name) return ''; const r = (window.RUBBERS || []).find(x => x.name === name); return r ? r.rubberId : name; };
   const gradeOptions = { '小学生': ['1年生','2年生','3年生','4年生','5年生','6年生'], '中学生': ['1年生','2年生','3年生'], '高校生': ['1年生','2年生','3年生'] };
   const gradeBirthYears = { '小学生': { '1年生':'2019–2020', '2年生':'2018–2019', '3年生':'2017–2018', '4年生':'2016–2017', '5年生':'2015–2016', '6年生':'2014–2015' }, '中学生': { '1年生':'2013–2014', '2年生':'2012–2013', '3年生':'2011–2012' }, '高校生': { '1年生':'2010–2011', '2年生':'2009–2010', '3年生':'2008–2009' } };
   const entityFields = {
@@ -291,7 +289,7 @@
       } else if (key === 'forehandRubber' || key === 'backhandRubber') {
         const typeKey = key === 'forehandRubber' ? 'forehandRubberType' : 'backhandRubberType';
         const currentType = record[typeKey] || '';
-        const rubbers = rubberDB[currentType] || [];
+        const rubbers = (window.RUBBER_DB || {})[currentType] || [];
         const rubberSelect = el('select', { name: key });
         rubberSelect.append(el('option', { value: '', textContent: '' }));
         rubbers.forEach(r => rubberSelect.append(el('option', { value: r.rubberId, textContent: r.name })));
@@ -338,7 +336,7 @@
       const typeSelect = form.querySelector(`[name="${typeKey}"]`);
       const updateRubberOptions = () => {
         const rubberType = typeSelect?.value || '';
-        const rubbers = rubberDB[rubberType] || [];
+        const rubbers = (window.RUBBER_DB || {})[rubberType] || [];
         const currentRubberId = rubberIdByName(input.value);
         input.replaceChildren();
         input.append(el('option', { value: '', textContent: '' }));
@@ -457,7 +455,7 @@
       } else if (key === 'forehandRubber' || key === 'backhandRubber') {
         const typeKey = key === 'forehandRubber' ? 'forehandRubberType' : 'backhandRubberType';
         const currentType = record?.[typeKey] || '';
-        const rubbers = rubberDB[currentType] || [];
+        const rubbers = (window.RUBBER_DB || {})[currentType] || [];
         const rubberSelect = el('select', { name: key });
         rubberSelect.append(el('option', { value: '', textContent: '' }));
         rubbers.forEach(r => rubberSelect.append(el('option', { value: r.rubberId, textContent: r.name })));
@@ -477,7 +475,7 @@
       const typeSelect = form.querySelector(`[name="${typeKey}"]`);
       const updateRubberOptions = () => {
         const rubberType = typeSelect?.value || '';
-        const rubbers = rubberDB[rubberType] || [];
+        const rubbers = (window.RUBBER_DB || {})[rubberType] || [];
         const currentRubberId = rubberIdByName(input.value);
         input.replaceChildren();
         input.append(el('option', { value: '', textContent: '' }));
