@@ -45,6 +45,20 @@
     const byName = (S[table] || []).find(x => x.name === value || x.nameJa === value || x.nameEn === value || `${x.nameJa || ''} / ${x.nameEn || ''}` === value);
     return byName ? byName.id : value;
   };
+  const FIELD_TABLE_MAP = { gender: 'genders', schoolLevel: 'schoolLevels', playingHand: 'playingHands', grip: 'grips', playingStyle: 'playingStyles', status: 'statuses', grade: 'grades', forehandRubberType: 'rubberTypes', backhandRubberType: 'rubberTypes', round: 'tournamentRounds', result: 'tournamentResults', resultStatus: 'resultStatuses' };
+  const displayValue = (field, val) => {
+    if (val === '' || val == null) return String(val);
+    if (field === 'forehandRubber' || field === 'backhandRubber') return rubberName(val);
+    const tbl = FIELD_TABLE_MAP[field];
+    if (tbl) {
+      const entries = window.LK_STATIC?.[tbl] || [];
+      const entry = entries.find(x => x.id === val);
+      if (entry) return bilingual(entry);
+      const byName = entries.find(x => x.name === val || x.nameJa === val || x.nameEn === val);
+      if (byName) return bilingual(byName);
+    }
+    return String(val);
+  };
   const gradeOptions = { '小学生': ['1年生','2年生','3年生','4年生','5年生','6年生'], '中学生': ['1年生','2年生','3年生'], '高校生': ['1年生','2年生','3年生'] };
   const gradeBirthYears = { '小学生': { '1年生':'2019–2020', '2年生':'2018–2019', '3年生':'2017–2018', '4年生':'2016–2017', '5年生':'2015–2016', '6年生':'2014–2015' }, '中学生': { '1年生':'2013–2014', '2年生':'2012–2013', '3年生':'2011–2012' }, '高校生': { '1年生':'2010–2011', '2年生':'2009–2010', '3年生':'2008–2009' } };
   const entityFields = {
@@ -100,13 +114,13 @@
       const table = el('table', { className: 'admin-pending-table' });
       const thead = el('thead'); const thr = el('tr'); thr.append(text('th', 'Field'), text('th', 'Before'), text('th', 'After')); thead.append(thr); table.append(thead);
       const tbody = el('tbody'); table.append(tbody);
-      diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : String(d.before)), text('td', d.after === '' || d.after == null ? '—' : String(d.after))); tbody.append(row); });
+      diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : displayValue(d.field, d.before)), text('td', d.after === '' || d.after == null ? '—' : displayValue(d.field, d.after))); tbody.append(row); });
       box.append(table);
     } else if (change.action === 'create' && change.after) {
       const table = el('table', { className: 'admin-pending-table' });
       const thead = el('thead'); const thr = el('tr'); thr.append(text('th', 'Field'), text('th', 'Value')); thead.append(thr); table.append(thead);
       const tbody = el('tbody'); table.append(tbody);
-      Object.entries(change.after).forEach(([key, value]) => { if (value === '' || value === null || value === undefined || key === 'gradeHistory') return; const row = el('tr'); row.append(text('td', key), text('td', String(value))); tbody.append(row); });
+      Object.entries(change.after).forEach(([key, value]) => { if (value === '' || value === null || value === undefined || key === 'gradeHistory') return; const row = el('tr'); row.append(text('td', key), text('td', displayValue(key, value))); tbody.append(row); });
       box.append(table);
     } else if (change.action === 'delete') {
       box.append(text('p', 'Record will be deleted upon approval. / 承認後にレコードが削除されます。', 'admin-pending-info-note'));
@@ -683,14 +697,7 @@
             const tbody = el('tbody'); table.append(tbody);
             diff.forEach(d => {
               const row = el('tr'); row.className = 'admin-pending-diff-row';
-              const fieldTable = { gender: 'genders', schoolLevel: 'schoolLevels', playingHand: 'playingHands', grip: 'grips', playingStyle: 'playingStyles', status: 'statuses', grade: 'grades', forehandRubberType: 'rubberTypes', backhandRubberType: 'rubberTypes', round: 'tournamentRounds', result: 'tournamentResults', resultStatus: 'resultStatuses' }[d.field];
-              const resolveDisplay = val => {
-                if (val === '' || val == null) return String(val);
-                if (d.field === 'forehandRubber' || d.field === 'backhandRubber') return rubberName(val);
-                if (fieldTable) return lookupName(fieldTable, val);
-                return String(val);
-              };
-              row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : resolveDisplay(d.before)), text('td', d.after === '' || d.after == null ? '—' : resolveDisplay(d.after)));
+              row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : displayValue(d.field, d.before)), text('td', d.after === '' || d.after == null ? '—' : displayValue(d.field, d.after)));
               tbody.append(row);
             });
             diffSection.append(table); card.append(diffSection);
@@ -699,7 +706,10 @@
             const table = el('table', { className: 'admin-pending-table' }); const thead3 = el('thead'); const thr3 = el('tr'); thead3.append(thr3); table.append(thead3);
             thr3.append(text('th', 'Field'), text('th', 'Value'));
             const tbody = el('tbody'); table.append(tbody);
-            Object.entries(change.after).forEach(([key, value]) => { if (value === '' || value === null || value === undefined) return; const row = el('tr'); row.append(text('td', key), text('td', String(value))); tbody.append(row); });
+            Object.entries(change.after).forEach(([key, value]) => {
+              if (value === '' || value === null || value === undefined) return;
+              const row = el('tr'); row.append(text('td', key), text('td', displayValue(key, value))); tbody.append(row);
+            });
             detail.append(table); card.append(detail);
           } else {
             card.append(text('p', 'No changes detected. / 変更は検出されませんでした。', 'admin-empty'));
@@ -781,7 +791,7 @@
               const table = el('table', { className: 'admin-pending-table' }); const thead = el('thead'); const thr = el('tr'); thead.append(thr); table.append(thead);
               thr.append(text('th', 'Field'), text('th', 'Before'), text('th', 'After'));
               const tbody = el('tbody'); table.append(tbody);
-            diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; const fieldTable = { gender: 'genders', schoolLevel: 'schoolLevels', playingHand: 'playingHands', grip: 'grips', playingStyle: 'playingStyles', status: 'statuses', grade: 'grades', forehandRubberType: 'rubberTypes', backhandRubberType: 'rubberTypes', round: 'tournamentRounds', result: 'tournamentResults', resultStatus: 'resultStatuses' }[d.field]; const resolveDisplay = val => { if (val === '' || val == null) return String(val); if (d.field === 'forehandRubber' || d.field === 'backhandRubber') return rubberName(val); if (fieldTable) return lookupName(fieldTable, val); return String(val); }; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : resolveDisplay(d.before)), text('td', d.after === '' || d.after == null ? '—' : resolveDisplay(d.after))); tbody.append(row); });
+            diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : displayValue(d.field, d.before)), text('td', d.after === '' || d.after == null ? '—' : displayValue(d.field, d.after))); tbody.append(row); });
               diffSection.append(table); card.append(diffSection);
             }
             group.append(card);
