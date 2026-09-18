@@ -195,12 +195,12 @@
       activeTab = 'pending';
     } else {
       tabs.append(tab('matches', 'TRAINING MATCHES / 練習試合'));
-      tabs.append(tab('players', 'PLAYERS / 選手'), tab('clubs', 'CLUBS / クラブ'), tab('tournaments', 'TOURNAMENTS / 大会'), tab('tournamentMatches', 'TOURNAMENT RESULTS / 大会結果'), tab('tournamentProgress', 'TOURNAMENT PROGRESS / 大会進捗'));
+      tabs.append(tab('ourPlayers', 'OUR PLAYERS / リトルキングス'), tab('extPlayers', 'OTHER PLAYERS / 外部選手'), tab('clubs', 'CLUBS / クラブ'), tab('tournaments', 'TOURNAMENTS / 大会'), tab('tournamentMatches', 'TOURNAMENT RESULTS / 大会結果'), tab('tournamentProgress', 'TOURNAMENT PROGRESS / 大会進捗'));
       tabs.append(tab('pending', 'PENDING CHANGES / 承認待ち'));
       tabs.append(tab('history', 'HISTORY / 変更履歴'));
     }
     app.append(header, tabs);
-    if (activeTab === 'players') renderPlayers(); else if (activeTab === 'pending') renderPending(); else if (activeTab === 'history') renderHistory(); else if (activeTab === 'matches') renderMatches(); else renderEntity(activeTab);
+    if (activeTab === 'ourPlayers' || activeTab === 'extPlayers') renderPlayers(activeTab); else if (activeTab === 'pending') renderPending(); else if (activeTab === 'history') renderHistory(); else if (activeTab === 'matches') renderMatches(); else renderEntity(activeTab);
   }
   function button(label, onclick, className = '') { const node = el('button', { className: `admin-button ${className}`.trim(), type: 'button', textContent: label }); node.onclick = onclick; return node; }
   function tab(id, label) { const node = button(label, () => { activeTab = id; selectedId = ''; renderWorkspace(); }, `admin-tab${activeTab === id ? ' active' : ''}`); return node; }
@@ -323,17 +323,26 @@
     return id;
   }
 
-  function renderPlayers() {
+  function renderPlayers(tabType) {
+    const isExtTab = tabType === 'extPlayers';
     const workspace = el('section', { className: 'admin-workspace' }); const listPanel = el('section', { className: 'admin-panel admin-list-panel' });
-    const listHeader = el('div', { className: 'admin-list-header' }); const heading = el('div'); heading.append(text('p', 'PLAYER DIRECTORY / 選手一覧', 'eyebrow'), text('h2', `${players.length + (entityData.externalOpponents || []).length} players`));
+    const listHeader = el('div', { className: 'admin-list-header' }); const heading = el('div');
+    const extCount = (entityData.externalOpponents || []).length;
+    const headingText = isExtTab ? `OTHER PLAYERS / 外部選手` : `OUR PLAYERS / リトルキングス`;
+    const countText = isExtTab ? `${extCount} external` : `${players.length} players`;
+    heading.append(text('p', headingText, 'eyebrow'), text('h2', countText));
     const search = el('input', { type: 'search', placeholder: '名前・ID・カテゴリ等で検索 / Search by name, ID, category, equipment...', ariaLabel: 'Search players' }); listHeader.append(heading, search);
-    const addBtn = button('+ ADD PLAYER / 選手追加', () => showPlayerEditor(null), 'primary');
-    const addExtBtn = button('+ ADD EXT. OPPONENT / 外部選手追加', () => showExternalOpponentEditor(), 'secondary');
-    const rolloverBtn = button('APRIL ROLLOVER / 4月繰り上げ', () => { if (confirm(language === 'en' ? 'Submit grade advancement for all students for approval?\n\nEach change will require approval before taking effect.' : '全選手の学年繰り上げを承認申請しますか？\n\n各変更は承認後に反映されます。')) { AprilRollover(); } }, 'secondary');
-    listPanel.append(listHeader, addBtn, addExtBtn, rolloverBtn);
+    const addBtn = isExtTab
+      ? button('+ ADD EXT. OPPONENT / 外部選手追加', () => showExternalOpponentEditor(), 'primary')
+      : button('+ ADD PLAYER / 選手追加', () => showPlayerEditor(null), 'primary');
+    const rolloverBtn = isExtTab ? null : button('APRIL ROLLOVER / 4月繰り上げ', () => { if (confirm(language === 'en' ? 'Submit grade advancement for all students for approval?\n\nEach change will require approval before taking effect.' : '全選手の学年繰り上げを承認申請しますか？\n\n各変更は承認後に反映されます。')) { AprilRollover(); } }, 'secondary');
+    listPanel.append(listHeader, addBtn);
+    if (rolloverBtn) listPanel.append(rolloverBtn);
     const list = el('div', { className: 'admin-player-list' }); listPanel.append(list); const editor = el('section', { className: 'admin-panel admin-editor-panel' }); workspace.append(listPanel, editor); app.append(workspace);
-    const allPlayers = [...players.map(p => ({ ...p, _entityType: 'player' })), ...(entityData.externalOpponents || []).map(p => ({ ...p, _entityType: 'externalOpponent' }))];
-    const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); allPlayers.filter(player => `${player.playerId || player.externalOpponentId || ''} ${player.displayName} ${player.englishName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query)).sort((a, b) => (a.playerId || a.externalOpponentId || '').localeCompare(b.playerId || b.externalOpponentId || '')).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${(player.playerId || player.externalOpponentId) === selectedId ? ' selected' : ''}` }); const names = el('span'); const gradeTag = player.grade ? ` · ${player.grade}` : ''; const id = player.playerId || player.externalOpponentId; const isExternal = player._entityType === 'externalOpponent'; names.append(text('b', player.displayName || 'No display name'), text('small', `${id} · ${player.englishName || '-'}${gradeTag}${isExternal ? ' · EXT' : ''}`)); row.append(names, text('i', player.status || 'Active')); row.onclick = () => { selectedId = id; updateList(); showPlayerEditor(player); }; list.append(row); }); };
+    const allPlayers = isExtTab
+      ? (entityData.externalOpponents || []).map(p => ({ ...p, _entityType: 'externalOpponent' }))
+      : players.map(p => ({ ...p, _entityType: 'player' }));
+    const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); allPlayers.filter(player => `${player.playerId || player.externalOpponentId || ''} ${player.displayName} ${player.englishName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query)).sort((a, b) => (a.playerId || a.externalOpponentId || '').localeCompare(b.playerId || b.externalOpponentId || '')).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${(player.playerId || player.externalOpponentId) === selectedId ? ' selected' : ''}` }); const names = el('span'); const gradeTag = player.grade ? ` · ${player.grade}` : ''; const id = player.playerId || player.externalOpponentId; names.append(text('b', player.displayName || 'No display name'), text('small', `${id} · ${player.englishName || '-'}${gradeTag}`)); row.append(names, text('i', player.status || 'Active')); row.onclick = () => { selectedId = id; updateList(); showPlayerEditor(player); }; list.append(row); }); };
     search.oninput = updateList; window.adminPlayerListUpdate = updateList; updateList(); showPlayerEditor(allPlayers[0] || null);
   }
   function showPlayerEditor(player) {
