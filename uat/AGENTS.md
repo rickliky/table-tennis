@@ -268,3 +268,9 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
   - Approver login overlay redesigned: vertical layout, larger inputs, description text, backdrop blur
   - LK-0086 rubber reference fixed (RB-0156 → RB-0155 after merge)
 - **Player/External player merge**: DONE — two tabs share the same editor: "OUR PLAYERS" (Little Kings, clubId=CLUB-0001) and "OTHER PLAYERS" (external opponents). Same entity types, same editor, filtered by tab.
+
+### UAT Release Readiness (2026-09-20)
+- Admin navigation is organized as five top-level tabs: Matches, Players, Tournaments, Clubs, and Manage; related views use sub-tabs.
+- Match result statuses use lookup IDs (`RS-001` Completed and `RS-002` Incomplete) in the admin editor. `resultStatusId()` preserves compatibility with legacy Upstash text values such as `Verified`, `Complete`, and `Transcribed - review` for filters, badges, and statistics.
+- Worker validation accepts both Little Kings players and external opponents for training and tournament matches. Tournament matches use `tournamentId`, `player1Id`, and `player2Id`; tournament progress uses `tournamentId` and `playerId`.
+- Before promoting UAT to production: deploy the Worker with the validation update, manually verify the live UAT UI in a browser, and approve any pending Upstash changes.

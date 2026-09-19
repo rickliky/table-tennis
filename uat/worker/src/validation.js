@@ -5,12 +5,22 @@ export function validateEntity(entityType, record, data, targetId = record?.[({ 
   const idField = { club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId' }[entityType];
   if (!idField || !record[idField]) throw new Error('A valid record ID is required');
   if (record[idField] !== targetId) throw new Error('Target ID does not match record ID');
+  const participantExists = id => data.players.some(item => item.playerId === id) || data.externalOpponents.some(item => item.externalOpponentId === id);
+  const validSetCounts = values => values.every(value => Number.isInteger(Number(value)) && Number(value) >= 0);
   if (entityType === 'match') {
     if (!record.player1Id || !record.player2Id || record.player1Id === record.player2Id) throw new Error('A match requires two different players');
-    if (![record.player1Sets, record.player2Sets].every(value => Number.isInteger(Number(value)) && Number(value) >= 0)) throw new Error('Set counts must be non-negative integers');
-    if (!data.players.some(item => item.playerId === record.player1Id) || !data.players.some(item => item.playerId === record.player2Id)) throw new Error('Match players must exist');
+    if (!validSetCounts([record.player1Sets, record.player2Sets])) throw new Error('Set counts must be non-negative integers');
+    if (!participantExists(record.player1Id) || !participantExists(record.player2Id)) throw new Error('Match players must exist');
   }
-  if (entityType === 'tournamentMatch' && (!data.tournaments.some(item => item.tournamentId === record.tournamentId) || !data.players.some(item => item.playerId === record.lkPlayerId) || !data.externalOpponents.some(item => item.externalOpponentId === record.externalOpponentId))) throw new Error('Tournament match references an unknown record');
+  if (entityType === 'tournamentMatch') {
+    if (!record.tournamentId || !data.tournaments.some(item => item.tournamentId === record.tournamentId)) throw new Error('Tournament match must reference an existing tournament');
+    if (!record.player1Id || !record.player2Id || record.player1Id === record.player2Id || !participantExists(record.player1Id) || !participantExists(record.player2Id)) throw new Error('Tournament match requires two different existing players');
+    if (!validSetCounts([record.player1Sets, record.player2Sets])) throw new Error('Set counts must be non-negative integers');
+  }
+  if (entityType === 'tournamentProgress') {
+    if (!record.tournamentId || !data.tournaments.some(item => item.tournamentId === record.tournamentId)) throw new Error('Tournament progress must reference an existing tournament');
+    if (!record.playerId || !participantExists(record.playerId)) throw new Error('Tournament progress must reference an existing player');
+  }
   return record;
 }
 
