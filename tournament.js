@@ -7,6 +7,11 @@
     ja: { title:'大会情報', subtitle:'大会結果・ランキング', noData:'大会データがありません。', location:'会場', date:'日付', format:'形式', players:'リトルキングス選手', divisions:'部門', rank:'順位', result:'結果', participant:'参加者', club:'クラブ', grade:'学年', division:'部門', allDivisions:'すべての部門', calendarTitle:'大会カレンダー', selectTournament:'大会を選択してください', backToList:'← 一覧に戻る', totalPlayers:'参加者数' }
   };
   const t = key => words[language][key];
+  const lookupValue = (table, value) => {
+    if (!value) return value;
+    const item = (window.LK_STATIC?.[table] || []).find(entry => entry.id === value || entry.name === value || entry.nameJa === value || entry.nameEn === value);
+    return item ? (language === 'en' ? item.nameEn : item.nameJa) : value;
+  };
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[c]);
   const formatDate = date => {
     if (!date) return '';
@@ -176,7 +181,7 @@
             <td class="name-cell">${lkBadge} ${nameHtml}</td>
             <td>${escapeHtml(club)}</td>
             <td>${escapeHtml(grade)}</td>
-            <td>${escapeHtml(p.result || '')}</td>
+            <td>${escapeHtml(lookupValue('tournamentResults', p.result) || '')}</td>
           </tr>`;
       }).join('');
 
