@@ -305,3 +305,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Display `nameJa` in Japanese and `nameEn` in English; this also merges legacy text records and new ID-based records into one statistics group.
 - Applied to the index statistics/setup summaries, player-profile dossier fields, and tournament-progress result labels.
 - Leaderboard, ranking, session-matchup, player-grid, and active-player category groupings must normalize `schoolLevel` through the same lookup before grouping; otherwise legacy text values and IDs create duplicate categories such as `小学生` and `SL-001`.
+
+### Main Navigation Language Rule (2026-09-20)
+- `access-gate.js` injects the Tournament and Data Maintenance links into the main-page navigation after the static HTML loads.
+- These injected links must use the current `lk-language` at creation and be refreshed by `app.js` whenever the language toggle changes; never hardcode them in English.

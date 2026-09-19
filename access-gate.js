@@ -19,4 +19,4 @@ if (!isAdminPage && accessUntil <= Date.now()) {
 const environment = /\/uat(?:\/|$)/i.test(location.pathname) ? 'UAT' : 'PROD';
 document.body.insertAdjacentHTML('beforeend', `<aside class="environment-badge ${environment.toLowerCase()}" aria-label="Environment: ${environment}">${environment}</aside>`);
 const nav = document.querySelector('nav');
-if (nav) nav.insertAdjacentHTML('beforeend', '<a href="tournament.html">TOURNAMENTS</a><a href="admin.html" style="color:#8c423a;border-bottom:2px solid #8c423a;padding-bottom:0">DATA MAINTENANCE</a>');
+if (nav) nav.insertAdjacentHTML('beforeend', `<a href="tournament.html" id="nav-tournaments">${accessLanguage === 'en' ? 'Tournaments' : '大会'}</a><a href="admin.html" id="nav-maintenance" style="color:#8c423a;border-bottom:2px solid #8c423a;padding-bottom:0">${accessLanguage === 'en' ? 'Data Maintenance' : 'データメンテナンス'}</a>`);
