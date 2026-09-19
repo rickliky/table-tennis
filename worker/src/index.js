@@ -34,6 +34,14 @@ export default { async fetch(request, env) {
       return json({ ok: true, club: values[0][0] || null, clubs: values[0], players: values[1], matches: values[2], externalOpponents: values[3], tournaments: values[4], tournamentMatches: values[5], tournamentProgress: values[6], rubbers: values[7], lastUpdated: new Date().toISOString() });
     }
     if (url.pathname === '/api/pending' && request.method === 'GET') return json({ ok: true, changes: await repo.read(environment, 'pending-changes') });
+    if (url.pathname === '/api/clear-history' && request.method === 'POST') {
+      const actor = await session(request, env);
+      if (actor.role !== 'approver' && actor.role !== 'admin') throw new Error('Approver or admin role required');
+      const changes = await repo.read(environment, 'pending-changes');
+      const remaining = changes.filter(change => change.status === 'pending');
+      await repo.write(environment, 'pending-changes', remaining);
+      return json({ ok: true, deleted: changes.length - remaining.length, remaining: remaining.length });
+    }
     if (url.pathname === '/api/change' && request.method === 'POST') {
       const body = await request.json(); const records = {}; for (const type of types.slice(0, 8)) records[type] = await repo.read(environment, type);
       const collection = collectionFor(body.entityType); if (!collection) throw new Error('Unsupported entity type');

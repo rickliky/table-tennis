@@ -274,3 +274,4 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Match result statuses use lookup IDs (`RS-001` Completed and `RS-002` Incomplete) in the admin editor. `resultStatusId()` preserves compatibility with legacy Upstash text values such as `Verified`, `Complete`, and `Transcribed - review` for filters, badges, and statistics.
 - Worker validation accepts both Little Kings players and external opponents for training and tournament matches. Tournament matches use `tournamentId`, `player1Id`, and `player2Id`; tournament progress uses `tournamentId` and `playerId`.
 - Before promoting UAT to production: deploy the Worker with the validation update, manually verify the live UAT UI in a browser, and approve any pending Upstash changes.
+- Processed UAT audit history can be cleared only through Worker `POST /api/clear-history`; it requires an approver/admin session and preserves all `pending` changes.
