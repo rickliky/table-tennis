@@ -1157,6 +1157,17 @@
       typeFilter.append(el('option', { value: 'all', textContent: 'ALL TYPES / すべての種類' }));
       entityTypes.forEach(t => typeFilter.append(el('option', { value: t, textContent: t })));
       controls.append(search, statusFilter, typeFilter); panel.append(controls);
+      if (currentRole === 'approver') {
+        const clearHistory = button('CLEAR PROCESSED HISTORY / 処理済み履歴を削除', async () => {
+          if (!confirm('Delete all accepted and rejected UAT history records? Pending changes will be kept. / UATの承認・却下済み履歴をすべて削除しますか？承認待ちの変更は保持されます。')) return;
+          try {
+            const result = await window.LKData.request('/api/clear-history', { method: 'POST' });
+            alert(`${result.deleted} history record(s) deleted. / ${result.deleted}件の履歴を削除しました。`);
+            renderWorkspace();
+          } catch (error) { alert(`${error.message} / 削除できませんでした`); }
+        }, 'secondary');
+        panel.append(clearHistory);
+      }
       const list = el('div', { className: 'admin-history-list' }); panel.append(list);
       const renderList = () => {
         empty(list); const query = search.value.trim().toLowerCase();
