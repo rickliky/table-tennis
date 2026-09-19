@@ -275,3 +275,8 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Worker validation accepts both Little Kings players and external opponents for training and tournament matches. Tournament matches use `tournamentId`, `player1Id`, and `player2Id`; tournament progress uses `tournamentId` and `playerId`.
 - Before promoting UAT to production: deploy the Worker with the validation update, manually verify the live UAT UI in a browser, and approve any pending Upstash changes.
 - Processed UAT audit history can be cleared only through Worker `POST /api/clear-history`; it requires an approver/admin session and preserves all `pending` changes.
+
+### Tournament Calendar Fix (2026-09-20)
+- Tournament page calendar now starts on the first tournament's month instead of the current month.
+- Fixes the issue where a May 2026 tournament showed a September 2026 calendar.
+- `renderCalendar()` initializes `currentMonth` from the earliest tournament date, not `new Date()`.
