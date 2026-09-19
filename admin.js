@@ -1027,16 +1027,19 @@
 
   function renderManage() {
     const workspace = el('section', { className: 'admin-workspace' });
+    const listPanel = el('section', { className: 'admin-panel admin-list-panel' });
+    const listHeader = el('div', { className: 'admin-list-header' });
+    const heading = el('div'); heading.append(text('p', 'MANAGE / 管理', 'eyebrow'), text('h2', activeManageSubTab === 'pending' ? 'Review changes / 変更を確認' : 'Processed changes / 処理済み変更'));
+    listHeader.append(heading); listPanel.append(listHeader);
+    // Sub-tabs
     const subTabs = el('div', { className: 'admin-sub-tabs' });
     const subTab = (id, label) => { const node = button(label, () => { activeManageSubTab = id; renderWorkspace(); }, `admin-sub-tab${activeManageSubTab === id ? ' active' : ''}`); return node; };
     subTabs.append(subTab('pending', 'PENDING / 承認待ち'), subTab('history', 'HISTORY / 履歴'));
-    const header = el('div', { className: 'admin-list-header' });
-    header.append(text('p', 'MANAGE / 管理', 'eyebrow'), text('h2', activeManageSubTab === 'pending' ? 'Review changes' : 'Processed changes'));
-    const panel = el('section', { className: 'admin-panel admin-pending-panel' });
-    panel.append(header, subTabs);
-    workspace.append(panel); app.append(workspace);
-    if (activeManageSubTab === 'pending') renderPendingContent(panel);
-    else renderHistoryContent(panel);
+    listPanel.append(subTabs);
+    const editor = el('section', { className: 'admin-panel admin-editor-panel' });
+    workspace.append(listPanel, editor); app.append(workspace);
+    if (activeManageSubTab === 'pending') renderPendingContent(listPanel);
+    else renderHistoryContent(listPanel);
   }
 
   async function renderPendingContent(panel) {
