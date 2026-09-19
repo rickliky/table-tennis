@@ -275,36 +275,6 @@ window.LK_STATIC = {
       "name": "Incomplete",
       "nameJa": "未完了",
       "nameEn": "Incomplete"
-    },
-    {
-      "id": "RS-003",
-      "name": "Void",
-      "nameJa": "無効",
-      "nameEn": "Void"
-    },
-    {
-      "id": "RS-004",
-      "name": "Verified",
-      "nameJa": "確認済み",
-      "nameEn": "Verified"
-    },
-    {
-      "id": "RS-005",
-      "name": "Transcribed - review",
-      "nameJa": "転記済み - 要確認",
-      "nameEn": "Transcribed - review"
-    },
-    {
-      "id": "RS-006",
-      "name": "Complete",
-      "nameJa": "完了",
-      "nameEn": "Complete"
-    },
-    {
-      "id": "RS-007",
-      "name": "Draw",
-      "nameJa": "引き分け",
-      "nameEn": "Draw"
     }
   ],
   "grades": [
