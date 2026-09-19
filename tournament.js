@@ -27,7 +27,10 @@
 
   function renderCalendar(tournamentDates) {
     const now = new Date();
-    let currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    // Start on the month of the first tournament instead of today
+    const firstTournament = [...tournaments].sort((a, b) => (a.date || '').localeCompare(b.date || ''))[0];
+    const initDate = firstTournament?.date ? new Date(`${firstTournament.date}T00:00:00`) : now;
+    let currentMonth = new Date(initDate.getFullYear(), initDate.getMonth(), 1);
     const monthNames = language === 'en' ? ['January','February','March','April','May','June','July','August','September','October','November','December'] : ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
     const dayNames = language === 'en' ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] : ['日','月','火','水','木','金','土'];
 
