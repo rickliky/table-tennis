@@ -27,6 +27,11 @@
   const roundOpts = toOpts(S.tournamentRounds);
   const resultOpts = toOpts(S.tournamentResults);
   const resultStatusOpts = toOpts(S.resultStatuses);
+  const resultStatusId = value => resolveFieldValue('resultStatuses', value);
+  const completedStatusId = (S.resultStatuses || []).find(x => x.nameEn === 'Completed' || x.name === 'Completed')?.id || 'Completed';
+  const incompleteStatusId = (S.resultStatuses || []).find(x => x.nameEn === 'Incomplete' || x.name === 'Incomplete')?.id || 'Incomplete';
+  const isIncompleteStatus = value => resultStatusId(value) === incompleteStatusId;
+  const statusLabel = value => lookupName('resultStatuses', value);
 
   const playerFields = [['playerId', '選手ID / Player ID', 'text', true], ['clubId', 'クラブID / Club ID', 'select', true], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマ字表記 / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, genderOpts], ['schoolLevel', 'カテゴリ / School level', 'select', false, schoolLevelOpts], ['grade', '学年 / Grade', 'select', false, gradeOpts], ['playingHand', '利き手 / Playing hand', 'select', false, playingHandOpts], ['grip', 'グリップ / Grip', 'select', false, gripOpts], ['playingStyle', '戦型 / Playing style', 'select', false, playingStyleOpts], ['forehandRubberType', 'フォア面種類 / Forehand type', 'select', false, rubberTypeOpts], ['forehandRubber', 'フォア面ラバー / Forehand rubber', 'rubber'], ['backhandRubberType', 'バック面種類 / Backhand type', 'select', false, rubberTypeOpts], ['backhandRubber', 'バック面ラバー / Backhand rubber', 'rubber'], ['status', '状態 / Status', 'select', true, statusOpts]];
   const rubberName = id => { if (!id) return ''; const r = (window.RUBBERS || []).find(x => x.rubberId === id); return r ? r.name : id; };
@@ -227,7 +232,7 @@
     const dateFrom = el('input', { type: 'date', ariaLabel: 'From date' });
     const dateTo = el('input', { type: 'date', ariaLabel: 'To date' });
     const statusFilter = el('select');
-    ['', 'Completed', 'Incomplete'].forEach(s => { statusFilter.append(el('option', { value: s, textContent: s || 'ALL STATUS / 全ステータス' })); });
+    ['', completedStatusId, incompleteStatusId].forEach(s => { statusFilter.append(el('option', { value: s, textContent: s ? statusLabel(s) : 'ALL STATUS / 全ステータス' })); });
     const isTraining = activeMatchSubTab === 'training';
     if (!isTraining) filters.append(text('span', '大会:', 'admin-filter-label'), tournFilter);
     filters.append(text('span', 'FROM:', 'admin-filter-label'), dateFrom, text('span', 'TO:', 'admin-filter-label'), dateTo, text('span', 'STATUS:', 'admin-filter-label'), statusFilter);
@@ -235,7 +240,7 @@
     if (canEditMatches()) listPanel.append(button('+ ADD MATCH / 試合追加', () => isTraining ? showMatchEditor(null) : showTournamentMatchEditor(null), 'primary'));
     const list = el('div', { className: 'admin-player-list admin-match-list' }); listPanel.append(list);
     const editor = el('section', { className: 'admin-panel admin-editor-panel' }); workspace.append(listPanel, editor); app.append(workspace);
-    const statusColor = s => ({ 'Verified': 'status-complete', 'Complete': 'status-complete', 'Completed': 'status-complete', 'Transcribed - review': 'status-complete', 'Draw': 'status-complete', 'Void': 'status-incomplete', 'Incomplete': 'status-incomplete' }[s] || '');
+    const statusColor = s => isIncompleteStatus(s) || s === 'Void' ? 'status-incomplete' : 'status-complete';
     const tournName = tid => { const t = tourns.find(x => x.tournamentId === tid); return t ? t.name : tid; };
     const updateList = () => {
       empty(list);
@@ -244,7 +249,7 @@
         tournFilter.style.display = 'none';
         const tq = tournFilter.value;
         const results = trainingMatches.filter(match => {
-          if (sf && match.resultStatus !== sf) return false;
+          if (sf && resultStatusId(match.resultStatus) !== sf) return false;
           if (from && match.matchDate < from) return false;
           if (to && match.matchDate > to) return false;
           return true;
@@ -262,7 +267,7 @@
             const p1win = match.winnerId === match.player1Id; const p2win = match.winnerId === match.player2Id;
             players2.append(text('b', match.player1Name || match.player1Id, p1win ? 'admin-match-winner' : ''), text('span', ' vs ', 'admin-match-vs'), text('b', match.player2Name || match.player2Id, p2win ? 'admin-match-winner' : ''));
             const score = el('span', { className: 'admin-match-score' }); score.textContent = match.score || '-';
-            const badge = el('span', { className: `admin-match-badge ${statusColor(match.resultStatus)}` }); badge.textContent = match.resultStatus || '-';
+            const badge = el('span', { className: `admin-match-badge ${statusColor(match.resultStatus)}` }); badge.textContent = statusLabel(match.resultStatus) || '-';
             row.append(players2, score, badge);
             row.onclick = () => { selectedId = match.matchId; updateList(); showMatchEditor(match); };
             list.append(row);
@@ -273,7 +278,7 @@
         const tq = tournFilter.value;
         const results = (entityData.tournamentMatches || []).filter(m => {
           if (tq && m.tournamentId !== tq) return false;
-          if (sf && m.resultStatus !== sf) return false;
+          if (sf && resultStatusId(m.resultStatus) !== sf) return false;
           if (from && m.matchDate < from) return false;
           if (to && m.matchDate > to) return false;
           return true;
@@ -290,7 +295,7 @@
             const players2 = el('span', { className: 'admin-match-players' });
             players2.append(text('b', m.player1Name || m.player1Id || '?'), text('span', ' vs ', 'admin-match-vs'), text('b', m.player2Name || m.player2Id || '?'));
             const score = el('span', { className: 'admin-match-score' }); score.textContent = m.score || '-';
-            const badge = el('span', { className: `admin-match-badge ${statusColor(m.resultStatus)}` }); badge.textContent = m.resultStatus || '-';
+            const badge = el('span', { className: `admin-match-badge ${statusColor(m.resultStatus)}` }); badge.textContent = statusLabel(m.resultStatus) || '-';
             const tourn = el('span', { className: 'admin-match-tourn' }); tourn.textContent = tournName(m.tournamentId);
             row.append(players2, score, badge, tourn);
             row.onclick = () => { selectedId = m.tournamentMatchId; updateList(); showTournamentMatchEditor(m); };
@@ -324,7 +329,7 @@
     const player1 = playerSelect('player1Id', record.player1Id); const player2 = playerSelect('player2Id', record.player2Id);
     const sets1 = el('input', { name: 'player1Sets', type: 'number', min: '0', step: '1', required: true, value: String(record.player1Sets ?? 0) });
     const sets2 = el('input', { name: 'player2Sets', type: 'number', min: '0', step: '1', required: true, value: String(record.player2Sets ?? 0) });
-    const resultStatus = select('resultStatus', resultStatusOpts.filter(Boolean), record.resultStatus || 'Completed');
+    const resultStatus = select('resultStatus', resultStatusOpts.filter(Boolean), resultStatusId(record.resultStatus) || completedStatusId);
     const p1sl = el('input', { name: 'player1SchoolLevel', type: 'hidden', value: record.player1SchoolLevel || '' });
     const p1gr = el('input', { name: 'player1Grade', type: 'hidden', value: record.player1Grade || '' });
     const p2sl = el('input', { name: 'player2SchoolLevel', type: 'hidden', value: record.player2SchoolLevel || '' });
@@ -343,7 +348,7 @@
     [date, event, division, format, player1, player2, sets1, sets2, resultStatus].forEach(input => { input.disabled = readOnly; });
     const derived = text('p', '', 'admin-derived'); form.append(derived);
     const updateDerived = () => {
-      const one = Number(sets1.value); const two = Number(sets2.value); const incomplete = resultStatus.value === 'Incomplete';
+      const one = Number(sets1.value); const two = Number(sets2.value); const incomplete = isIncompleteStatus(resultStatus.value);
       derived.textContent = `Score: ${Number.isFinite(one) ? one : 0}-${Number.isFinite(two) ? two : 0} · Winner: ${incomplete || one === two ? 'なし / None' : playerName(one > two ? player1.value : player2.value) || 'Select players'}`;
     };
     [player1, player2, sets1, sets2, resultStatus].forEach(input => input.oninput = updateDerived); updateDerived();
@@ -356,7 +361,7 @@
         event.preventDefault(); const next = match ? { ...record, ...Object.fromEntries(new FormData(form)) } : Object.fromEntries(new FormData(form));
         if (!next.player1Id || !next.player2Id || next.player1Id === next.player2Id) { derived.textContent = 'Choose two different players. / 異なる2名の選手を選択してください。'; return; }
         next.player1Sets = Number(next.player1Sets); next.player2Sets = Number(next.player2Sets); next.player1Name = playerName(next.player1Id); next.player2Name = playerName(next.player2Id); next.score = `${next.player1Sets}-${next.player2Sets}`;
-        if (next.resultStatus === 'Incomplete' || next.player1Sets === next.player2Sets) { next.winnerId = ''; next.winnerName = ''; } else { next.winnerId = next.player1Sets > next.player2Sets ? next.player1Id : next.player2Id; next.winnerName = playerName(next.winnerId); }
+        if (isIncompleteStatus(next.resultStatus) || next.player1Sets === next.player2Sets) { next.winnerId = ''; next.winnerName = ''; } else { next.winnerId = next.player1Sets > next.player2Sets ? next.player1Id : next.player2Id; next.winnerName = playerName(next.winnerId); }
         next.matchId = match?.matchId || newMatchId();
         submitChange('match', next.matchId, next, match ? 'update' : 'create').then(loadWorkspace).catch(error => { derived.textContent = `${error.message} / 保存できませんでした`; });
       };
@@ -371,7 +376,7 @@
 
   function showTournamentMatchEditor(match) {
     const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
-    const readOnly = !canEditMatches(); const record = match ? { ...match } : { tournamentMatchId: newEntityId('tournamentMatch'), tournamentId: '', matchDate: new Date().toISOString().slice(0, 10), round: '', format: '', player1Id: '', player1Sets: 0, player2Id: '', player2Sets: 0, winnerId: '', score: '0-0', resultStatus: 'Completed' };
+    const readOnly = !canEditMatches(); const record = match ? { ...match } : { tournamentMatchId: newEntityId('tournamentMatch'), tournamentId: '', matchDate: new Date().toISOString().slice(0, 10), round: '', format: '', player1Id: '', player1Sets: 0, player2Id: '', player2Sets: 0, winnerId: '', score: '0-0', resultStatus: completedStatusId };
     editor.append(text('p', readOnly ? 'VIEW ONLY / 閲覧専用' : match ? 'EDIT TOURNAMENT MATCH / 大会試合編集' : 'NEW TOURNAMENT MATCH / 新規大会試合', 'eyebrow'), text('h2', match ? `${record.player1Name || record.player1Id || '?'} vs ${record.player2Name || record.player2Id || '?'}` : 'Add tournament match'));
     const form = el('form', { className: 'admin-player-form admin-match-form' });
     // --- Info section ---
@@ -380,7 +385,7 @@
     const date = el('input', { name: 'matchDate', type: 'date', required: true, value: record.matchDate || '' });
     const round = el('input', { name: 'round', type: 'text', value: record.round || '' });
     const format = el('input', { name: 'format', type: 'text', value: record.format || '' });
-    const resultStatus = select('resultStatus', resultStatusOpts.filter(Boolean), record.resultStatus || 'Completed');
+    const resultStatus = select('resultStatus', resultStatusOpts.filter(Boolean), resultStatusId(record.resultStatus) || completedStatusId);
     const addMetaField = (label, input) => { const l = el('label'); l.append(text('span', label), input); sectionMeta.append(l); };
     addMetaField('大会 / Tournament', tournamentInput); addMetaField('日付 / Date', date); addMetaField('ラウンド / Round', round); addMetaField('形式 / Format', format); addMetaField('結果ステータス / Result Status', resultStatus);
     form.append(sectionMeta);
@@ -397,10 +402,10 @@
     const derived = text('p', '', 'admin-derived'); form.append(derived);
     const updateDerived = () => {
       const one = Number(sets1.value); const two = Number(sets2.value);
-      const winner = one > two ? player1.value : two > one ? player2.value : '';
+      const winner = isIncompleteStatus(resultStatus.value) ? '' : one > two ? player1.value : two > one ? player2.value : '';
       derived.textContent = `Score: ${Number.isFinite(one) ? one : 0}-${Number.isFinite(two) ? two : 0} · Winner: ${winner ? playerName(winner) : 'なし / None'}`;
     };
-    [player1, player2, sets1, sets2].forEach(input => input.oninput = updateDerived); updateDerived();
+    [player1, player2, sets1, sets2, resultStatus].forEach(input => input.oninput = updateDerived); updateDerived();
     if (!readOnly) {
       const actions = el('div', { className: 'admin-editor-actions' });
       actions.append(button('SAVE / 保存', () => { if (confirm(match ? 'Submit this match change? / この試合の変更を申請しますか？' : 'Submit this new match? / 新規試合を申請しますか？')) form.requestSubmit(); }, 'primary'));
@@ -411,7 +416,7 @@
         next.player1Name = playerName(next.player1Id); next.player2Name = playerName(next.player2Id);
         next.player1Sets = Number(next.player1Sets); next.player2Sets = Number(next.player2Sets);
         next.score = `${next.player1Sets}-${next.player2Sets}`;
-        next.winnerId = next.player1Sets > next.player2Sets ? next.player1Id : next.player2Sets > next.player1Sets ? next.player2Id : '';
+        next.winnerId = isIncompleteStatus(next.resultStatus) ? '' : next.player1Sets > next.player2Sets ? next.player1Id : next.player2Sets > next.player1Sets ? next.player2Id : '';
         next.winnerName = next.winnerId ? playerName(next.winnerId) : '';
         next.tournamentMatchId = match?.tournamentMatchId || newEntityId('tournamentMatch');
         submitChange('tournamentMatch', next.tournamentMatchId, next, match ? 'update' : 'create').then(loadWorkspace).catch(error => { derived.textContent = `${error.message} / 保存できませんでした`; });
@@ -647,7 +652,7 @@
     Object.defineProperty(wrapper, 'disabled', { set(v) { input.disabled = v; }, get() { return input.disabled; } });
     return wrapper;
   }
-  function newMatch() { return { matchDate: new Date().toISOString().slice(0, 10), event: 'Club Training', division: '', format: 'Singles', player1Id: '', player1Name: '', player1Sets: 0, player2Id: '', player2Name: '', player2Sets: 0, winnerId: '', winnerName: '', score: '0-0', resultStatus: 'Completed' }; }
+  function newMatch() { return { matchDate: new Date().toISOString().slice(0, 10), event: 'Club Training', division: '', format: 'Singles', player1Id: '', player1Name: '', player1Sets: 0, player2Id: '', player2Name: '', player2Sets: 0, winnerId: '', winnerName: '', score: '0-0', resultStatus: completedStatusId }; }
   function newMatchId() { const stamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14); let sequence = 1; let id; do { id = `LK-T-${stamp}-${String(sequence++).padStart(3, '0')}`; } while (trainingMatches.some(match => match.matchId === id)); return id; }
   function newEntityId(type) {
     const existing = entityData[entityStorageKey[type]] || [];
@@ -686,7 +691,7 @@
     const stats = {};
     allPlayers.forEach(p => { const id = p.playerId || p.externalOpponentId; stats[id] = { played: 0, wins: 0, losses: 0 }; });
     (trainingMatches || []).forEach(m => {
-      if (m.resultStatus === 'Incomplete' || m.resultStatus === '未完了') return;
+      if (isIncompleteStatus(m.resultStatus)) return;
       const s1 = stats[m.player1Id]; const s2 = stats[m.player2Id];
       if (s1) s1.played++;
       if (s2) s2.played++;
