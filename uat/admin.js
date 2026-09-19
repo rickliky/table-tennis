@@ -217,7 +217,7 @@
     listHeader.append(heading); listPanel.append(listHeader);
     // Sub-tabs: Training / Tournament
     const subTabs = el('div', { className: 'admin-sub-tabs' });
-    const subTab = (id, label) => { const node = button(label, () => { activeMatchSubTab = id; selectedId = ''; renderAllMatches(); }, `admin-sub-tab${activeMatchSubTab === id ? ' active' : ''}`); return node; };
+    const subTab = (id, label) => { const node = button(label, () => { activeMatchSubTab = id; selectedId = ''; renderWorkspace(); }, `admin-sub-tab${activeMatchSubTab === id ? ' active' : ''}`); return node; };
     subTabs.append(subTab('training', 'TRAINING / 練習'), subTab('tournament', 'TOURNAMENT / 大会'));
     listPanel.append(subTabs);
     // Filters row
@@ -436,7 +436,7 @@
     listHeader.append(heading); listPanel.append(listHeader);
     // Sub-tabs: List / Progress
     const subTabs = el('div', { className: 'admin-sub-tabs' });
-    const subTab = (id, label) => { const node = button(label, () => { activeTournSubTab = id; selectedId = ''; renderTournaments(); }, `admin-sub-tab${activeTournSubTab === id ? ' active' : ''}`); return node; };
+    const subTab = (id, label) => { const node = button(label, () => { activeTournSubTab = id; selectedId = ''; renderWorkspace(); }, `admin-sub-tab${activeTournSubTab === id ? ' active' : ''}`); return node; };
     subTabs.append(subTab('list', 'LIST / 一覧'), subTab('progress', 'PROGRESS / 進捗'));
     listPanel.append(subTabs);
     if (canEditMatches()) {
@@ -668,7 +668,7 @@
     const search = el('input', { type: 'search', placeholder: '名前・ID・カテゴリ等で検索 / Search by name, ID, category, equipment...', ariaLabel: 'Search players' }); listHeader.append(heading, search);
     // Sub-tabs
     const subTabs = el('div', { className: 'admin-sub-tabs' });
-    const subTab = (id, label) => { const node = button(label, () => { activePlayerSubTab = id; selectedId = ''; renderPlayers(); }, `admin-sub-tab${activePlayerSubTab === id ? ' active' : ''}`); return node; };
+    const subTab = (id, label) => { const node = button(label, () => { activePlayerSubTab = id; selectedId = ''; renderWorkspace(); }, `admin-sub-tab${activePlayerSubTab === id ? ' active' : ''}`); return node; };
     subTabs.append(subTab('ourPlayers', 'OUR PLAYERS / リトルキングス'), subTab('extPlayers', 'OTHER PLAYERS / 外部選手'));
     listPanel.append(listHeader, subTabs);
     const addBtn = isExtTab
@@ -1025,7 +1025,7 @@
   function renderManage() {
     const workspace = el('section', { className: 'admin-workspace' });
     const subTabs = el('div', { className: 'admin-sub-tabs' });
-    const subTab = (id, label) => { const node = button(label, () => { activeManageSubTab = id; renderManage(); }, `admin-sub-tab${activeManageSubTab === id ? ' active' : ''}`); return node; };
+    const subTab = (id, label) => { const node = button(label, () => { activeManageSubTab = id; renderWorkspace(); }, `admin-sub-tab${activeManageSubTab === id ? ' active' : ''}`); return node; };
     subTabs.append(subTab('pending', 'PENDING / 承認待ち'), subTab('history', 'HISTORY / 履歴'));
     const header = el('div', { className: 'admin-list-header' });
     header.append(text('p', 'MANAGE / 管理', 'eyebrow'), text('h2', activeManageSubTab === 'pending' ? 'Review changes' : 'Processed changes'));
