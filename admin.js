@@ -895,7 +895,10 @@
       if (!results.length) list.append(text('p', '該当するレコードがありません / No records found.', 'admin-empty'));
       results.forEach(record => {
         const row = el('button', { type: 'button', className: `admin-player-row${record[idField] === selectedId ? ' selected' : ''}` });
-        const names = el('span'); names.append(text('b', record[idField] || 'Unnamed'), text('small', record.displayName || record.name || record.matchDate || ''));
+        const names = el('span');
+        const mainLabel = type === 'clubs' ? (record.nameJa || record.name || record[idField]) : (record[idField] || 'Unnamed');
+        const subLabel = type === 'clubs' ? `${record.clubId || ''} · ${record.name || ''}` : (record.displayName || record.name || record.matchDate || '');
+        names.append(text('b', mainLabel), text('small', subLabel));
         row.append(names); row.onclick = () => { selectedId = record[idField]; updateList(); showEntityEditor(type, record); }; list.append(row);
       });
     };
