@@ -280,3 +280,21 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Tournament page calendar now starts on the first tournament's month instead of the current month.
 - Fixes the issue where a May 2026 tournament showed a September 2026 calendar.
 - `renderCalendar()` initializes `currentMonth` from the earliest tournament date, not `new Date()`.
+
+### Bilingual Fixes (2026-09-20)
+- **app.js**: `t('win')`/`t('loss')` → `phrase('win')`/`phrase('loss')` (tooltips were always blank)
+- **app.js**: Session calendar weekdays now bilingual (日月火水木金土 vs SMTWTFS)
+- **app.js**: Monthly category ranking eyebrow and aria-label now bilingual
+- **player.js**: `localizeProfileDossier()` handles all three label formats (bilingual, English-only, Japanese-only)
+- **player.js**: "HOW TO READ" dialog eyebrow now bilingual
+- **tournament.js**: Rank suffix bilingual (1st/2nd/3rd vs 1位/2位/3位)
+- **tournament.js**: Plural `s` only appended in English mode (was showing `参加者s`)
+- **tournament.html**: Language toggle shows opposite language; loading text bilingual
+- **admin.js**: Diff table headers bilingual (Field/項目, Before/変更前, After/変更後, Value/値)
+- **admin.js**: Count labels bilingual (matches/試合, tournaments/大会, etc.)
+- **admin.js**: Filter labels bilingual (FROM/開始, TO/終了, STATUS/ステータス)
+- **admin.js**: Approver login overlay bilingual
+- **admin.js**: History action/status labels bilingual (NEW/新規, ACCEPTED/承認済み, etc.)
+- **admin.js**: Day-of-week abbreviations bilingual
+- **admin.js**: Nav links, subtitle, editor headings all bilingual
+- **admin.js**: Pending/processed summary text bilingual

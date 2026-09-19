@@ -117,18 +117,18 @@
     header.append(cancelBtn);
     box.append(header);
     const meta = el('div', { className: 'admin-pending-info-meta' });
-    meta.append(text('span', `Submitted by: ${change.createdBy} · ${formatPendingDate(change.createdAt)}`));
+    meta.append(text('span', `Submitted by: / 申請者: ${change.createdBy} · ${formatPendingDate(change.createdAt)}`));
     box.append(meta);
     const diff = computeDiff(change);
     if (diff.length) {
       const table = el('table', { className: 'admin-pending-table' });
-      const thead = el('thead'); const thr = el('tr'); thr.append(text('th', 'Field'), text('th', 'Before'), text('th', 'After')); thead.append(thr); table.append(thead);
+      const thead = el('thead'); const thr = el('tr'); thr.append(text('th', 'Field / 項目'), text('th', 'Before / 変更前'), text('th', 'After / 変更後')); thead.append(thr); table.append(thead);
       const tbody = el('tbody'); table.append(tbody);
       diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : displayValue(d.field, d.before)), text('td', d.after === '' || d.after == null ? '—' : displayValue(d.field, d.after))); tbody.append(row); });
       box.append(table);
     } else if (change.action === 'create' && change.after) {
       const table = el('table', { className: 'admin-pending-table' });
-      const thead = el('thead'); const thr = el('tr'); thr.append(text('th', 'Field'), text('th', 'Value')); thead.append(thr); table.append(thead);
+      const thead = el('thead'); const thr = el('tr'); thr.append(text('th', 'Field / 項目'), text('th', 'Value / 値')); thead.append(thr); table.append(thead);
       const tbody = el('tbody'); table.append(tbody);
       Object.entries(change.after).forEach(([key, value]) => { if (value === '' || value === null || value === undefined || key === 'gradeHistory') return; const row = el('tr'); row.append(text('td', key), text('td', displayValue(key, value))); tbody.append(row); });
       box.append(table);
@@ -149,7 +149,7 @@
   function showApproverLogin() {
     const loginOverlay = el('div', { className: 'admin-login-overlay' });
     const login = el('section', { className: 'admin-login admin-panel' });
-    login.append(text('p', 'APPROVER SIGN-IN / 承認者ログイン', 'eyebrow'), text('h2', '承認者アクセス'), text('p', '承認待ちの変更を確認・承認できます。管理者権限はありません。', 'admin-login-desc'));
+    login.append(text('p', 'APPROVER SIGN-IN / 承認者ログイン', 'eyebrow'), text('h2', '承認者アクセス / Approver Access'), text('p', '承認待ちの変更を確認・承認できます。管理者権限はありません。\nYou can review and approve pending changes. No admin privileges.', 'admin-login-desc'));
     const form = el('form', { className: 'admin-login-form' });
     const password = el('input', { name: 'password', type: 'password', required: true, autocomplete: 'current-password', placeholder: 'Password / パスワード' });
     const actions = el('div', { className: 'admin-login-actions' });
@@ -186,10 +186,10 @@
     const header = el('header', { className: 'site-header' });
     const brand = el('a', { className: 'brand', href: 'index.html', 'aria-label': 'Little Kings home' });
     const brandText = el('span');
-    brandText.append(text('span', 'LITTLE KINGS'), el('small', { textContent: 'DATA MAINTENANCE' }));
+    brandText.append(text('span', 'LITTLE KINGS'), el('small', { textContent: 'データメンテナンス / DATA MAINTENANCE' }));
     brand.append(el('img', { src: 'little-kings-logo.jpg', alt: 'Little Kings crown' }), brandText);
     const nav = el('nav', { 'aria-label': 'Main navigation' });
-    nav.append(el('a', { href: 'index.html', textContent: 'Home' }), el('a', { href: 'index.html#players', textContent: 'Players' }), el('a', { href: 'index.html#stats', textContent: 'Statistics' }));
+    nav.append(el('a', { href: 'index.html', textContent: 'Home / ホーム' }), el('a', { href: 'index.html#players', textContent: 'Players / 選手' }), el('a', { href: 'index.html#stats', textContent: 'Statistics / 統計' }));
     const headerActions = el('div', { className: 'header-actions' });
     if (currentRole === 'approver') {
       headerActions.append(text('span', '承認者 / Approver', 'admin-role-badge'));
@@ -218,7 +218,7 @@
     const listPanel = el('section', { className: 'admin-panel admin-list-panel' });
     const listHeader = el('div', { className: 'admin-list-header' });
     const tourns = entityData.tournaments || [];
-    const heading = el('div'); heading.append(text('p', 'MATCHES / 試合一覧', 'eyebrow'), text('h2', `${trainingMatches.length + (entityData.tournamentMatches || []).length} matches`));
+    const heading = el('div'); heading.append(text('p', 'MATCHES / 試合一覧', 'eyebrow'), text('h2', `${trainingMatches.length + (entityData.tournamentMatches || []).length} matches / 試合`));
     listHeader.append(heading); listPanel.append(listHeader);
     // Sub-tabs: Training / Tournament
     const subTabs = el('div', { className: 'admin-sub-tabs' });
@@ -235,7 +235,7 @@
     ['', completedStatusId, incompleteStatusId].forEach(s => { statusFilter.append(el('option', { value: s, textContent: s ? statusLabel(s) : 'ALL STATUS / 全ステータス' })); });
     const isTraining = activeMatchSubTab === 'training';
     if (!isTraining) filters.append(text('span', '大会:', 'admin-filter-label'), tournFilter);
-    filters.append(text('span', 'FROM:', 'admin-filter-label'), dateFrom, text('span', 'TO:', 'admin-filter-label'), dateTo, text('span', 'STATUS:', 'admin-filter-label'), statusFilter);
+    filters.append(text('span', 'FROM / 開始:', 'admin-filter-label'), dateFrom, text('span', 'TO / 終了:', 'admin-filter-label'), dateTo, text('span', 'STATUS / ステータス:', 'admin-filter-label'), statusFilter);
     listPanel.append(filters);
     if (canEditMatches()) listPanel.append(button('+ ADD MATCH / 試合追加', () => isTraining ? showMatchEditor(null) : showTournamentMatchEditor(null), 'primary'));
     const list = el('div', { className: 'admin-player-list admin-match-list' }); listPanel.append(list);
@@ -259,7 +259,7 @@
         Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(date => {
           const dateHeader = el('div', { className: 'admin-match-date-header' });
           dateHeader.append(text('span', date === 'No date' ? 'No date / 日付なし' : date, 'admin-match-date'));
-          dateHeader.append(text('span', `${groups[date].length} matches`, 'admin-match-date-count'));
+          dateHeader.append(text('span', `${groups[date].length} matches / 試合`, 'admin-match-date-count'));
           list.append(dateHeader);
           groups[date].sort((a, b) => b.matchId.localeCompare(a.matchId)).forEach(match => {
             const row = el('button', { type: 'button', className: `admin-player-row admin-match-row${match.matchId === selectedId ? ' selected' : ''}` });
@@ -288,7 +288,7 @@
         Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(date => {
           const dateHeader = el('div', { className: 'admin-match-date-header' });
           dateHeader.append(text('span', date === 'No date' ? 'No date / 日付なし' : date, 'admin-match-date'));
-          dateHeader.append(text('span', `${groups[date].length} matches`, 'admin-match-date-count'));
+          dateHeader.append(text('span', `${groups[date].length} matches / 試合`, 'admin-match-date-count'));
           list.append(dateHeader);
           groups[date].forEach(m => {
             const row = el('button', { type: 'button', className: `admin-player-row admin-match-row${m.tournamentMatchId === selectedId ? ' selected' : ''}` });
@@ -313,7 +313,7 @@
   function showMatchEditor(match) {
     const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
     const readOnly = !canEditMatches(); const record = match ? { ...match } : newMatch();
-    editor.append(text('p', readOnly ? 'VIEW ONLY / 閲覧専用' : match ? 'EDIT TRAINING MATCH / 練習試合編集' : 'NEW TRAINING MATCH / 新規練習試合', 'eyebrow'), text('h2', match ? `${record.player1Name || record.player1Id} vs ${record.player2Name || record.player2Id}` : 'Add training match'));
+    editor.append(text('p', readOnly ? 'VIEW ONLY / 閲覧専用' : match ? 'EDIT TRAINING MATCH / 練習試合編集' : 'NEW TRAINING MATCH / 新規練習試合', 'eyebrow'), text('h2', match ? `${record.player1Name || record.player1Id} vs ${record.player2Name || record.player2Id}` : 'Add training match / 練習試合を追加'));
     const form = el('form', { className: 'admin-player-form admin-match-form' });
     // --- Date & Event section ---
     const sectionMeta = el('div', { className: 'admin-match-section' }); sectionMeta.append(text('p', 'INFO / 基本情報', 'admin-match-section-title'));
@@ -349,7 +349,7 @@
     const derived = text('p', '', 'admin-derived'); form.append(derived);
     const updateDerived = () => {
       const one = Number(sets1.value); const two = Number(sets2.value); const incomplete = isIncompleteStatus(resultStatus.value);
-      derived.textContent = `Score: ${Number.isFinite(one) ? one : 0}-${Number.isFinite(two) ? two : 0} · Winner: ${incomplete || one === two ? 'なし / None' : playerName(one > two ? player1.value : player2.value) || 'Select players'}`;
+      derived.textContent = `Score: ${Number.isFinite(one) ? one : 0}-${Number.isFinite(two) ? two : 0} · Winner: ${incomplete || one === two ? 'なし / None' : playerName(one > two ? player1.value : player2.value) || 'Select players / 選手を選択'}`;
     };
     [player1, player2, sets1, sets2, resultStatus].forEach(input => input.oninput = updateDerived); updateDerived();
     if (!readOnly) {
@@ -377,7 +377,7 @@
   function showTournamentMatchEditor(match) {
     const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
     const readOnly = !canEditMatches(); const record = match ? { ...match } : { tournamentMatchId: newEntityId('tournamentMatch'), tournamentId: '', matchDate: new Date().toISOString().slice(0, 10), round: '', format: '', player1Id: '', player1Sets: 0, player2Id: '', player2Sets: 0, winnerId: '', score: '0-0', resultStatus: completedStatusId };
-    editor.append(text('p', readOnly ? 'VIEW ONLY / 閲覧専用' : match ? 'EDIT TOURNAMENT MATCH / 大会試合編集' : 'NEW TOURNAMENT MATCH / 新規大会試合', 'eyebrow'), text('h2', match ? `${record.player1Name || record.player1Id || '?'} vs ${record.player2Name || record.player2Id || '?'}` : 'Add tournament match'));
+    editor.append(text('p', readOnly ? 'VIEW ONLY / 閲覧専用' : match ? 'EDIT TOURNAMENT MATCH / 大会試合編集' : 'NEW TOURNAMENT MATCH / 新規大会試合', 'eyebrow'), text('h2', match ? `${record.player1Name || record.player1Id || '?'} vs ${record.player2Name || record.player2Id || '?'}` : 'Add tournament match / 大会試合を追加'));
     const form = el('form', { className: 'admin-player-form admin-match-form' });
     // --- Info section ---
     const sectionMeta = el('div', { className: 'admin-match-section' }); sectionMeta.append(text('p', 'INFO / 基本情報', 'admin-match-section-title'));
@@ -437,7 +437,7 @@
     const listPanel = el('section', { className: 'admin-panel admin-list-panel' });
     const listHeader = el('div', { className: 'admin-list-header' });
     const tourns = entityData.tournaments || [];
-    const heading = el('div'); heading.append(text('p', 'TOURNAMENTS / 大会', 'eyebrow'), text('h2', `${tourns.length} tournaments`));
+    const heading = el('div'); heading.append(text('p', 'TOURNAMENTS / 大会', 'eyebrow'), text('h2', `${tourns.length} tournaments / 大会`));
     listHeader.append(heading); listPanel.append(listHeader);
     // Sub-tabs: List / Progress
     const subTabs = el('div', { className: 'admin-sub-tabs' });
@@ -493,7 +493,7 @@
   function showTournamentProgressEditor(record) {
     const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
     const readOnly = !canEditMatches(); const rec = record ? { ...record } : { tournamentProgressId: newEntityId('tournamentProgress'), tournamentId: '', playerId: '', totalWins: 0, totalLosses: 0, totalDraws: 0, eliminated: '' };
-    editor.append(text('p', readOnly ? 'VIEW ONLY / 閲覧専用' : record ? 'EDIT PROGRESS / 進捗編集' : 'NEW PROGRESS / 新規進捗', 'eyebrow'), text('h2', record ? `${playerName(rec.playerId) || rec.playerId} - ${rec.tournamentId}` : 'Add progress record'));
+    editor.append(text('p', readOnly ? 'VIEW ONLY / 閲覧専用' : record ? 'EDIT PROGRESS / 進捗編集' : 'NEW PROGRESS / 新規進捗', 'eyebrow'), text('h2', record ? `${playerName(rec.playerId) || rec.playerId} - ${rec.tournamentId}` : 'Add progress record / 進捗記録を追加'));
     const form = el('form', { className: 'admin-player-form' });
     const tournamentInput = tournamentSelect('tournamentId', rec.tournamentId || '');
     const playerInput = playerSelect('playerId', rec.playerId || '');
@@ -669,7 +669,7 @@
     const workspace = el('section', { className: 'admin-workspace' }); const listPanel = el('section', { className: 'admin-panel admin-list-panel' });
     const listHeader = el('div', { className: 'admin-list-header' }); const heading = el('div');
     const extCount = (entityData.externalOpponents || []).length;
-    heading.append(text('p', 'PLAYERS / 選手', 'eyebrow'), text('h2', isExtTab ? `${extCount} external` : `${players.length} players`));
+    heading.append(text('p', 'PLAYERS / 選手', 'eyebrow'), text('h2', isExtTab ? `${extCount} external / 外部選手` : `${players.length} players / 選手`));
     const search = el('input', { type: 'search', placeholder: '名前・ID・カテゴリ等で検索 / Search by name, ID, category, equipment...', ariaLabel: 'Search players' }); listHeader.append(heading, search);
     // Sub-tabs
     const subTabs = el('div', { className: 'admin-sub-tabs' });
@@ -711,7 +711,7 @@
     const idField = isExternal ? 'externalOpponentId' : 'playerId';
     const record = player ? { ...player } : newPlayer();
     const recordId = record[idField] || record.playerId || record.externalOpponentId || '';
-    editor.append(text('p', player ? `EDIT ${isExternal ? 'EXT. OPPONENT' : 'PLAYER'} / ${isExternal ? '外部選手編集' : '選手編集'}` : 'NEW PLAYER / 新規選手', 'eyebrow'), text('h2', player ? (record.displayName || recordId) : 'Add player'));
+    editor.append(text('p', player ? `EDIT ${isExternal ? 'EXT. OPPONENT' : 'PLAYER'} / ${isExternal ? '外部選手編集' : '選手編集'}` : 'NEW PLAYER / 新規選手', 'eyebrow'), text('h2', player ? (record.displayName || recordId) : 'Add player / 選手を追加'));
     const form = el('form', { className: 'admin-player-form' });
     let schoolLevelInput, gradeInput, gradeBirthHelper;
     const rubberInputs = {};
@@ -887,7 +887,7 @@
     const workspace = el('section', { className: 'admin-workspace' });
     const listPanel = el('section', { className: 'admin-panel admin-list-panel' });
     const listHeader = el('div', { className: 'admin-list-header' });
-    const heading = el('div'); heading.append(text('p', `${label} / 管理`, 'eyebrow'), text('h2', `${records.length} records`));
+    const heading = el('div'); heading.append(text('p', `${label} / 管理`, 'eyebrow'), text('h2', `${records.length} records / レコード`));
     const search = el('input', { type: 'search', placeholder: 'ID・名前で検索 / Search by ID or name', ariaLabel: `Search ${label}` });
     listHeader.append(heading, search); listPanel.append(listHeader);
     if (currentRole === 'admin') listPanel.append(button(`+ ADD / ${label.split(' / ')[0]}追加`, () => showEntityEditor(type, null), 'primary'));
@@ -914,7 +914,7 @@
     const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
     const fields = entityFields[type]; const idField = entityIdKey[type];
     const newId = record ? null : newEntityId(type);
-    editor.append(text('p', record ? `EDIT ${entityLabel[type]}` : `NEW ${entityLabel[type]}`, 'eyebrow'), text('h2', record ? (record.displayName || record.name || record[idField] || 'Record') : 'Add new record'));
+    editor.append(text('p', record ? `EDIT ${entityLabel[type]}` : `NEW ${entityLabel[type]}`, 'eyebrow'), text('h2', record ? (record.displayName || record.name || record[idField] || 'Record') : 'Add new record / 新規レコードを追加'));
     const form = el('form', { className: 'admin-player-form' });
     const entityRubberInputs = {};
     fields.forEach(([key, label, type, required, options]) => {
@@ -1011,8 +1011,8 @@
         processed.forEach(c => {
           const card = el('article', { className: `admin-history-card ${c.status}` });
           const cardHeader = el('div', { className: 'admin-history-card-header' });
-          const actionLabels = { create: 'NEW', update: 'MODIFIED', delete: 'DELETE' };
-          cardHeader.append(text('span', actionLabels[c.action] || c.action, `admin-pending-badge ${c.action}`), text('span', c.status === 'accepted' ? '✓ ACCEPTED' : '✗ REJECTED', `admin-history-status ${c.status}`), text('span', formatPendingDate(c.reviewedAt), 'admin-pending-date'));
+          const actionLabels = { create: 'NEW / 新規', update: 'MODIFIED / 変更', delete: 'DELETE / 削除' };
+          cardHeader.append(text('span', actionLabels[c.action] || c.action, `admin-pending-badge ${c.action}`), text('span', c.status === 'accepted' ? '✓ ACCEPTED / 承認済み' : '✗ REJECTED / 却下済み', `admin-history-status ${c.status}`), text('span', formatPendingDate(c.reviewedAt), 'admin-pending-date'));
           card.append(cardHeader);
           const diff = computeDiff(c);
           if (diff.length) {
@@ -1046,7 +1046,7 @@
     try {
       const result = await window.LKData.request('/api/pending'); const changes = (result.changes || []).filter(change => change.status === 'pending');
       if (!changes.length) { panel.append(text('p', 'No pending changes. / 承認待ちの変更はありません。', 'admin-empty')); return; }
-      const summary = text('p', `${changes.length} change${changes.length > 1 ? 's' : ''} awaiting review`, 'admin-pending-summary'); panel.append(summary);
+      const summary = text('p', `${changes.length} change${changes.length > 1 ? 's' : ''} awaiting review / 承認待ち`, 'admin-pending-summary'); panel.append(summary);
       if (currentRole === 'approver') {
         const bulkActions = el('div', { className: 'admin-pending-bulk-actions' });
         const bulkStatus = text('span', '', 'admin-pending-action-status');
@@ -1059,7 +1059,7 @@
             try {
               await window.LKData.request('/api/approve', { method: 'POST', body: JSON.stringify({ changeId: change.changeId, decision }) });
               done++;
-              bulkStatus.textContent = `${done + failed}/${changes.length} processed...`;
+              bulkStatus.textContent = `${done + failed}/${changes.length} processed... / 処理中...`;
             } catch { failed++; }
           }
           bulkStatus.textContent = `Done: ${done} ${label}d, ${failed} failed. / 完了: ${done}件${label === 'accept' ? '承認' : '却下'}、${failed}件失敗。`;
@@ -1081,7 +1081,7 @@
         const header = el('div', { className: 'admin-pending-card-header' });
         header.append(text('span', actionLabels[change.action] || change.action, `admin-pending-badge ${actionClass[change.action] || ''}`), text('h3', change.summary || `${change.entityType} · ${change.targetId}`), text('span', formatPendingDate(change.createdAt), 'admin-pending-date'));
         const meta = el('div', { className: 'admin-pending-meta' });
-        meta.append(text('span', `${change.entityType} · ${change.targetId} · Submitted by: ${change.createdBy}`, 'admin-pending-by'));
+        meta.append(text('span', `${change.entityType} · ${change.targetId} · Submitted by: / 申請者: ${change.createdBy}`, 'admin-pending-by'));
         card.append(header, meta);
         if (change.action === 'delete' && change.before) {
           const deleted = el('div', { className: 'admin-pending-deleted' }); deleted.append(text('p', 'Record to be deleted / 削除対象レコード', 'admin-pending-section-title'));
@@ -1185,16 +1185,16 @@
           const group = el('div', { className: 'admin-history-group' });
           const groupHeader = el('div', { className: 'admin-history-group-header' });
           const d = day ? new Date(day + 'T00:00:00') : null;
-          const dateLabel = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} (${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]})` : day;
-          groupHeader.append(text('h3', dateLabel), text('span', `${items.length} change${items.length > 1 ? 's' : ''}`, 'admin-history-count'));
+          const dateLabel = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} (${(language === 'ja' ? ['日','月','火','水','木','金','土'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'])[d.getDay()]})` : day;
+          groupHeader.append(text('h3', dateLabel), text('span', `${items.length} change${items.length > 1 ? 's' : ''} / 件`, 'admin-history-count'));
           group.append(groupHeader);
           items.forEach(c => {
             const card = el('article', { className: `admin-history-card ${c.status}` });
             const cardHeader = el('div', { className: 'admin-history-card-header' });
-            const actionLabels = { create: 'NEW', update: 'MODIFIED', delete: 'DELETE' };
-            cardHeader.append(text('span', actionLabels[c.action] || c.action, `admin-pending-badge ${c.action}`), text('h4', c.summary || `${c.entityType} · ${c.targetId}`), text('span', c.status === 'accepted' ? '✓ ACCEPTED' : '✗ REJECTED', `admin-history-status ${c.status}`), text('span', formatPendingDate(c.reviewedAt), 'admin-pending-date'));
+            const actionLabels = { create: 'NEW / 新規', update: 'MODIFIED / 変更', delete: 'DELETE / 削除' };
+            cardHeader.append(text('span', actionLabels[c.action] || c.action, `admin-pending-badge ${c.action}`), text('h4', c.summary || `${c.entityType} · ${c.targetId}`), text('span', c.status === 'accepted' ? '✓ ACCEPTED / 承認済み' : '✗ REJECTED / 却下済み', `admin-history-status ${c.status}`), text('span', formatPendingDate(c.reviewedAt), 'admin-pending-date'));
             const meta = el('div', { className: 'admin-pending-meta' });
-            meta.append(text('span', `${c.entityType} · ${c.targetId} · Submitted: ${c.createdBy} · Reviewed: ${c.reviewedBy || '-'}`, 'admin-pending-by'));
+            meta.append(text('span', `${c.entityType} · ${c.targetId} · Submitted: / 申請者: ${c.createdBy} · Reviewed: / 確認者: ${c.reviewedBy || '-'}`, 'admin-pending-by'));
             card.append(cardHeader, meta);
             const diff = computeDiff(c);
             if (diff.length) {
