@@ -86,6 +86,8 @@
   let allPlayersList = [];
   let currentRole = '';
   let activeTab = 'matches';
+  let activePlayerSubTab = 'ourPlayers';
+  let activeManageSubTab = 'pending';
   let selectedId = '';
 
   const el = (tag, options = {}) => Object.assign(document.createElement(tag), options);
@@ -192,87 +194,115 @@
     }
     header.append(brand, nav, headerActions);
     const tabs = el('nav', { className: 'admin-tabs', ariaLabel: 'Data maintenance sections' });
-    if (currentRole === 'approver') {
-      tabs.append(tab('pending', 'PENDING CHANGES / 承認待ち'));
-      tabs.append(tab('history', 'HISTORY / 変更履歴'));
-      activeTab = 'pending';
-    } else {
-      tabs.append(tab('matches', 'TRAINING MATCHES / 練習試合'));
-      tabs.append(tab('ourPlayers', 'OUR PLAYERS / リトルキングス'), tab('extPlayers', 'OTHER PLAYERS / 外部選手'), tab('clubs', 'CLUBS / クラブ'), tab('tournaments', 'TOURNAMENTS / 大会'), tab('tournamentMatches', 'TOURNAMENT RESULTS / 大会結果'), tab('tournamentProgress', 'TOURNAMENT PROGRESS / 大会進捗'));
-      tabs.append(tab('pending', 'PENDING CHANGES / 承認待ち'));
-      tabs.append(tab('history', 'HISTORY / 変更履歴'));
-    }
+    tabs.append(tab('matches', 'MATCHES / 試合'));
+    tabs.append(tab('players', 'PLAYERS / 選手'));
+    tabs.append(tab('tournaments', 'TOURNAMENTS / 大会'));
+    if (currentRole === 'admin') tabs.append(tab('clubs', 'CLUBS / クラブ'));
+    tabs.append(tab('manage', 'MANAGE / 管理'));
     app.append(header, tabs);
-    if (activeTab === 'ourPlayers' || activeTab === 'extPlayers') renderPlayers(activeTab); else if (activeTab === 'pending') renderPending(); else if (activeTab === 'history') renderHistory(); else if (activeTab === 'matches') renderMatches(); else if (activeTab === 'tournamentMatches') renderTournamentMatches(); else if (activeTab === 'tournamentProgress') renderTournamentProgress(); else renderEntity(activeTab);
+    if (activeTab === 'matches') renderAllMatches(); else if (activeTab === 'players') renderPlayers(activePlayerSubTab); else if (activeTab === 'tournaments') renderTournaments(); else if (activeTab === 'clubs') renderEntity('clubs'); else if (activeTab === 'manage') renderManage(); else renderAllMatches();
   }
   function button(label, onclick, className = '') { const node = el('button', { className: `admin-button ${className}`.trim(), type: 'button', textContent: label }); node.onclick = onclick; return node; }
   function tab(id, label) { const node = button(label, () => { activeTab = id; selectedId = ''; renderWorkspace(); }, `admin-tab${activeTab === id ? ' active' : ''}`); return node; }
   function roleLabel(role) { return ({ admin: '管理者', approver: '承認者' })[role] || role; }
 
-  function renderMatches() {
+  let activeMatchSubTab = 'training';
+
+  function renderAllMatches() {
     const workspace = el('section', { className: 'admin-workspace' });
     const listPanel = el('section', { className: 'admin-panel admin-list-panel' });
     const listHeader = el('div', { className: 'admin-list-header' });
-    const heading = el('div'); heading.append(text('p', 'TRAINING MATCHES / 練習試合一覧', 'eyebrow'), text('h2', `${trainingMatches.length} matches`));
-    const search = el('input', { type: 'search', placeholder: '選手名・IDで検索 / Search player name or ID...', ariaLabel: 'Search training matches' });
-    listHeader.append(heading, search); listPanel.append(listHeader);
+    const tourns = entityData.tournaments || [];
+    const heading = el('div'); heading.append(text('p', 'MATCHES / 試合一覧', 'eyebrow'), text('h2', `${trainingMatches.length + (entityData.tournamentMatches || []).length} matches`));
+    listHeader.append(heading); listPanel.append(listHeader);
+    // Sub-tabs: Training / Tournament
+    const subTabs = el('div', { className: 'admin-sub-tabs' });
+    const subTab = (id, label) => { const node = button(label, () => { activeMatchSubTab = id; selectedId = ''; renderAllMatches(); }, `admin-sub-tab${activeMatchSubTab === id ? ' active' : ''}`); return node; };
+    subTabs.append(subTab('training', 'TRAINING / 練習'), subTab('tournament', 'TOURNAMENT / 大会'));
+    listPanel.append(subTabs);
     // Filters row
     const filters = el('div', { className: 'admin-match-filters' });
+    const tournFilter = tournamentSelect('tournFilter', '');
+    tournFilter.querySelector('input').placeholder = '大会で絞り込み / Filter by tournament...';
     const dateFrom = el('input', { type: 'date', ariaLabel: 'From date' });
     const dateTo = el('input', { type: 'date', ariaLabel: 'To date' });
     const statusFilter = el('select');
-    ['', 'Completed', 'Incomplete'].forEach(s => {
-      statusFilter.append(el('option', { value: s, textContent: s || 'ALL STATUS / 全ステータス' }));
-    });
+    ['', 'Completed', 'Incomplete'].forEach(s => { statusFilter.append(el('option', { value: s, textContent: s || 'ALL STATUS / 全ステータス' })); });
+    const isTraining = activeMatchSubTab === 'training';
+    if (!isTraining) filters.append(text('span', '大会:', 'admin-filter-label'), tournFilter);
     filters.append(text('span', 'FROM:', 'admin-filter-label'), dateFrom, text('span', 'TO:', 'admin-filter-label'), dateTo, text('span', 'STATUS:', 'admin-filter-label'), statusFilter);
     listPanel.append(filters);
-    if (canEditMatches()) listPanel.append(button('+ ADD MATCH / 試合追加', () => showMatchEditor(null), 'primary'));
+    if (canEditMatches()) listPanel.append(button('+ ADD MATCH / 試合追加', () => isTraining ? showMatchEditor(null) : showTournamentMatchEditor(null), 'primary'));
     const list = el('div', { className: 'admin-player-list admin-match-list' }); listPanel.append(list);
     const editor = el('section', { className: 'admin-panel admin-editor-panel' }); workspace.append(listPanel, editor); app.append(workspace);
     const statusColor = s => ({ 'Verified': 'status-complete', 'Complete': 'status-complete', 'Completed': 'status-complete', 'Transcribed - review': 'status-complete', 'Draw': 'status-complete', 'Void': 'status-incomplete', 'Incomplete': 'status-incomplete' }[s] || '');
+    const tournName = tid => { const t = tourns.find(x => x.tournamentId === tid); return t ? t.name : tid; };
     const updateList = () => {
-      empty(list); const query = search.value.trim().toLowerCase();
+      empty(list);
       const from = dateFrom.value; const to = dateTo.value; const sf = statusFilter.value;
-      const results = trainingMatches.filter(match => {
-        if (sf && match.resultStatus !== sf) return false;
-        if (from && match.matchDate < from) return false;
-        if (to && match.matchDate > to) return false;
-        if (query) {
-          const p1 = players.find(p => p.playerId === match.player1Id);
-          const p2 = players.find(p => p.playerId === match.player2Id);
-          const hay = `${match.matchId} ${match.matchDate} ${match.player1Name} ${match.player1Id} ${p1?.englishName || ''} ${p2?.englishName || ''} ${match.player2Name} ${match.player2Id} ${match.score || ''}`.toLowerCase();
-          if (!hay.includes(query)) return false;
-        }
-        return true;
-      });
-      if (!results.length) { list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty')); return; }
-      // Group by date
-      const groups = {};
-      results.forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
-      const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
-      sortedDates.forEach(date => {
-        const dateHeader = el('div', { className: 'admin-match-date-header' });
-        dateHeader.append(text('span', date === 'No date' ? 'No date / 日付なし' : date, 'admin-match-date'));
-        dateHeader.append(text('span', `${groups[date].length} matches`, 'admin-match-date-count'));
-        list.append(dateHeader);
-        groups[date].sort((a, b) => b.matchId.localeCompare(a.matchId)).forEach(match => {
-          const row = el('button', { type: 'button', className: `admin-player-row admin-match-row${match.matchId === selectedId ? ' selected' : ''}` });
-          const players2 = el('span', { className: 'admin-match-players' });
-          const p1win = match.winnerId === match.player1Id;
-          const p2win = match.winnerId === match.player2Id;
-          players2.append(text('b', match.player1Name || match.player1Id, p1win ? 'admin-match-winner' : ''), text('span', ' vs ', 'admin-match-vs'), text('b', match.player2Name || match.player2Id, p2win ? 'admin-match-winner' : ''));
-          const score = el('span', { className: 'admin-match-score' });
-          score.textContent = match.score || '-';
-          const badge = el('span', { className: `admin-match-badge ${statusColor(match.resultStatus)}` });
-          badge.textContent = match.resultStatus || '-';
-          row.append(players2, score, badge);
-          row.onclick = () => { selectedId = match.matchId; updateList(); showMatchEditor(match); };
-          list.append(row);
+      if (isTraining) {
+        tournFilter.style.display = 'none';
+        const tq = tournFilter.value;
+        const results = trainingMatches.filter(match => {
+          if (sf && match.resultStatus !== sf) return false;
+          if (from && match.matchDate < from) return false;
+          if (to && match.matchDate > to) return false;
+          return true;
         });
-      });
+        if (!results.length) { list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty')); return; }
+        const groups = {}; results.forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
+        Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(date => {
+          const dateHeader = el('div', { className: 'admin-match-date-header' });
+          dateHeader.append(text('span', date === 'No date' ? 'No date / 日付なし' : date, 'admin-match-date'));
+          dateHeader.append(text('span', `${groups[date].length} matches`, 'admin-match-date-count'));
+          list.append(dateHeader);
+          groups[date].sort((a, b) => b.matchId.localeCompare(a.matchId)).forEach(match => {
+            const row = el('button', { type: 'button', className: `admin-player-row admin-match-row${match.matchId === selectedId ? ' selected' : ''}` });
+            const players2 = el('span', { className: 'admin-match-players' });
+            const p1win = match.winnerId === match.player1Id; const p2win = match.winnerId === match.player2Id;
+            players2.append(text('b', match.player1Name || match.player1Id, p1win ? 'admin-match-winner' : ''), text('span', ' vs ', 'admin-match-vs'), text('b', match.player2Name || match.player2Id, p2win ? 'admin-match-winner' : ''));
+            const score = el('span', { className: 'admin-match-score' }); score.textContent = match.score || '-';
+            const badge = el('span', { className: `admin-match-badge ${statusColor(match.resultStatus)}` }); badge.textContent = match.resultStatus || '-';
+            row.append(players2, score, badge);
+            row.onclick = () => { selectedId = match.matchId; updateList(); showMatchEditor(match); };
+            list.append(row);
+          });
+        });
+      } else {
+        tournFilter.style.display = '';
+        const tq = tournFilter.value;
+        const results = (entityData.tournamentMatches || []).filter(m => {
+          if (tq && m.tournamentId !== tq) return false;
+          if (sf && m.resultStatus !== sf) return false;
+          if (from && m.matchDate < from) return false;
+          if (to && m.matchDate > to) return false;
+          return true;
+        });
+        if (!results.length) { list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty')); return; }
+        const groups = {}; results.forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
+        Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(date => {
+          const dateHeader = el('div', { className: 'admin-match-date-header' });
+          dateHeader.append(text('span', date === 'No date' ? 'No date / 日付なし' : date, 'admin-match-date'));
+          dateHeader.append(text('span', `${groups[date].length} matches`, 'admin-match-date-count'));
+          list.append(dateHeader);
+          groups[date].forEach(m => {
+            const row = el('button', { type: 'button', className: `admin-player-row admin-match-row${m.tournamentMatchId === selectedId ? ' selected' : ''}` });
+            const players2 = el('span', { className: 'admin-match-players' });
+            players2.append(text('b', m.player1Name || m.player1Id || '?'), text('span', ' vs ', 'admin-match-vs'), text('b', m.player2Name || m.player2Id || '?'));
+            const score = el('span', { className: 'admin-match-score' }); score.textContent = m.score || '-';
+            const badge = el('span', { className: `admin-match-badge ${statusColor(m.resultStatus)}` }); badge.textContent = m.resultStatus || '-';
+            const tourn = el('span', { className: 'admin-match-tourn' }); tourn.textContent = tournName(m.tournamentId);
+            row.append(players2, score, badge, tourn);
+            row.onclick = () => { selectedId = m.tournamentMatchId; updateList(); showTournamentMatchEditor(m); };
+            list.append(row);
+          });
+        });
+      }
     };
-    search.oninput = updateList; dateFrom.onchange = updateList; dateTo.onchange = updateList; statusFilter.onchange = updateList;
-    window.adminMatchListUpdate = updateList; updateList(); showMatchEditor(trainingMatches.find(match => match.matchId === selectedId) || trainingMatches[0] || null);
+    tournFilter.onchange = updateList; dateFrom.onchange = updateList; dateTo.onchange = updateList; statusFilter.onchange = updateList;
+    updateList();
+    if (isTraining) { showMatchEditor(trainingMatches.find(match => match.matchId === selectedId) || trainingMatches[0] || null); }
+    else { const tm = entityData.tournamentMatches || []; showTournamentMatchEditor(tm.find(m => m.tournamentMatchId === selectedId) || tm[0] || null); }
   }
 
   function showMatchEditor(match) {
@@ -339,63 +369,6 @@
     }
   }
 
-  function renderTournamentMatches() {
-    const workspace = el('section', { className: 'admin-workspace' });
-    const listPanel = el('section', { className: 'admin-panel admin-list-panel' });
-    const listHeader = el('div', { className: 'admin-list-header' });
-    const tourns = entityData.tournaments || [];
-    const records = entityData.tournamentMatches || [];
-    const heading = el('div'); heading.append(text('p', 'TOURNAMENT RESULTS / 大会結果', 'eyebrow'), text('h2', `${records.length} matches`));
-    listHeader.append(heading); listPanel.append(listHeader);
-    // Filters
-    const filters = el('div', { className: 'admin-match-filters' });
-    const tournFilter = tournamentSelect('tournFilter', '');
-    tournFilter.querySelector('input').placeholder = '大会で絞り込み / Filter by tournament...';
-    const dateFrom = el('input', { type: 'date', ariaLabel: 'From date' });
-    const dateTo = el('input', { type: 'date', ariaLabel: 'To date' });
-    const statusFilter = el('select');
-    ['', 'Completed', 'Incomplete'].forEach(s => { statusFilter.append(el('option', { value: s, textContent: s || 'ALL STATUS / 全ステータス' })); });
-    filters.append(text('span', '大会:', 'admin-filter-label'), tournFilter, text('span', 'FROM:', 'admin-filter-label'), dateFrom, text('span', 'TO:', 'admin-filter-label'), dateTo, text('span', 'STATUS:', 'admin-filter-label'), statusFilter);
-    listPanel.append(filters);
-    if (canEditMatches()) listPanel.append(button('+ ADD MATCH / 試合追加', () => showTournamentMatchEditor(null), 'primary'));
-    const list = el('div', { className: 'admin-player-list admin-match-list' }); listPanel.append(list);
-    const editor = el('section', { className: 'admin-panel admin-editor-panel' }); workspace.append(listPanel, editor); app.append(workspace);
-    const statusColor = s => ({ 'Completed': 'status-complete', 'Incomplete': 'status-incomplete' }[s] || '');
-    const tournName = tid => { const t = tourns.find(x => x.tournamentId === tid); return t ? t.name : tid; };
-    const updateList = () => {
-      empty(list); const query = tournFilter.value; const from = dateFrom.value; const to = dateTo.value; const sf = statusFilter.value;
-      const results = records.filter(m => {
-        if (query && m.tournamentId !== query) return false;
-        if (sf && m.resultStatus !== sf) return false;
-        if (from && m.matchDate < from) return false;
-        if (to && m.matchDate > to) return false;
-        return true;
-      });
-      if (!results.length) { list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty')); return; }
-      // Group by date
-      const groups = {}; results.forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
-      Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(date => {
-        const dateHeader = el('div', { className: 'admin-match-date-header' });
-        dateHeader.append(text('span', date === 'No date' ? 'No date / 日付なし' : date, 'admin-match-date'));
-        dateHeader.append(text('span', `${groups[date].length} matches`, 'admin-match-date-count'));
-        list.append(dateHeader);
-        groups[date].forEach(m => {
-          const row = el('button', { type: 'button', className: `admin-player-row admin-match-row${m.tournamentMatchId === selectedId ? ' selected' : ''}` });
-          const players2 = el('span', { className: 'admin-match-players' });
-          players2.append(text('b', m.player1Name || m.player1Id || '?'), text('span', ' vs ', 'admin-match-vs'), text('b', m.player2Name || m.player2Id || '?'));
-          const score = el('span', { className: 'admin-match-score' }); score.textContent = m.score || '-';
-          const badge = el('span', { className: `admin-match-badge ${statusColor(m.resultStatus)}` }); badge.textContent = m.resultStatus || '-';
-          const tourn = el('span', { className: 'admin-match-tourn' }); tourn.textContent = tournName(m.tournamentId);
-          row.append(players2, score, badge, tourn);
-          row.onclick = () => { selectedId = m.tournamentMatchId; updateList(); showTournamentMatchEditor(m); };
-          list.append(row);
-        });
-      });
-    };
-    tournFilter.onchange = updateList; dateFrom.onchange = updateList; dateTo.onchange = updateList; statusFilter.onchange = updateList;
-    updateList(); showTournamentMatchEditor(records.find(m => m.tournamentMatchId === selectedId) || records[0] || null);
-  }
-
   function showTournamentMatchEditor(match) {
     const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
     const readOnly = !canEditMatches(); const record = match ? { ...match } : { tournamentMatchId: newEntityId('tournamentMatch'), tournamentId: '', matchDate: new Date().toISOString().slice(0, 10), round: '', format: '', player1Id: '', player1Sets: 0, player2Id: '', player2Sets: 0, winnerId: '', score: '0-0', resultStatus: 'Completed' };
@@ -452,45 +425,64 @@
     }
   }
 
-  function renderTournamentProgress() {
+  let activeTournSubTab = 'list';
+
+  function renderTournaments() {
     const workspace = el('section', { className: 'admin-workspace' });
     const listPanel = el('section', { className: 'admin-panel admin-list-panel' });
     const listHeader = el('div', { className: 'admin-list-header' });
     const tourns = entityData.tournaments || [];
-    const records = entityData.tournamentProgress || [];
-    const heading = el('div'); heading.append(text('p', 'TOURNAMENT PROGRESS / 大会進捗', 'eyebrow'), text('h2', `${records.length} records`));
+    const heading = el('div'); heading.append(text('p', 'TOURNAMENTS / 大会', 'eyebrow'), text('h2', `${tourns.length} tournaments`));
     listHeader.append(heading); listPanel.append(listHeader);
-    // Filters
-    const filters = el('div', { className: 'admin-match-filters' });
-    const tournFilter = tournamentSelect('tournFilter', '');
-    tournFilter.querySelector('input').placeholder = '大会で絞り込み / Filter by tournament...';
-    const playerFilter = playerSelect('playerFilter', '');
-    playerFilter.querySelector('input').placeholder = '選手で絞り込み / Filter by player...';
-    filters.append(text('span', '大会:', 'admin-filter-label'), tournFilter, text('span', '選手:', 'admin-filter-label'), playerFilter);
-    listPanel.append(filters);
-    if (canEditMatches()) listPanel.append(button('+ ADD PROGRESS / 進捗追加', () => showTournamentProgressEditor(null), 'primary'));
+    // Sub-tabs: List / Progress
+    const subTabs = el('div', { className: 'admin-sub-tabs' });
+    const subTab = (id, label) => { const node = button(label, () => { activeTournSubTab = id; selectedId = ''; renderTournaments(); }, `admin-sub-tab${activeTournSubTab === id ? ' active' : ''}`); return node; };
+    subTabs.append(subTab('list', 'LIST / 一覧'), subTab('progress', 'PROGRESS / 進捗'));
+    listPanel.append(subTabs);
+    if (canEditMatches()) {
+      if (activeTournSubTab === 'list') listPanel.append(button('+ ADD TOURNAMENT / 大会追加', () => showEntityEditor('tournament', null), 'primary'));
+      else listPanel.append(button('+ ADD PROGRESS / 進捗追加', () => showTournamentProgressEditor(null), 'primary'));
+    }
     const list = el('div', { className: 'admin-player-list' }); listPanel.append(list);
     const editor = el('section', { className: 'admin-panel admin-editor-panel' }); workspace.append(listPanel, editor); app.append(workspace);
-    const tournName = tid => { const t = tourns.find(x => x.tournamentId === tid); return t ? t.name : tid; };
-    const updateList = () => {
-      empty(list); const tq = tournFilter.value; const pq = playerFilter.value;
-      const results = records.filter(r => {
-        if (tq && r.tournamentId !== tq) return false;
-        if (pq && r.playerId !== pq) return false;
-        return true;
-      });
-      if (!results.length) { list.append(text('p', '該当する記録がありません / No records found.', 'admin-empty')); return; }
-      results.forEach(r => {
-        const row = el('button', { type: 'button', className: `admin-player-row${r.tournamentProgressId === selectedId ? ' selected' : ''}` });
-        const info = el('span'); info.append(text('b', playerName(r.playerId) || r.playerId, '', ' '),
-          text('small', `W${r.totalWins ?? 0} L${r.totalLosses ?? 0} D${r.totalDraws ?? 0}${r.eliminated === 'true' ? ' ✕' : ''} · ${tournName(r.tournamentId)}`));
-        row.append(info);
-        row.onclick = () => { selectedId = r.tournamentProgressId; updateList(); showTournamentProgressEditor(r); };
-        list.append(row);
-      });
-    };
-    tournFilter.onchange = updateList; playerFilter.onchange = updateList;
-    updateList(); showTournamentProgressEditor(records.find(r => r.tournamentProgressId === selectedId) || records[0] || null);
+    if (activeTournSubTab === 'list') {
+      const updateList = () => {
+        empty(list);
+        tourns.sort((a, b) => (b.date || '').localeCompare(a.date || '')).forEach(t => {
+          const row = el('button', { type: 'button', className: `admin-player-row${t.tournamentId === selectedId ? ' selected' : ''}` });
+          const info = el('span'); info.append(text('b', t.name || t.tournamentId), text('small', `${t.date || ''} · ${t.tournamentId}`));
+          row.append(info);
+          row.onclick = () => { selectedId = t.tournamentId; updateList(); showEntityEditor('tournament', t); };
+          list.append(row);
+        });
+      };
+      updateList(); showEntityEditor('tournament', tourns.find(t => t.tournamentId === selectedId) || tourns[0] || null);
+    } else {
+      const records = entityData.tournamentProgress || [];
+      const filters = el('div', { className: 'admin-match-filters' });
+      const tournFilter = tournamentSelect('tournFilter', '');
+      tournFilter.querySelector('input').placeholder = '大会で絞り込み / Filter by tournament...';
+      const playerFilter = playerSelect('playerFilter', '');
+      playerFilter.querySelector('input').placeholder = '選手で絞り込み / Filter by player...';
+      filters.append(text('span', '大会:', 'admin-filter-label'), tournFilter, text('span', '選手:', 'admin-filter-label'), playerFilter);
+      listPanel.append(filters);
+      const tournName = tid => { const t = tourns.find(x => x.tournamentId === tid); return t ? t.name : tid; };
+      const updateList = () => {
+        empty(list); const tq = tournFilter.value; const pq = playerFilter.value;
+        const results = records.filter(r => { if (tq && r.tournamentId !== tq) return false; if (pq && r.playerId !== pq) return false; return true; });
+        if (!results.length) { list.append(text('p', '該当する記録がありません / No records found.', 'admin-empty')); return; }
+        results.forEach(r => {
+          const row = el('button', { type: 'button', className: `admin-player-row${r.tournamentProgressId === selectedId ? ' selected' : ''}` });
+          const info = el('span'); info.append(text('b', playerName(r.playerId) || r.playerId, '', ' '),
+            text('small', `W${r.totalWins ?? 0} L${r.totalLosses ?? 0} D${r.totalDraws ?? 0}${r.eliminated === 'true' ? ' ✕' : ''} · ${tournName(r.tournamentId)}`));
+          row.append(info);
+          row.onclick = () => { selectedId = r.tournamentProgressId; updateList(); showTournamentProgressEditor(r); };
+          list.append(row);
+        });
+      };
+      tournFilter.onchange = updateList; playerFilter.onchange = updateList;
+      updateList(); showTournamentProgressEditor(records.find(r => r.tournamentProgressId === selectedId) || records[0] || null);
+    }
   }
 
   function showTournamentProgressEditor(record) {
@@ -667,15 +659,18 @@
     return id;
   }
 
-  function renderPlayers(tabType) {
-    const isExtTab = tabType === 'extPlayers';
+  function renderPlayers() {
+    const isExtTab = activePlayerSubTab === 'extPlayers';
     const workspace = el('section', { className: 'admin-workspace' }); const listPanel = el('section', { className: 'admin-panel admin-list-panel' });
     const listHeader = el('div', { className: 'admin-list-header' }); const heading = el('div');
     const extCount = (entityData.externalOpponents || []).length;
-    const headingText = isExtTab ? `OTHER PLAYERS / 外部選手` : `OUR PLAYERS / リトルキングス`;
-    const countText = isExtTab ? `${extCount} external` : `${players.length} players`;
-    heading.append(text('p', headingText, 'eyebrow'), text('h2', countText));
+    heading.append(text('p', 'PLAYERS / 選手', 'eyebrow'), text('h2', isExtTab ? `${extCount} external` : `${players.length} players`));
     const search = el('input', { type: 'search', placeholder: '名前・ID・カテゴリ等で検索 / Search by name, ID, category, equipment...', ariaLabel: 'Search players' }); listHeader.append(heading, search);
+    // Sub-tabs
+    const subTabs = el('div', { className: 'admin-sub-tabs' });
+    const subTab = (id, label) => { const node = button(label, () => { activePlayerSubTab = id; selectedId = ''; renderPlayers(); }, `admin-sub-tab${activePlayerSubTab === id ? ' active' : ''}`); return node; };
+    subTabs.append(subTab('ourPlayers', 'OUR PLAYERS / リトルキングス'), subTab('extPlayers', 'OTHER PLAYERS / 外部選手'));
+    listPanel.append(listHeader, subTabs);
     const addBtn = isExtTab
       ? button('+ ADD EXT. OPPONENT / 外部選手追加', () => showExternalOpponentEditor(), 'primary')
       : button('+ ADD PLAYER / 選手追加', () => showPlayerEditor(null), 'primary');
@@ -1027,11 +1022,24 @@
     return container;
   }
 
-  async function renderPending() {
-    const panel = el('section', { className: 'admin-panel admin-pending-panel' }); panel.append(text('p', 'PENDING CHANGES / 承認待ち', 'eyebrow'), text('h2', 'Review changes / 変更を確認'));
+  function renderManage() {
+    const workspace = el('section', { className: 'admin-workspace' });
+    const subTabs = el('div', { className: 'admin-sub-tabs' });
+    const subTab = (id, label) => { const node = button(label, () => { activeManageSubTab = id; renderManage(); }, `admin-sub-tab${activeManageSubTab === id ? ' active' : ''}`); return node; };
+    subTabs.append(subTab('pending', 'PENDING / 承認待ち'), subTab('history', 'HISTORY / 履歴'));
+    const header = el('div', { className: 'admin-list-header' });
+    header.append(text('p', 'MANAGE / 管理', 'eyebrow'), text('h2', activeManageSubTab === 'pending' ? 'Review changes' : 'Processed changes'));
+    const panel = el('section', { className: 'admin-panel admin-pending-panel' });
+    panel.append(header, subTabs);
+    workspace.append(panel); app.append(workspace);
+    if (activeManageSubTab === 'pending') renderPendingContent(panel);
+    else renderHistoryContent(panel);
+  }
+
+  async function renderPendingContent(panel) {
     try {
       const result = await window.LKData.request('/api/pending'); const changes = (result.changes || []).filter(change => change.status === 'pending');
-      if (!changes.length) { panel.append(text('p', 'No pending changes. / 承認待ちの変更はありません。', 'admin-empty')); app.append(panel); return; }
+      if (!changes.length) { panel.append(text('p', 'No pending changes. / 承認待ちの変更はありません。', 'admin-empty')); return; }
       const summary = text('p', `${changes.length} change${changes.length > 1 ? 's' : ''} awaiting review`, 'admin-pending-summary'); panel.append(summary);
       if (currentRole === 'approver') {
         const bulkActions = el('div', { className: 'admin-pending-bulk-actions' });
@@ -1126,16 +1134,14 @@
         panel.append(card);
       });
     } catch (error) { panel.append(text('p', `${error.message} / 読み込みに失敗しました`, 'admin-load-error')); }
-    app.append(panel);
   }
   function formatPendingDate(iso) { if (!iso) return ''; const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
 
-  async function renderHistory() {
-    const panel = el('section', { className: 'admin-panel admin-history-panel' }); panel.append(text('p', 'CHANGE HISTORY / 変更履歴', 'eyebrow'), text('h2', 'Processed changes / 処理済み変更'));
+  async function renderHistoryContent(panel) {
     try {
       const result = await window.LKData.request('/api/pending');
       const processed = (result.changes || []).filter(change => change.status === 'accepted' || change.status === 'rejected');
-      if (!processed.length) { panel.append(text('p', 'No processed changes yet. / 処理済みの変更はありません。', 'admin-empty')); app.append(panel); return; }
+      if (!processed.length) { panel.append(text('p', 'No processed changes yet. / 処理済みの変更はありません。', 'admin-empty')); return; }
       const controls = el('div', { className: 'admin-history-controls' });
       const search = el('input', { type: 'search', placeholder: 'ID・種類で検索 / Search by ID or type', ariaLabel: 'Search history' });
       const statusFilter = el('select', { ariaLabel: 'Filter by status' });
@@ -1189,7 +1195,6 @@
       };
       search.oninput = renderList; statusFilter.onchange = renderList; typeFilter.onchange = renderList; renderList();
     } catch (error) { panel.append(text('p', `${error.message} / 読み込みに失敗しました`, 'admin-load-error')); }
-    app.append(panel);
   }
 
   if (document.querySelector('#admin-app')) shell();
