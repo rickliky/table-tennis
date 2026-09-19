@@ -186,10 +186,10 @@
     const header = el('header', { className: 'site-header' });
     const brand = el('a', { className: 'brand', href: 'index.html', 'aria-label': 'Little Kings home' });
     const brandText = el('span');
-    brandText.append(text('span', 'LITTLE KINGS'), el('small', { textContent: 'データメンテナンス / DATA MAINTENANCE' }));
+    brandText.append(text('span', 'LITTLE KINGS'), el('small', { textContent: language === 'en' ? 'DATA MAINTENANCE' : 'データメンテナンス' }));
     brand.append(el('img', { src: 'little-kings-logo.jpg', alt: 'Little Kings crown' }), brandText);
     const nav = el('nav', { 'aria-label': 'Main navigation' });
-    nav.append(el('a', { href: 'index.html', textContent: 'Home / ホーム' }), el('a', { href: 'index.html#players', textContent: 'Players / 選手' }), el('a', { href: 'index.html#stats', textContent: 'Statistics / 統計' }));
+    nav.append(el('a', { href: 'index.html', textContent: language === 'en' ? 'Home' : 'ホーム' }), el('a', { href: 'index.html#players', textContent: language === 'en' ? 'Players' : '選手' }), el('a', { href: 'index.html#stats', textContent: language === 'en' ? 'Statistics' : '統計' }));
     const headerActions = el('div', { className: 'header-actions' });
     if (currentRole === 'approver') {
       headerActions.append(text('span', '承認者 / Approver', 'admin-role-badge'));
