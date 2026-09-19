@@ -17,7 +17,8 @@
   const externalMap = () => new Map((data.externalOpponents || []).map(e => [e.externalOpponentId, e]));
   const clubMap = () => new Map((data.clubs || []).map(c => [c.clubId, c]));
   const resultEmoji = rank => rank <= 3 ? ['🥇','🥈','🥉'][rank - 1] : '';
-  const resultLabel = rank => rank ? `${resultEmoji(rank)} ${rank}位` : '-';
+  const ordinal = language === 'en' ? n => { const s = ['th','st','nd','rd']; const v = n % 100; return n + (s[(v-20)%10] || s[v] || s[0]); } : n => `${n}位`;
+  const resultLabel = rank => rank ? `${resultEmoji(rank)} ${ordinal(rank)}` : '-';
 
   function getTournamentDates() {
     const dates = new Set();
@@ -181,7 +182,7 @@
 
       return `
         <section class="division-section">
-          <h3>${escapeHtml(div)} <small>(${divPlayers.length} ${t('participant')}${divPlayers.length > 1 ? 's' : ''})</small></h3>
+          <h3>${escapeHtml(div)} <small>(${divPlayers.length} ${t('participant')}${divPlayers.length > 1 && language === 'en' ? 's' : ''})</small></h3>
           <table class="division-table">
             <thead><tr><th>${t('rank')}</th><th>${t('participant')}</th><th>${t('club')}</th><th>${t('grade')}</th><th>${t('result')}</th></tr></thead>
             <tbody>${rows}</tbody>
@@ -265,6 +266,9 @@
     localStorage.setItem('lk-language', language);
     location.reload();
   });
+  // Set language toggle button to show the OTHER language
+  const langBtn = document.getElementById('language-toggle');
+  if (langBtn) langBtn.textContent = language === 'ja' ? 'ENGLISH' : '日本語';
 
   init();
 })();
