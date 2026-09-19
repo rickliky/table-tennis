@@ -298,3 +298,9 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - **admin.js**: Day-of-week abbreviations bilingual
 - **admin.js**: Nav links, subtitle, editor headings all bilingual
 - **admin.js**: Pending/processed summary text bilingual
+
+### Public Lookup Display Rule (2026-09-20)
+- Public pages must never render stored lookup IDs (for example `GD-001`, `SL-001`, `PS-001`, `GH-001`, or `INVERTED`) as user-facing text.
+- Load `static-data.js` before public page scripts and resolve lookup values by ID, legacy name, `nameJa`, or `nameEn`.
+- Display `nameJa` in Japanese and `nameEn` in English; this also merges legacy text records and new ID-based records into one statistics group.
+- Applied to the index statistics/setup summaries, player-profile dossier fields, and tournament-progress result labels.
