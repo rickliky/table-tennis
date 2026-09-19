@@ -304,3 +304,4 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Load `static-data.js` before public page scripts and resolve lookup values by ID, legacy name, `nameJa`, or `nameEn`.
 - Display `nameJa` in Japanese and `nameEn` in English; this also merges legacy text records and new ID-based records into one statistics group.
 - Applied to the index statistics/setup summaries, player-profile dossier fields, and tournament-progress result labels.
+- Leaderboard, ranking, session-matchup, player-grid, and active-player category groupings must normalize `schoolLevel` through the same lookup before grouping; otherwise legacy text values and IDs create duplicate categories such as `小学生` and `SL-001`.
