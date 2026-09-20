@@ -225,17 +225,29 @@
     const subTab = (id, label) => { const node = button(label, () => { activeMatchSubTab = id; selectedId = ''; renderWorkspace(); }, `admin-sub-tab${activeMatchSubTab === id ? ' active' : ''}`); return node; };
     subTabs.append(subTab('training', 'TRAINING / 練習'), subTab('tournament', 'TOURNAMENT / 大会'));
     listPanel.append(subTabs);
-    // Filters row
+    // Filters
+    const isTraining = activeMatchSubTab === 'training';
     const filters = el('div', { className: 'admin-match-filters' });
-    const tournFilter = tournamentSelect('tournFilter', '');
-    tournFilter.querySelector('input').placeholder = '大会で絞り込み / Filter by tournament...';
+    // Row 1: Player search (prominent)
+    const searchRow = el('div', { className: 'admin-match-filter-row' });
+    const playerSearch = el('input', { type: 'text', placeholder: '選手名で検索 / Search by player name...', ariaLabel: 'Search by player name' });
+    searchRow.append(text('span', '🔍', 'admin-filter-icon'), playerSearch);
+    filters.append(searchRow);
+    // Row 2: Date range + Status (+ Tournament for tournament tab)
+    const detailRow = el('div', { className: 'admin-match-filter-row' });
     const dateFrom = el('input', { type: 'date', ariaLabel: 'From date' });
     const dateTo = el('input', { type: 'date', ariaLabel: 'To date' });
     const statusFilter = el('select');
     ['', completedStatusId, incompleteStatusId].forEach(s => { statusFilter.append(el('option', { value: s, textContent: s ? statusLabel(s) : 'ALL STATUS / 全ステータス' })); });
-    const isTraining = activeMatchSubTab === 'training';
-    if (!isTraining) filters.append(text('span', '大会:', 'admin-filter-label'), tournFilter);
-    filters.append(text('span', 'FROM / 開始:', 'admin-filter-label'), dateFrom, text('span', 'TO / 終了:', 'admin-filter-label'), dateTo, text('span', 'STATUS / ステータス:', 'admin-filter-label'), statusFilter);
+    detailRow.append(text('span', 'FROM:', 'admin-filter-label'), dateFrom, text('span', 'TO:', 'admin-filter-label'), dateTo, text('span', 'STATUS:', 'admin-filter-label'), statusFilter);
+    if (!isTraining) {
+      const tournFilter = tournamentSelect('tournFilter', '');
+      tournFilter.querySelector('input').placeholder = '大会 / Tournament...';
+      detailRow.append(text('span', '大会:', 'admin-filter-label'), tournFilter);
+      // Wire up tournament filter change
+      tournFilter.onchange = updateList;
+    }
+    filters.append(detailRow);
     listPanel.append(filters);
     if (canEditMatches()) listPanel.append(button('+ ADD MATCH / 試合追加', () => isTraining ? showMatchEditor(null) : showTournamentMatchEditor(null), 'primary'));
     const list = el('div', { className: 'admin-player-list admin-match-list' }); listPanel.append(list);
@@ -245,13 +257,16 @@
     const updateList = () => {
       empty(list);
       const from = dateFrom.value; const to = dateTo.value; const sf = statusFilter.value;
+      const pq = playerSearch.value.trim().toLowerCase();
       if (isTraining) {
-        tournFilter.style.display = 'none';
-        const tq = tournFilter.value;
         const results = trainingMatches.filter(match => {
           if (sf && resultStatusId(match.resultStatus) !== sf) return false;
           if (from && match.matchDate < from) return false;
           if (to && match.matchDate > to) return false;
+          if (pq) {
+            const hay = `${match.player1Name || ''} ${match.player2Name || ''} ${match.player1Id || ''} ${match.player2Id || ''}`.toLowerCase();
+            if (!hay.includes(pq)) return false;
+          }
           return true;
         });
         if (!results.length) { list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty')); return; }
@@ -274,13 +289,17 @@
           });
         });
       } else {
-        tournFilter.style.display = '';
-        const tq = tournFilter.value;
+        const tournFilterEl = detailRow.querySelector('.player-combobox');
+        const tq = tournFilterEl ? tournFilterEl.querySelector('input')?.dataset?.value || '' : '';
         const results = (entityData.tournamentMatches || []).filter(m => {
           if (tq && m.tournamentId !== tq) return false;
           if (sf && resultStatusId(m.resultStatus) !== sf) return false;
           if (from && m.matchDate < from) return false;
           if (to && m.matchDate > to) return false;
+          if (pq) {
+            const hay = `${m.player1Name || ''} ${m.player2Name || ''} ${m.player1Id || ''} ${m.player2Id || ''}`.toLowerCase();
+            if (!hay.includes(pq)) return false;
+          }
           return true;
         });
         if (!results.length) { list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty')); return; }
@@ -304,7 +323,10 @@
         });
       }
     };
-    tournFilter.onchange = updateList; dateFrom.onchange = updateList; dateTo.onchange = updateList; statusFilter.onchange = updateList;
+    dateFrom.onchange = updateList; dateTo.onchange = updateList; statusFilter.onchange = updateList;
+    playerSearch.oninput = updateList;
+    const tournFilterEl = detailRow.querySelector('.player-combobox');
+    if (tournFilterEl) { tournFilterEl.addEventListener('change', updateList); }
     updateList();
     if (isTraining) { showMatchEditor(trainingMatches.find(match => match.matchId === selectedId) || trainingMatches[0] || null); }
     else { const tm = entityData.tournamentMatches || []; showTournamentMatchEditor(tm.find(m => m.tournamentMatchId === selectedId) || tm[0] || null); }
