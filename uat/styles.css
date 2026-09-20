@@ -260,10 +260,12 @@ html[lang="ja"] .matchup-axis::after { content:'この用具・利き手との�
  .tc-lk-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
  .tc-lk-badge { background: rgba(214,165,22,.12); border: 1px solid rgba(214,165,22,.3); color: var(--gold); font: 700 10px "Barlow Condensed",sans-serif; letter-spacing: .08em; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
  .tc-lk-count { color: var(--muted); font: 600 11px "Noto Sans JP",sans-serif; }
- .tc-top-results { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 10px; }
- .tc-top-result { color: var(--cream); font: 600 13px "Noto Sans JP",sans-serif; }
- .tc-top-result a { color: var(--gold); text-decoration: none; }
- .tc-top-result a:hover { text-decoration: underline; }
+ .tc-lk-results { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+ .tc-lk-result { color: var(--cream); font: 500 13px "Noto Sans JP",sans-serif; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+ .tc-lk-result a { color: var(--gold); text-decoration: none; white-space: nowrap; }
+ .tc-lk-result a:hover { text-decoration: underline; }
+ .tc-lk-result small { color: var(--muted); font: 500 11px "Noto Sans JP",sans-serif; }
+ .tc-lk-result i { color: var(--muted); font: 500 11px "Noto Sans JP",sans-serif; font-style: normal; }
  .tc-lk-avatars { display: flex; gap: 0; }
  .tc-avatar { border: 2px solid var(--ink); border-radius: 50%; display: flex; align-items: center; justify-content: center; height: 36px; margin-left: -6px; overflow: hidden; width: 36px; }
  .tc-avatar:first-child { margin-left: 0; }
