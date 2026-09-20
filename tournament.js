@@ -75,6 +75,21 @@
   const externalMap = () => new Map((data.externalOpponents || []).map(e => [e.externalOpponentId, e]));
   const clubMap = () => new Map((data.clubs || []).map(c => [c.clubId, c]));
 
+  const fullName = player => {
+    if (!player) return '';
+    if (language === 'en') {
+      return player.englishName ? `${player.displayName} (${player.englishName})` : player.displayName;
+    }
+    return player.displayName;
+  };
+
+  const clubName = (clubId, cMap) => {
+    if (!clubId || !cMap) return '';
+    const club = cMap.get(clubId);
+    if (!club) return clubId;
+    return language === 'en' ? (club.nameEn || club.name || club.nameJa || clubId) : (club.nameJa || club.name || clubId);
+  };
+
   const resultEmoji = rank => rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : '';
   const ordinal = language === 'en'
     ? n => { const s = ['th', 'st', 'nd', 'rd']; const v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
@@ -125,25 +140,31 @@
   }
 
   // ─── Tournament Card ───
-  function renderTournamentCard(tournament, pMap) {
+  function renderTournamentCard(tournament, pMap, cMap) {
     const tProgress = progress.filter(p => p.tournamentId === tournament.tournamentId);
     const lkPlayers = tProgress.filter(p => p.playerId.startsWith('LK-'));
     const divisions = [...new Set(tProgress.map(p => p.division))];
     const totalParticipants = tProgress.length;
 
-    // Top 3 LK results
-    const topLk = lkPlayers
-      .filter(p => p.seed && p.seed <= 3)
-      .sort((a, b) => a.seed - b.seed)
-      .slice(0, 3);
+    // All LK player results (sorted by seed)
+    const lkResults = lkPlayers
+      .filter(p => p.seed)
+      .sort((a, b) => a.seed - b.seed);
 
-    const topResults = topLk.map(p => {
+    const lkResultHtml = lkResults.map(p => {
       const player = pMap.get(p.playerId);
-      const name = player
-        ? (language === 'en' && player.englishName ? player.englishName : player.displayName)
-        : p.playerName;
-      return `<span class="tc-top-result">${resultEmoji(p.seed)} <a href="player.html?id=${p.playerId}">${escapeHtml(name)}</a></span>`;
+      const name = fullName(player) || p.playerName;
+      const club = player ? clubName(player.clubId, cMap) : '';
+      const resultText = p.result ? escapeHtml(lookupValue('tournamentResults', p.result)) : '';
+      return `<span class="tc-lk-result">
+        ${resultEmoji(p.seed)} <a href="player.html?id=${p.playerId}">${escapeHtml(name)}</a>
+        ${club ? `<small>${escapeHtml(club)}</small>` : ''}
+        ${resultText ? `<i>${resultText}</i>` : ''}
+      </span>`;
     }).join('');
+
+    // Avatars for top players
+    const topPlayers = lkPlayers.filter(p => p.seed && p.seed <= 3).sort((a, b) => a.seed - b.seed);
 
     return `
       <article class="tc" data-id="${tournament.tournamentId}">
@@ -159,7 +180,7 @@
               <div class="tc-meta">
                 <span class="tc-meta-item">📍 ${escapeHtml(tournament.location || '-')}</span>
                 <span class="tc-meta-item">👥 ${totalParticipants} ${t('participant')}${totalParticipants !== 1 && language === 'en' ? 's' : ''}</span>
-                ${divisions.length ? `<span class="tc-meta-item">📋 ${divisions.length} ${t('division')}${divisions.length !== 1 && language === 'en' ? 's' : ''}</span>` : ''}
+                ${divisions.length ? `<span class="tc-meta-item">📋 ${divisions.map(d => escapeHtml(d)).join(', ')}</span>` : ''}
               </div>
             </div>
           </div>
@@ -170,18 +191,15 @@
                 <span class="tc-lk-badge">${t('lkPlayers')}</span>
                 <span class="tc-lk-count">${lkPlayers.length}</span>
               </div>
-              ${topResults ? `<div class="tc-top-results">${topResults}</div>` : ''}
+              ${lkResultHtml ? `<div class="tc-lk-results">${lkResultHtml}</div>` : ''}
               <div class="tc-lk-avatars">
-                ${lkPlayers.slice(0, 6).map(p => {
+                ${topPlayers.map(p => {
                   const player = pMap.get(p.playerId);
-                  const name = player
-                    ? (language === 'en' && player.englishName ? player.englishName : player.displayName)
-                    : p.playerName;
+                  const name = fullName(player) || p.playerName;
                   return `<a href="player.html?id=${p.playerId}" class="tc-avatar" title="${escapeHtml(name)}">
                     <img src="img/${p.playerId}.jpg" alt="${escapeHtml(name)}" onerror="this.parentElement.innerHTML='<span>${escapeHtml(name).charAt(0)}</span>'" />
                   </a>`;
                 }).join('')}
-                ${lkPlayers.length > 6 ? `<span class="tc-avatar tc-avatar-more">+${lkPlayers.length - 6}</span>` : ''}
               </div>
             </div>
           ` : ''}
@@ -202,6 +220,7 @@
     const sorted = [...tournaments].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     const tournamentDates = getTournamentDates();
     const pMap = playerMap();
+    const cMap = clubMap();
 
     // Summary stats
     const totalTournaments = tournaments.length;
@@ -209,7 +228,7 @@
     const totalLkPlayers = new Set(progress.filter(p => p.playerId.startsWith('LK-')).map(p => p.playerId)).size;
 
     const calendarHtml = renderCalendarTimeline(tournamentDates);
-    const cards = sorted.map(t => renderTournamentCard(t, pMap)).join('');
+    const cards = sorted.map(t => renderTournamentCard(t, pMap, cMap)).join('');
 
     return `
       <section class="tp-hero">
@@ -268,10 +287,8 @@
       const rows = divPlayers.map(p => {
         const isLk = p.playerId.startsWith('LK-');
         const player = pMap.get(p.playerId) || eMap.get(p.playerId);
-        const name = player
-          ? (language === 'en' && player.englishName ? `${player.displayName} (${player.englishName})` : player.displayName)
-          : p.playerName;
-        const club = player?.clubId ? (cMap.get(player.clubId)?.nameJa || cMap.get(player.clubId)?.name || player.clubId) : '';
+        const name = fullName(player) || p.playerName;
+        const club = player?.clubId ? clubName(player.clubId, cMap) : '';
         const grade = player?.grade || '';
         const nameHtml = isLk
           ? `<a href="player.html?id=${p.playerId}" class="lk-link">${escapeHtml(name)}</a>`
@@ -317,17 +334,16 @@
       <div class="detail-lk-section">
         <h2 class="detail-lk-title">${t('players')} <span class="detail-lk-count">${lkPlayers.length}</span></h2>
         <div class="detail-lk-grid">
-          ${lkPlayers.map(p => {
+          ${lkPlayers.sort((a, b) => (a.seed || 99) - (b.seed || 99)).map(p => {
             const player = pMap.get(p.playerId);
-            const name = player
-              ? (language === 'en' && player.englishName ? `${player.displayName} (${player.englishName})` : player.displayName)
-              : p.playerName;
+            const name = fullName(player) || p.playerName;
+            const club = player?.clubId ? clubName(player.clubId, cMap) : '';
             return `
               <a href="player.html?id=${p.playerId}" class="detail-lk-card">
                 <img src="img/${p.playerId}.jpg" alt="${escapeHtml(name)}" onerror="this.style.display='none'" />
                 <div class="detail-lk-info">
                   <b>${escapeHtml(name)}</b>
-                  <small>${escapeHtml(p.division)}</small>
+                  <small>${escapeHtml(p.division)}${club ? ` · ${escapeHtml(club)}` : ''}</small>
                   <span>${resultLabel(p.seed)}${p.result ? ` · ${escapeHtml(lookupValue('tournamentResults', p.result))}` : ''}</span>
                 </div>
               </a>`;
