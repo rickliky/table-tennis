@@ -706,23 +706,30 @@
     const listHeader = el('div', { className: 'admin-list-header' }); const heading = el('div');
     const extCount = (entityData.externalOpponents || []).length;
     heading.append(text('p', 'PLAYERS / 選手', 'eyebrow'), text('h2', isExtTab ? `${extCount} external / 外部選手` : `${players.length} players / 選手`));
-    const search = el('input', { type: 'search', placeholder: '名前・ID・カテゴリ等で検索 / Search by name, ID, category, equipment...', ariaLabel: 'Search players' }); listHeader.append(heading, search);
+    const search = el('input', { type: 'search', placeholder: '名前・ID・カテゴリ等で検索 / Search by name, ID, category, equipment...', ariaLabel: 'Search players' }); listHeader.append(heading);
     // Sub-tabs
     const subTabs = el('div', { className: 'admin-sub-tabs' });
     const subTab = (id, label) => { const node = button(label, () => { activePlayerSubTab = id; selectedId = ''; renderWorkspace(); }, `admin-sub-tab${activePlayerSubTab === id ? ' active' : ''}`); return node; };
     subTabs.append(subTab('ourPlayers', 'OUR PLAYERS / リトルキングス'), subTab('extPlayers', 'OTHER PLAYERS / 外部選手'));
-    // Category filter
+    // Filters — same style as match filters
+    const filters = el('div', { className: 'admin-match-filters' });
+    // Row 1: Search (prominent)
+    const searchRow = el('div', { className: 'admin-match-filter-row' });
+    searchRow.append(text('span', '🔍', 'admin-filter-icon'), search);
+    filters.append(searchRow);
+    // Row 2: Category filter
     const catFilter = el('select', { ariaLabel: 'Filter by category' });
     catFilter.append(el('option', { value: '', textContent: language === 'en' ? 'ALL CATEGORIES' : 'すべてのカテゴリ' }));
     (S.schoolLevels || []).forEach(sl => { catFilter.append(el('option', { value: sl.id, textContent: language === 'en' ? sl.nameEn : sl.nameJa })); });
-    const filterRow = el('div', { className: 'admin-match-filter-row' });
-    filterRow.append(text('span', 'CATEGORY:', 'admin-filter-label'), catFilter);
-    listPanel.append(listHeader, subTabs, filterRow);
+    const detailRow = el('div', { className: 'admin-match-filter-row' });
+    detailRow.append(text('span', 'CATEGORY:', 'admin-filter-label'), catFilter);
+    filters.append(detailRow);
+    listPanel.append(listHeader, subTabs, filters);
     const addBtn = isExtTab
       ? button('+ ADD EXT. OPPONENT / 外部選手追加', () => showExternalOpponentEditor(), 'primary')
       : button('+ ADD PLAYER / 選手追加', () => showPlayerEditor(null), 'primary');
     const rolloverBtn = isExtTab ? null : button('APRIL ROLLOVER / 4月繰り上げ', () => { if (confirm(language === 'en' ? 'Submit grade advancement for all students for approval?\n\nEach change will require approval before taking effect.' : '全選手の学年繰り上げを承認申請しますか？\n\n各変更は承認後に反映されます。')) { AprilRollover(); } }, 'secondary');
-    listPanel.append(listHeader, addBtn);
+    listPanel.append(addBtn);
     if (rolloverBtn) listPanel.append(rolloverBtn);
     const list = el('div', { className: 'admin-player-list' }); listPanel.append(list); const editor = el('section', { className: 'admin-panel admin-editor-panel' }); workspace.append(listPanel, editor); app.append(workspace);
     allPlayersList = isExtTab
