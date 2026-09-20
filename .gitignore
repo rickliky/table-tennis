@@ -1,3 +1,6 @@
-# Club source records stay local; the published site reads the approved public API.
+# Local data assets — offline-only backups, not used at runtime.
+# Golden source is Upstash Redis via Cloudflare Worker API.
 *.xlsx
-data/
+data/*
+!data/.gitkeep
+build-info.json

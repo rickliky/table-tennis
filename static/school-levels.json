@@ -1,0 +1,6 @@
+[
+  { "id": "SL-001", "name": "小学生", "nameJa": "小学生", "nameEn": "Elementary school" },
+  { "id": "SL-002", "name": "中学生", "nameJa": "中学生", "nameEn": "Middle school" },
+  { "id": "SL-003", "name": "高校生", "nameJa": "高校生", "nameEn": "High school" },
+  { "id": "SL-004", "name": "一般", "nameJa": "一般", "nameEn": "Adult" }
+]

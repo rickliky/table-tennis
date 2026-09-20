@@ -1,0 +1,6 @@
+[
+  { "id": "INVERTED", "name": "裏ソフト / Inverted", "nameJa": "裏ソフト", "nameEn": "Inverted" },
+  { "id": "SHORT_PIPS", "name": "表ソフト / Short pips", "nameJa": "表ソフト", "nameEn": "Short pips" },
+  { "id": "LONG_PIPS", "name": "粒高 / Long pips", "nameJa": "粒高", "nameEn": "Long pips" },
+  { "id": "ANTI", "name": "アンチ / Anti", "nameJa": "アンチ", "nameEn": "Anti-spin" }
+]

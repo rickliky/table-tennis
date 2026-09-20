@@ -1,0 +1,4 @@
+[
+  { "id": "RS-001", "name": "Completed", "nameJa": "完了", "nameEn": "Completed" },
+  { "id": "RS-002", "name": "Incomplete", "nameJa": "未完了", "nameEn": "Incomplete" }
+]

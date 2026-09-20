@@ -1,0 +1,4 @@
+[
+  { "id": "ST-001", "name": "Active", "nameJa": "有効", "nameEn": "Active" },
+  { "id": "ST-002", "name": "Inactive", "nameJa": "無効", "nameEn": "Inactive" }
+]
