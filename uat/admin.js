@@ -548,7 +548,8 @@
 
   function select(name, options, value) { const node = el('select', { name }); options.forEach(option => { const val = typeof option === 'object' ? option.id : option; const txt = typeof option === 'object' ? (option.name || option.id) : option; node.append(el('option', { value: val, textContent: txt })); }); node.value = value; return node; }
   function playerSelect(name, value) {
-    const activePlayers = players.filter(p => p.status === 'Active').sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja'));
+    const activeStatuses = new Set(['Active', 'ST-001']);
+    const activePlayers = players.filter(p => activeStatuses.has(p.status)).sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja'));
     const allPlayers = [...activePlayers, ...(entityData.externalOpponents || [])];
     const clubName = cid => { const c = (entityData.clubs || []).find(cl => cl.clubId === cid); return c ? (c.nameJa || c.name || '') : ''; };
     const playerLabel = p => { const parts = [p.displayName]; if (p.englishName) parts.push(p.englishName); parts.push(p.playerId || p.externalOpponentId); const cn = clubName(p.clubId); if (cn) parts.push(cn); return parts.join(' · '); };
