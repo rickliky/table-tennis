@@ -99,6 +99,18 @@ export default { async fetch(request, env) {
       await repo.write(targetEnv, 'rubbers', rubbers);
       return json({ ok: true, count: rubbers.length, environment: targetEnv });
     }
+    if (url.pathname === '/api/bulk-write' && request.method === 'POST') {
+      const actor = await session(request, env);
+      if (actor.role !== 'admin') throw new Error('Admin role required for bulk write');
+      const body = await request.json();
+      const { entityType, records, environment: envParam } = body;
+      const collection = collectionFor(entityType);
+      if (!collection) throw new Error('Unsupported entity type');
+      if (!Array.isArray(records)) throw new Error('records array is required');
+      const targetEnv = validateEnvironment(envParam || url.searchParams.get('environment') || 'prod');
+      await repo.write(targetEnv, collection, records);
+      return json({ ok: true, entityType, count: records.length, environment: targetEnv });
+    }
     throw new Error('Not found');
   } catch (error) { const status = error.message === 'Authentication required' ? 401 : 400; return new Response(JSON.stringify({ ok: false, error: error.message }), { status, headers: JSON_HEADERS }); }
 } };
