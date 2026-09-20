@@ -237,13 +237,16 @@
     const playerSearch = el('input', { type: 'text', placeholder: '選手名で検索 / Search by player name...', ariaLabel: 'Search by player name' });
     searchRow.append(text('span', '🔍', 'admin-filter-icon'), playerSearch);
     filters.append(searchRow);
-    // Row 2: Date range + Status (+ Tournament for tournament tab)
+    // Row 2: Date select + Status (+ Tournament for tournament tab)
     const detailRow = el('div', { className: 'admin-match-filter-row' });
-    const dateFrom = el('input', { type: 'date', ariaLabel: 'From date' });
-    const dateTo = el('input', { type: 'date', ariaLabel: 'To date' });
+    // Build date select from available match dates
+    const dateSelect = el('select', { ariaLabel: 'Filter by date' });
+    const allDates = [...new Set((isTraining ? trainingMatches : (entityData.tournamentMatches || [])).map(m => m.matchDate).filter(Boolean))].sort().reverse();
+    dateSelect.append(el('option', { value: '', textContent: language === 'en' ? 'ALL DATES' : 'すべての日付' }));
+    allDates.forEach(d => { dateSelect.append(el('option', { value: d, textContent: d })); });
     const statusFilter = el('select');
-    ['', completedStatusId, incompleteStatusId].forEach(s => { statusFilter.append(el('option', { value: s, textContent: s ? statusLabel(s) : 'ALL STATUS / 全ステータス' })); });
-    detailRow.append(text('span', 'FROM:', 'admin-filter-label'), dateFrom, text('span', 'TO:', 'admin-filter-label'), dateTo, text('span', 'STATUS:', 'admin-filter-label'), statusFilter);
+    ['', completedStatusId, incompleteStatusId].forEach(s => { statusFilter.append(el('option', { value: s, textContent: s ? statusLabel(s) : (language === 'en' ? 'ALL STATUS' : 'すべてのステータス') })); });
+    detailRow.append(text('span', 'DATE:', 'admin-filter-label'), dateSelect, text('span', 'STATUS:', 'admin-filter-label'), statusFilter);
     if (!isTraining) {
       const tournFilter = tournamentSelect('tournFilter', '');
       tournFilter.querySelector('input').placeholder = '大会 / Tournament...';
@@ -260,13 +263,12 @@
     const tournName = tid => { const t = tourns.find(x => x.tournamentId === tid); return t ? t.name : tid; };
     const updateList = () => {
       empty(list);
-      const from = dateFrom.value; const to = dateTo.value; const sf = statusFilter.value;
+      const dateVal = dateSelect.value; const sf = statusFilter.value;
       const pq = playerSearch.value.trim().toLowerCase();
       if (isTraining) {
         const results = trainingMatches.filter(match => {
           if (sf && resultStatusId(match.resultStatus) !== sf) return false;
-          if (from && match.matchDate < from) return false;
-          if (to && match.matchDate > to) return false;
+          if (dateVal && match.matchDate !== dateVal) return false;
           if (pq) {
             const hay = `${match.player1Name || ''} ${match.player2Name || ''} ${match.player1Id || ''} ${match.player2Id || ''}`.toLowerCase();
             if (!hay.includes(pq)) return false;
@@ -298,8 +300,7 @@
         const results = (entityData.tournamentMatches || []).filter(m => {
           if (tq && m.tournamentId !== tq) return false;
           if (sf && resultStatusId(m.resultStatus) !== sf) return false;
-          if (from && m.matchDate < from) return false;
-          if (to && m.matchDate > to) return false;
+          if (dateVal && m.matchDate !== dateVal) return false;
           if (pq) {
             const hay = `${m.player1Name || ''} ${m.player2Name || ''} ${m.player1Id || ''} ${m.player2Id || ''}`.toLowerCase();
             if (!hay.includes(pq)) return false;
@@ -327,7 +328,7 @@
         });
       }
     };
-    dateFrom.onchange = updateList; dateTo.onchange = updateList; statusFilter.onchange = updateList;
+    dateSelect.onchange = updateList; statusFilter.onchange = updateList;
     playerSearch.oninput = updateList;
     const tournFilterEl = detailRow.querySelector('.player-combobox');
     if (tournFilterEl) { tournFilterEl.addEventListener('change', updateList); }
