@@ -309,3 +309,25 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 ### Main Navigation Language Rule (2026-09-20)
 - `access-gate.js` injects the Tournament and Data Maintenance links into the main-page navigation after the static HTML loads.
 - These injected links must use the current `lk-language` at creation and be refreshed by `app.js` whenever the language toggle changes; never hardcode them in English.
+
+### Training Match Transcription (2026-09-20)
+- Transcribed 54 training matches for 2026-09-17 from handwritten notebook images.
+- All player names resolved via `displayName` or overrides (ジェイス=LK-0080, ケイツ=LK-0002, etc.).
+- 50 matches had `resultStatus: 'Complete'` pushed as pending updates; 4 are genuinely incomplete (no 3-set winner).
+- LK-0002 notebookName updated from "ケイシ" to "ケイツ" (pending approval).
+- LK-0153 (ケイツ) was a duplicate — user chose to merge into LK-0002 (李 紫妤 ケイシ) and inactivate LK-0153.
+
+### Admin Match Filter Redesign (2026-09-20)
+- Two-row filter layout: Row 1 = player name search (🔍 + text input, filters as you type); Row 2 = date range + status + tournament dropdown.
+- Player search matches against player1Name, player2Name, player1Id, player2Id (case-insensitive substring).
+- CSS: `.admin-match-filters` is now `flex-direction: column`; `.admin-match-filter-row` for each row.
+- Tournament filter is dynamically read from DOM (`detailRow.querySelector('.player-combobox')`) since it's conditionally rendered.
+
+### UAT→PROD Migration Completed (2026-09-20)
+- **Full data replacement**: All UAT data pushed to PROD via `/api/bulk-write` endpoint (direct overwrite, no pending changes).
+- **PROD data**: 84 players, 1,561 matches, 44 external opponents, 19 clubs, 1 tournament, 47 progress records, 171 rubbers.
+- **Worker deployed** with new `/api/bulk-write` admin endpoint for direct collection overwrites.
+- **Code merged**: `uat` → `main` (140 commits), GitHub Pages deployed.
+- **All category values** normalized to IDs (SL-001–SL-004) in both UAT and PROD.
+- 39 players remain unassigned a category — these are mostly inactive/external players.
+- Legacy match statuses (Verified, Complete, Transcribed - review) mapped to canonical IDs via `legacyStatusMap` in admin filter.
