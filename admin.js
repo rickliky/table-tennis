@@ -32,6 +32,9 @@
   const incompleteStatusId = (S.resultStatuses || []).find(x => x.nameEn === 'Incomplete' || x.name === 'Incomplete')?.id || 'Incomplete';
   const isIncompleteStatus = value => resultStatusId(value) === incompleteStatusId;
   const statusLabel = value => lookupName('resultStatuses', value);
+  const playerStatusId = value => resolveFieldValue('statuses', value);
+  const activePlayerStatusId = (S.statuses || []).find(x => x.nameEn === 'Active' || x.name === 'Active')?.id || 'ST-001';
+  const isActivePlayer = p => playerStatusId(p.status) === activePlayerStatusId;
 
   const playerFields = [['playerId', '選手ID / Player ID', 'text', true], ['clubId', 'クラブID / Club ID', 'select', true], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマ字表記 / Romanized name', 'text'], ['notebookName', 'ノートブック名 / Player Name (Notebook)', 'text'], ['gender', '性別 / Gender', 'select', false, genderOpts], ['schoolLevel', 'カテゴリ / School level', 'select', false, schoolLevelOpts], ['grade', '学年 / Grade', 'select', false, gradeOpts], ['playingHand', '利き手 / Playing hand', 'select', false, playingHandOpts], ['grip', 'グリップ / Grip', 'select', false, gripOpts], ['playingStyle', '戦型 / Playing style', 'select', false, playingStyleOpts], ['forehandRubberType', 'フォア面種類 / Forehand type', 'select', false, rubberTypeOpts], ['forehandRubber', 'フォア面ラバー / Forehand rubber', 'rubber'], ['backhandRubberType', 'バック面種類 / Backhand type', 'select', false, rubberTypeOpts], ['backhandRubber', 'バック面ラバー / Backhand rubber', 'rubber'], ['status', '状態 / Status', 'select', true, statusOpts]];
   const rubberName = id => { if (!id) return ''; const r = (window.RUBBERS || []).find(x => x.rubberId === id); return r ? r.name : id; };
@@ -548,8 +551,7 @@
 
   function select(name, options, value) { const node = el('select', { name }); options.forEach(option => { const val = typeof option === 'object' ? option.id : option; const txt = typeof option === 'object' ? (option.name || option.id) : option; node.append(el('option', { value: val, textContent: txt })); }); node.value = value; return node; }
   function playerSelect(name, value) {
-    const activeStatuses = new Set(['Active', 'ST-001']);
-    const activePlayers = players.filter(p => activeStatuses.has(p.status)).sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja'));
+    const activePlayers = players.filter(isActivePlayer).sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja'));
     const allPlayers = [...activePlayers, ...(entityData.externalOpponents || [])];
     const clubName = cid => { const c = (entityData.clubs || []).find(cl => cl.clubId === cid); return c ? (c.nameJa || c.name || '') : ''; };
     const playerLabel = p => { const parts = [p.displayName]; if (p.englishName) parts.push(p.englishName); parts.push(p.playerId || p.externalOpponentId); const cn = clubName(p.clubId); if (cn) parts.push(cn); return parts.join(' · '); };
