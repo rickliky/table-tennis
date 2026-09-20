@@ -16,6 +16,16 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
+      - name: Generate build info
+        run: |
+          BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          BRANCH="${GITHUB_REF_NAME}"
+          COMMIT="${GITHUB_SHA}"
+          VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "$COMMIT")
+          cat > build-info.json <<EOF
+          {"version":"${VERSION}","commit":"${COMMIT}","branch":"${BRANCH}","buildDate":"${BUILD_DATE}"}
+          EOF
+
       - name: Deploy production
         if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4

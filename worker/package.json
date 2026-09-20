@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/index.js && node --check src/auth.js && node --check src/repository.js && node --check src/validation.js && node --check src/diff.js"
+  },
+  "devDependencies": {
+    "wrangler": "^4.134.0"
+  }
+}
