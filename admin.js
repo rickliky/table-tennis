@@ -27,9 +27,18 @@
   const roundOpts = toOpts(S.tournamentRounds);
   const resultOpts = toOpts(S.tournamentResults);
   const resultStatusOpts = toOpts(S.resultStatuses);
-  const resultStatusId = value => resolveFieldValue('resultStatuses', value);
-  const completedStatusId = (S.resultStatuses || []).find(x => x.nameEn === 'Completed' || x.name === 'Completed')?.id || 'Completed';
-  const incompleteStatusId = (S.resultStatuses || []).find(x => x.nameEn === 'Incomplete' || x.name === 'Incomplete')?.id || 'Incomplete';
+  const completedStatusId = (S.resultStatuses || []).find(x => x.nameEn === 'Completed' || x.name === 'Completed')?.id || 'RS-001';
+  const incompleteStatusId = (S.resultStatuses || []).find(x => x.nameEn === 'Incomplete' || x.name === 'Incomplete')?.id || 'RS-002';
+  // Map legacy text statuses to canonical IDs
+  const legacyStatusMap = { 'Verified': completedStatusId, 'Complete': completedStatusId, 'Transcribed - review': completedStatusId, 'Draw': completedStatusId, 'Incomplete': incompleteStatusId, 'Void': incompleteStatusId };
+  const resultStatusId = value => {
+    if (!value) return '';
+    const canonical = resolveFieldValue('resultStatuses', value);
+    // If resolved to a known ID, return it
+    if (canonical === completedStatusId || canonical === incompleteStatusId) return canonical;
+    // Check legacy map
+    return legacyStatusMap[value] || canonical;
+  };
   const isIncompleteStatus = value => resultStatusId(value) === incompleteStatusId;
   const statusLabel = value => lookupName('resultStatuses', value);
   const playerStatusId = value => resolveFieldValue('statuses', value);
