@@ -90,6 +90,13 @@
     return language === 'en' ? (club.nameEn || club.name || club.nameJa || clubId) : (club.nameJa || club.name || clubId);
   };
 
+  const lkClubLabel = cMap => {
+    const club = cMap.get('CLUB-0001');
+    if (!club) return language === 'en' ? 'LK Players' : 'LK選手';
+    const name = language === 'en' ? (club.nameEn || club.name || 'Little Kings') : (club.nameJa || club.name || 'リトルキングス');
+    return `${name} ${language === 'en' ? 'Players' : '選手'}`;
+  };
+
   const resultEmoji = rank => rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : '';
   const ordinal = language === 'en'
     ? n => { const s = ['th', 'st', 'nd', 'rd']; const v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
@@ -188,7 +195,7 @@
           ${lkPlayers.length ? `
             <div class="tc-lk-section">
               <div class="tc-lk-header">
-                <span class="tc-lk-badge">${t('lkPlayers')}</span>
+                <span class="tc-lk-badge">${lkClubLabel(cMap)}</span>
                 <span class="tc-lk-count">${lkPlayers.length}</span>
               </div>
               ${lkResultHtml ? `<div class="tc-lk-results">${lkResultHtml}</div>` : ''}
@@ -248,7 +255,7 @@
             <div class="tp-stat-divider"></div>
             <div class="tp-stat">
               <span class="tp-stat-value">${totalLkPlayers}</span>
-              <span class="tp-stat-label">${language === 'en' ? 'LK Players' : 'LK選手'}</span>
+              <span class="tp-stat-label">${lkClubLabel(cMap)}</span>
             </div>
           </div>
         </div>
@@ -332,7 +339,7 @@
     // LK Player highlight cards
     const lkHighlight = lkPlayers.length ? `
       <div class="detail-lk-section">
-        <h2 class="detail-lk-title">${t('players')} <span class="detail-lk-count">${lkPlayers.length}</span></h2>
+        <h2 class="detail-lk-title">${lkClubLabel(cMap)} <span class="detail-lk-count">${lkPlayers.length}</span></h2>
         <div class="detail-lk-grid">
           ${lkPlayers.sort((a, b) => (a.seed || 99) - (b.seed || 99)).map(p => {
             const player = pMap.get(p.playerId);
