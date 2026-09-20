@@ -331,3 +331,5 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - **All category values** normalized to IDs (SL-001–SL-004) in both UAT and PROD.
 - 39 players remain unassigned a category — these are mostly inactive/external players.
 - Legacy match statuses (Verified, Complete, Transcribed - review) mapped to canonical IDs via `legacyStatusMap` in admin filter.
+- **Match completion rule enforced**: 60 matches with < 3 sets were incorrectly marked Verified/Complete → corrected to Incomplete. Rule: `isComplete()` = `player1Sets >= 3 || player2Sets >= 3` (best-of-5, 3 sets to win).
+- **Head-to-head setup fix**: `player.js` head-to-head dialog now resolves lookup IDs (PS-001→ドライブ攻撃型, GH-001→横書きショートハンドル, etc.) via `lookupValue()`.
