@@ -316,6 +316,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - 50 matches had `resultStatus: 'Complete'` pushed as pending updates; 4 are genuinely incomplete (no 3-set winner).
 - LK-0002 notebookName updated from "ケイシ" to "ケイツ" (pending approval).
 - LK-0153 (ケイツ) was a duplicate — user chose to merge into LK-0002 (李 紫妤 ケイシ) and inactivate LK-0153.
+- **9/20 transcription**: 45 matches from 荻窪 session. 38 complete, 7 incomplete, 1 draw (福原 2-2 繁田). New players: LK-0154 (岸), LK-0155 (伊従). 長嶺=長嵐(LK-0152), 平田=岡田(LK-0093).
 
 ### Admin Match Filter Redesign (2026-09-20)
 - Two-row filter layout: Row 1 = player name search (🔍 + text input, filters as you type); Row 2 = date range + status + tournament dropdown.
