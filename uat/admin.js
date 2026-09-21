@@ -391,7 +391,7 @@
     if (!readOnly) {
       const actions = el('div', { className: 'admin-editor-actions' });
       actions.append(button('SAVE / 保存', () => { if (confirm(match ? 'Submit this match change for approval? / この試合の変更を承認申請しますか？\n\nChanges take effect after approval. / 変更は承認後に反映されます。' : 'Submit this new match for approval? / 新規試合を承認申請しますか？\n\nChanges take effect after approval. / 変更は承認後に反映されます。')) form.requestSubmit(); }, 'primary'));
-      actions.append(button(match ? 'RESET / リセット' : 'CLEAR / クリア', () => { if (match) { Object.keys(record).forEach(key => { const el = form.elements[key]; if (el) el.value = record[key] ?? ''; }); player1.value = record.player1Id || ''; player2.value = record.player2Id || ''; } else { form.reset(); } updateDerived(); }, 'secondary'));
+      actions.append(button(match ? 'RESET / リセット' : 'CLEAR / クリア', () => { if (match) { Object.keys(record).forEach(key => { const el = form.elements[key]; if (el) el.value = record[key] ?? ''; }); resultStatus.value = resultStatusId(record.resultStatus) || completedStatusId; player1.value = record.player1Id || ''; player2.value = record.player2Id || ''; } else { form.reset(); resultStatus.value = completedStatusId; } updateDerived(); }, 'secondary'));
       form.append(actions);
       form.onsubmit = event => {
         event.preventDefault(); const next = match ? { ...record, ...Object.fromEntries(new FormData(form)) } : Object.fromEntries(new FormData(form));
@@ -445,7 +445,7 @@
     if (!readOnly) {
       const actions = el('div', { className: 'admin-editor-actions' });
       actions.append(button('SAVE / 保存', () => { if (confirm(match ? 'Submit this match change? / この試合の変更を申請しますか？' : 'Submit this new match? / 新規試合を申請しますか？')) form.requestSubmit(); }, 'primary'));
-      actions.append(button(match ? 'RESET / リセット' : 'CLEAR / クリア', () => { if (match) { Object.keys(record).forEach(key => { const el = form.elements[key]; if (el) el.value = record[key] ?? ''; }); player1.value = record.player1Id || ''; player2.value = record.player2Id || ''; tournamentInput.value = record.tournamentId || ''; } else { form.reset(); } updateDerived(); }, 'secondary'));
+      actions.append(button(match ? 'RESET / リセット' : 'CLEAR / クリア', () => { if (match) { Object.keys(record).forEach(key => { const el = form.elements[key]; if (el) el.value = record[key] ?? ''; }); resultStatus.value = resultStatusId(record.resultStatus) || completedStatusId; player1.value = record.player1Id || ''; player2.value = record.player2Id || ''; tournamentInput.value = record.tournamentId || ''; } else { form.reset(); resultStatus.value = completedStatusId; } updateDerived(); }, 'secondary'));
       form.append(actions);
       form.onsubmit = event => {
         event.preventDefault(); const next = match ? { ...record, ...Object.fromEntries(new FormData(form)) } : Object.fromEntries(new FormData(form));
