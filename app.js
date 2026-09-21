@@ -309,6 +309,23 @@ function openHeadToHead(matchId) {
   const setupFor = player => [[language === 'en' ? 'Style' : '戦型',player.playingStyle],[language === 'en' ? 'Grip' : 'グリップ',player.grip],[language === 'en' ? 'FH' : 'フォア',rubberName(player.forehandRubber)],[language === 'en' ? 'BH' : 'バック',rubberName(player.backhandRubber)]].filter(([,value]) => value).map(([label,value]) => `<span><b>${label}</b>${value}</span>`).join('') || `<span>${language === 'en' ? 'No setup data' : '用具情報なし'}</span>`; document.querySelector('#head-to-head-content').insertAdjacentHTML('beforeend', `<section class="h2h-setups"><p>${language === 'en' ? 'Player Setup Context' : '選手セッティング比較'}</p><div><article><b>${nameFor(first)}</b>${setupFor(first)}</article><article><b>${nameFor(second)}</b>${setupFor(second)}</article></div></section>`); document.querySelector('#head-to-head').showModal();
 }
 
+function renderClubInsights() {
+  const target = document.querySelector('#club-insights-content'); if (!target) return;
+  const completed = data.matches.filter(match => eventType(match) === 'training' && isComplete(match));
+  const months = [...new Set(completed.map(match => match.matchDate.slice(0,7)))].sort().reverse();
+  const latest = months[0], prior = months[1], forMonth = month => completed.filter(match => match.matchDate.startsWith(month));
+  const latestMatches = latest ? forMonth(latest) : [], priorMatches = prior ? forMonth(prior) : [];
+  const participants = list => new Set(list.flatMap(match => [match.player1Id, match.player2Id])).size;
+  const close = list => list.filter(match => Math.abs(Number(match.player1Sets) - Number(match.player2Sets)) === 1).length;
+  const playerStats = new Map(); latestMatches.forEach(match => [[match.player1Id, match.player1Sets, match.player2Sets], [match.player2Id, match.player2Sets, match.player1Sets]].forEach(([id, won, lost]) => { const entry = playerStats.get(id) || { wins:0, losses:0, opponents:new Set() }; entry.wins += match.winnerId === id ? 1 : 0; entry.losses += match.winnerId === id ? 0 : 1; entry.opponents.add(match.player1Id === id ? match.player2Id : match.player1Id); playerStats.set(id, entry); }));
+  const mostActive = [...playerStats.entries()].sort(([,a],[,b]) => b.wins + b.losses - a.wins - a.losses).slice(0,5);
+  const categories = ['SL-001','SL-002','SL-003','SL-004']; const matrix = new Map(); latestMatches.forEach(match => { const first = data.players.find(player => player.playerId === match.player1Id), second = data.players.find(player => player.playerId === match.player2Id); const a = first?.schoolLevel, b = second?.schoolLevel; if (!a || !b) return; const key = [a,b].sort().join('|'); matrix.set(key, (matrix.get(key) || 0) + 1); });
+  const label = language === 'en' ? { title:'Activity & Competition', activity:'Latest month', players:'participants', close:'close matches', change:'vs previous month', active:'Most active this month', diversity:'unique opponents', category:'Category matchups', none:'No completed training matches yet' } : { title:'活動・対戦インサイト', activity:'直近月', players:'参加選手', close:'接戦', change:'前月比', active:'今月の試合数上位', diversity:'ユニーク対戦相手', category:'カテゴリ対戦', none:'完了した練習試合はまだありません' };
+  if (!latest) { target.innerHTML = `<p class="empty">${label.none}</p>`; return; }
+  const delta = latestMatches.length - priorMatches.length, deltaText = `${delta >= 0 ? '+' : ''}${delta}`;
+  target.innerHTML = `<div class="insight-metrics"><article><small>${label.activity} · ${latest}</small><b>${latestMatches.length}</b><span>${t('matches')} · ${participants(latestMatches)} ${label.players}</span><em>${label.change} ${deltaText}</em></article><article><small>${label.close}</small><b>${close(latestMatches)}</b><span>${latestMatches.length ? Math.round(close(latestMatches) / latestMatches.length * 100) : 0}% · 3–2 / 2–3</span></article></div><div class="insight-grid"><section><h3>${label.active}</h3><ol>${mostActive.map(([id, stat]) => { const person = data.players.find(player => player.playerId === id); const games = stat.wins + stat.losses; return `<li><a class="player-link" href="player.html?id=${id}">${nameFor(person || { displayName:id })}</a><span>${games} ${t('matches')} · ${stat.opponents.size} ${label.diversity}</span></li>`; }).join('')}</ol></section><section><h3>${label.category}</h3><div class="category-matchup-matrix">${[...matrix.entries()].sort((a,b) => b[1] - a[1]).map(([key,count]) => `<span><b>${key.split('|').map(value => lookupValue('schoolLevel', value)).join(' × ')}</b><i>${count}</i></span>`).join('') || '-'}</div></section></div>`;
+}
+
 function render() {
   document.documentElement.lang = language;
   document.querySelectorAll('[data-i18n]').forEach(element => { element.textContent = t(element.dataset.i18n); });
@@ -325,7 +342,7 @@ function render() {
   const matches = visibleMatches(), ranked = rankPlayers(matches), dates = matches.map(match => match.matchDate).filter(Boolean).sort();
   charts.forEach(chart => chart.destroy()); charts = [];
   document.querySelector('#player-count').textContent = data.players.length;
-  renderPlayers(ranked); renderGroupStats(matches); renderLatestSession(); renderLeaderboardDashboard(); renderSession();
+  renderPlayers(ranked); renderGroupStats(matches); renderLatestSession(); renderClubInsights(); renderLeaderboardDashboard(); renderSession();
   const heroSearch = document.querySelector('#hero-player-search'); if (heroSearch && heroSearch.value.trim()) renderHeroPlayerResults(heroSearch.value.trim().toLowerCase());
   document.querySelector('#last-updated').textContent = `${t('lastUpdated')}: ${new Date(data.lastUpdated).toLocaleString(language === 'ja' ? 'ja-JP' : 'en-GB')}`;
   const latestMatchDate = data.matches.map(match => match.matchDate).filter(Boolean).sort().at(-1); document.querySelector('#match-data-status').textContent = latestMatchDate ? (language === 'en' ? `Latest match data: ${dateLabel(latestMatchDate)}` : `最新試合データ: ${dateLabel(latestMatchDate)}`) : (language === 'en' ? 'No match data recorded' : '試合データはありません');
