@@ -367,3 +367,15 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Player-to-Admin Shortcuts (2026-09-21)
 - Each player profile offers Add Training Match and Edit Player Profile shortcuts. URL parameters route Admin directly to the training-match form with that player preselected, or to the matching player editor.
+
+### Tournament Data Corrections (2026-09-21)
+- 2026全農杯 data was recreated as `2026年度全農杯日本卓球選手権大会（ホープス・カブ・バンビの部）県予選会` (2026-05-03, 川崎市多摩スポーツセンター).
+- Its 47 listed finishers have 28 representatives: 3 recommended (`鈴木希華`, `茂田悠稀`, `森本夏愛`) plus the source-sheet representative placements. 茂田翔紀 is ホープス男子1位, not recommended; 三浦健人 is not a representative.
+- Corrected external-player names include 下田さくら, 鈴木梨楓, 内田結衣, 中間琴海, 茂田翔紀, 森本陽喜, 蒋修逸, 酬醐宙, 倉田東弥, 森本夏愛, and 鈴木伶奈.
+- Admin editor now has `rank`, `recommended`, and `qualified` fields for tournament progress.
+- Tournament page displays 推薦 badge for recommended players and 代表 badge for all representatives.
+
+### Tournament Scouting (2026-09-21)
+- Tournament detail pages now turn tournament fields into preparation briefs for Little Kings: field size, known vs. unscouted opponents, and representative/recommended priority opponents with documented LK scorelines.
+- Tournament details render documented tournament match results by stage; player profiles render an LK-only Tournament Preparation / Field Readiness card for divisions they entered.
+- Tournament preparation metrics deliberately remain separate from club-training leaderboards and training statistics; tournament and training results are used only as opponent-scouting context.

@@ -15,7 +15,8 @@
       backToList: 'Back to list', totalPlayers: 'Total participants',
       lkPlayers: 'LK Players', viewDetails: 'View Details',
       tournamentHistory: 'Tournament History', notes: 'Notes',
-      noLKPlayers: 'No Little Kings players in this tournament'
+      noLKPlayers: 'No Little Kings players in this tournament',
+      prep: 'Preparation Brief', known: 'known to Little Kings', unscouted: 'unscouted', priority: 'Priority opponents', tournamentMatches: 'Documented Match Results', representative: 'Representative'
     },
     ja: {
       title: '大会情報', subtitle: '大会結果・ランキング',
@@ -29,7 +30,8 @@
       backToList: '一覧に戻る', totalPlayers: '参加者数',
       lkPlayers: 'LK選手', viewDetails: '詳細を見る',
       tournamentHistory: '大会履歴', notes: '備考',
-      noLKPlayers: 'リトルキングス選手がいません'
+      noLKPlayers: 'リトルキングス選手がいません',
+      prep: '対戦準備ブリーフ', known: 'LK既知の対戦相手', unscouted: '未スカウト', priority: '優先対戦相手', tournamentMatches: '登録済み大会試合', representative: '代表'
     }
   };
   const t = key => words[language][key];
@@ -276,6 +278,25 @@
       </section>`;
   }
 
+  const participantFor = (id, pMap, eMap) => pMap.get(id) || eMap.get(id);
+  const documentedMatchesFor = id => [...(data.matches || []), ...(data.tournamentMatches || [])].filter(match => match.player1Id === id || match.player2Id === id);
+
+  function preparationBrief(divPlayers, division, pMap, eMap) {
+    const lkIds = divPlayers.filter(item => item.playerId.startsWith('LK-')).map(item => item.playerId);
+    if (!lkIds.length) return '';
+    const opponents = divPlayers.filter(item => !item.playerId.startsWith('LK-'));
+    const known = opponents.filter(item => lkIds.some(id => documentedMatchesFor(id).some(match => match.player1Id === item.playerId || match.player2Id === item.playerId)));
+    const priority = [...opponents].sort((left, right) => Number(right.recommended || right.qualified) - Number(left.recommended || left.qualified) || (left.rank || 99) - (right.rank || 99)).slice(0, 5);
+    const opponentCard = item => {
+      const person = participantFor(item.playerId, pMap, eMap) || { displayName: item.playerName || item.playerId };
+      const record = lkIds.flatMap(id => documentedMatchesFor(id)).filter(match => match.player1Id === item.playerId || match.player2Id === item.playerId);
+      const recordText = record.length ? record.map(match => { const ownSets = match.player1Id === item.playerId ? match.player1Sets : match.player2Sets, lkSets = match.player1Id === item.playerId ? match.player2Sets : match.player1Sets; return `${ownSets}-${lkSets}`; }).join(', ') : (language === 'en' ? 'No LK record' : 'LK対戦記録なし');
+      const tier = item.recommended ? (language === 'en' ? 'Recommended' : '推薦') : item.qualified ? t('representative') : (language === 'en' ? 'Field opponent' : '大会出場者');
+      return `<li><b>${escapeHtml(fullName(person))}</b><span>${escapeHtml(tier)} · ${escapeHtml(recordText)}</span></li>`;
+    };
+    return `<aside class="division-prep"><header><p>${t('prep')}</p><h4>${escapeHtml(division)}</h4></header><div class="division-prep-metrics"><span><b>${opponents.length}</b>${language === 'en' ? 'field opponents' : '対戦候補'}</span><span><b>${known.length}</b>${t('known')}</span><span><b>${opponents.length - known.length}</b>${t('unscouted')}</span></div><section><h5>${t('priority')}</h5><ol>${priority.map(opponentCard).join('')}</ol></section></aside>`;
+  }
+
   // ─── Tournament Detail View ───
   function showTournamentDetail(tournamentId) {
     const tournament = tournaments.find(t => t.tournamentId === tournamentId);
@@ -287,10 +308,11 @@
     const cMap = clubMap();
     const divisions = [...new Set(tProgress.map(p => p.division))];
     const lkPlayers = tProgress.filter(p => p.playerId.startsWith('LK-'));
+    const tournamentMatches = (data.tournamentMatches || []).filter(match => match.tournamentId === tournamentId).sort((left, right) => `${left.matchDate}${left.tournamentMatchId}`.localeCompare(`${right.matchDate}${right.tournamentMatchId}`));
 
     // Division sections
     const divisionSections = divisions.map(div => {
-      const divPlayers = tProgress.filter(p => p.division === div).sort((a, b) => (a.seed || 99) - (b.seed || 99));
+      const divPlayers = tProgress.filter(p => p.division === div).sort((a, b) => (a.recommended ? 0 : 1) - (b.recommended ? 0 : 1) || (a.rank || 99) - (b.rank || 99));
       const rows = divPlayers.map(p => {
         const isLk = p.playerId.startsWith('LK-');
         const player = pMap.get(p.playerId) || eMap.get(p.playerId);
@@ -300,13 +322,16 @@
         const nameHtml = isLk
           ? `<a href="player.html?id=${p.playerId}" class="lk-link">${escapeHtml(name)}</a>`
           : escapeHtml(name);
-        const rankHtml = p.seed ? resultLabel(p.seed) : '-';
+        const rankHtml = p.recommended
+          ? `<span class="rank-badge recommended">${language === 'en' ? 'REC' : '推薦'}</span>`
+          : p.rank ? resultLabel(p.rank) : '-';
         const resultHtml = p.result ? escapeHtml(lookupValue('tournamentResults', p.result)) : '';
+        const qualHtml = p.qualified ? `<span class="qual-badge">${language === 'en' ? '代表' : '代表'}</span>` : '';
 
         return `
           <tr class="${isLk ? 'tr-lk' : ''}">
             <td class="td-rank">${rankHtml}</td>
-            <td class="td-name">${isLk ? '<span class="lk-chip">LK</span> ' : ''}${nameHtml}</td>
+            <td class="td-name">${isLk ? '<span class="lk-chip">LK</span> ' : ''}${nameHtml} ${qualHtml}</td>
             <td class="td-club">${escapeHtml(club)}</td>
             <td class="td-grade">${escapeHtml(grade)}</td>
             <td class="td-result">${resultHtml}</td>
@@ -333,6 +358,7 @@
               <tbody>${rows}</tbody>
             </table>
           </div>
+          ${preparationBrief(divPlayers, div, pMap, eMap)}
         </div>`;
     }).join('');
 
@@ -341,17 +367,20 @@
       <div class="detail-lk-section">
         <h2 class="detail-lk-title">${lkClubLabel(cMap)} <span class="detail-lk-count">${lkPlayers.length}</span></h2>
         <div class="detail-lk-grid">
-          ${lkPlayers.sort((a, b) => (a.seed || 99) - (b.seed || 99)).map(p => {
+          ${lkPlayers.sort((a, b) => (a.recommended ? 0 : 1) - (b.recommended ? 0 : 1) || (a.rank || 99) - (b.rank || 99)).map(p => {
             const player = pMap.get(p.playerId);
             const name = fullName(player) || p.playerName;
             const club = player?.clubId ? clubName(player.clubId, cMap) : '';
+            const rankLabel = p.recommended
+              ? (language === 'en' ? 'Recommended' : '推薦')
+              : p.rank ? resultLabel(p.rank) : '';
             return `
               <a href="player.html?id=${p.playerId}" class="detail-lk-card">
                 <img src="img/${p.playerId}.jpg" alt="${escapeHtml(name)}" onerror="this.style.display='none'" />
                 <div class="detail-lk-info">
                   <b>${escapeHtml(name)}</b>
                   <small>${escapeHtml(p.division)}${club ? ` · ${escapeHtml(club)}` : ''}</small>
-                  <span>${resultLabel(p.seed)}${p.result ? ` · ${escapeHtml(lookupValue('tournamentResults', p.result))}` : ''}</span>
+                  <span>${rankLabel}${p.result ? ` · ${escapeHtml(lookupValue('tournamentResults', p.result))}` : ''}</span>
                 </div>
               </a>`;
           }).join('')}
@@ -363,7 +392,8 @@
       <div class="detail-notes">
         <h3>${t('notes')}</h3>
         <p>${escapeHtml(tournament.notes)}</p>
-      </div>` : '';
+       </div>` : '';
+    const tournamentResultsHtml = tournamentMatches.length ? `<section class="tournament-match-results"><div class="section-title"><div><p>${t('tournamentMatches')}</p><h2>${t('tournamentMatches')}</h2></div></div><div>${tournamentMatches.map(match => { const first = participantFor(match.player1Id, pMap, eMap), second = participantFor(match.player2Id, pMap, eMap), firstName = fullName(first) || match.player1Name || match.player1Id, secondName = fullName(second) || match.player2Name || match.player2Id; return `<article><span>${escapeHtml(match.round || '-')}</span><b class="${match.winnerId === match.player1Id ? 'winner' : ''}">${escapeHtml(firstName)}</b><strong>${match.player1Sets}-${match.player2Sets}</strong><b class="${match.winnerId === match.player2Id ? 'winner' : ''}">${escapeHtml(secondName)}</b></article>`; }).join('')}</div></section>` : '';
 
     app.innerHTML = `
       <section class="tp-hero tp-hero-detail">
@@ -382,11 +412,12 @@
 
       <section class="detail-content">
         ${lkHighlight}
-        ${notesHtml}
-        <div class="detail-divisions">
-          ${divisionSections}
-        </div>
-      </section>`;
+         ${notesHtml}
+         <div class="detail-divisions">
+           ${divisionSections}
+         </div>
+         ${tournamentResultsHtml}
+       </section>`;
 
     document.getElementById('back-to-list')?.addEventListener('click', () => render());
   }
@@ -404,6 +435,7 @@
       data = await window.LKData.loadPublicData();
       tournaments = data.tournaments || [];
       progress = data.tournamentProgress || [];
+      data.tournamentMatches = data.tournamentMatches || [];
       players = data.players || [];
       render();
     } catch (error) {
