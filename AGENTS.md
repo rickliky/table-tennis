@@ -334,3 +334,16 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Legacy match statuses (Verified, Complete, Transcribed - review) mapped to canonical IDs via `legacyStatusMap` in admin filter.
 - **Match completion rule enforced**: 60 matches with < 3 sets were incorrectly marked Verified/Complete → corrected to Incomplete. Rule: `isComplete()` = `player1Sets >= 3 || player2Sets >= 3` (best-of-5, 3 sets to win).
 - **Head-to-head setup fix**: `player.js` head-to-head dialog now resolves lookup IDs (PS-001→ドライブ攻撃型, GH-001→横書きショートハンドル, etc.) via `lookupValue()`.
+
+### Player Profile UAT Redesign (2026-09-21)
+- Player profiles now lead with a compact three-column identity block: dossier, portrait, and key all-time/latest records.
+- The latest match day remains immediately below the profile, followed by bilingual in-page navigation for latest session, statistics, trends, and archive.
+- Existing charts, period statistics, tactical matchup analysis, head-to-head views, and full archive are retained; this is a presentation-only UAT change.
+
+### Leaderboard Controls Fix (2026-09-21)
+- Index leaderboard tabs and period arrows use delegated click handling rather than direct element handlers, so Month/Year switching and period navigation remain functional after redraws and on touch browsers.
+- The yearly leaderboard avatar observer must detect an avatar immediately before a direct player link as well as one before its parent wrapper; otherwise it repeatedly injects portraits and freezes the page.
+- Yearly podium rows now use the same `<b>` + `recordSummary()` structure as monthly rows, so avatar, name, and win/loss record align identically in the grid layout.
+
+### Build Info Deployment Fix (2026-09-21)
+- `build-info.json` is explicitly unignored and committed. This lets the Pages workflow publish its generated build stamp; the nested UAT `.gitignore` negation also overrides the stale root `gh-pages` ignore rule for `uat/build-info.json`.

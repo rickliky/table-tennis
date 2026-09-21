@@ -2,7 +2,6 @@
   'use strict';
 
   const isUat = /\/uat(?:\/|$)/i.test(location.pathname);
-  const basePath = isUat ? 'uat/' : '';
   const versionLabel = isUat ? 'UAT' : 'PROD';
 
   function timeAgo(date) {
@@ -42,7 +41,7 @@
     else document.body.appendChild(node);
   }
 
-  fetch(`${basePath}build-info.json`, { cache: 'no-store' })
+  fetch('build-info.json', { cache: 'no-store' })
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(render)
     .catch(() => {});
