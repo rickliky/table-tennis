@@ -339,3 +339,6 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Player profiles now lead with a compact three-column identity block: dossier, portrait, and key all-time/latest records.
 - The latest match day remains immediately below the profile, followed by bilingual in-page navigation for latest session, statistics, trends, and archive.
 - Existing charts, period statistics, tactical matchup analysis, head-to-head views, and full archive are retained; this is a presentation-only UAT change.
+
+### Leaderboard Controls Fix (2026-09-21)
+- Index leaderboard tabs and period arrows use delegated click handling rather than direct element handlers, so Month/Year switching and period navigation remain functional after redraws and on touch browsers.

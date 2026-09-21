@@ -336,11 +336,23 @@ document.querySelector('#menu-toggle').onclick = event => { const menu = documen
 document.querySelector('nav').onclick = event => { if (event.target.matches('a')) { document.querySelector('nav').classList.remove('open'); document.querySelector('#menu-toggle').setAttribute('aria-expanded', 'false'); } };
 document.querySelector('#player-search').oninput = () => renderPlayers(rankPlayers());
 document.querySelector('#hero-player-search').oninput = event => renderHeroPlayerResults(event.target.value.trim().toLowerCase());
-// Leaderboard tab switching
-document.querySelectorAll('.leaderboard-tab').forEach(tab => { tab.onclick = () => { leaderboardView = tab.dataset.view; renderLeaderboardDashboard(); }; });
-// Leaderboard navigation
-document.querySelector('#leaderboard-prev').onclick = () => { if (leaderboardView === 'month') recentStart++; else leaderboardYearIndex++; renderLeaderboardDashboard(); };
-document.querySelector('#leaderboard-next').onclick = () => { if (leaderboardView === 'month') recentStart--; else leaderboardYearIndex--; renderLeaderboardDashboard(); };
+// Leaderboard controls use one delegated handler so they remain reliable across redraws and touch browsers.
+document.addEventListener('click', event => {
+  const tab = event.target.closest('.leaderboard-tab');
+  if (tab) {
+    event.preventDefault();
+    leaderboardView = tab.dataset.view;
+    renderLeaderboardDashboard();
+    return;
+  }
+  const direction = event.target.closest('#leaderboard-prev, #leaderboard-next');
+  if (!direction || direction.disabled) return;
+  event.preventDefault();
+  const older = direction.id === 'leaderboard-prev';
+  if (leaderboardView === 'month') recentStart += older ? 1 : -1;
+  else leaderboardYearIndex += older ? 1 : -1;
+  renderLeaderboardDashboard();
+});
 function renderHeroPlayerResults(query) {
   const labels = language === 'en' ? { displayName:'Display Name', englishName:'ローマ字表記 / Romanized name', id:'Player ID', category:'Category', gender:'Gender', handStyle:'Hand / Style', grip:'Grip', games:'Completed Games', record:'W / L', rate:'Win %', empty:'No players found' } : { displayName:'表示名', englishName:'ローマ字表記 / Romanized name', id:'選手ID', category:'カテゴリ', gender:'性別', handStyle:'利き手 / 戦型', grip:'グリップ', games:'完了試合数', record:'勝 / 負', rate:'勝率', empty:'該当する選手がいません' };
   const stats = playerStats(data.matches), results = data.players.filter(player => `${player.playerId} ${player.displayName} ${player.englishName || ''}`.toLowerCase().includes(query)).slice(0,8);
