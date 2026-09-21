@@ -290,7 +290,7 @@
 
     // Division sections
     const divisionSections = divisions.map(div => {
-      const divPlayers = tProgress.filter(p => p.division === div).sort((a, b) => (a.seed || 99) - (b.seed || 99));
+      const divPlayers = tProgress.filter(p => p.division === div).sort((a, b) => (a.rank || 99) - (b.rank || 99));
       const rows = divPlayers.map(p => {
         const isLk = p.playerId.startsWith('LK-');
         const player = pMap.get(p.playerId) || eMap.get(p.playerId);
@@ -300,13 +300,16 @@
         const nameHtml = isLk
           ? `<a href="player.html?id=${p.playerId}" class="lk-link">${escapeHtml(name)}</a>`
           : escapeHtml(name);
-        const rankHtml = p.seed ? resultLabel(p.seed) : '-';
+        const rankHtml = p.recommended
+          ? `<span class="rank-badge recommended">${language === 'en' ? 'REC' : '推薦'}</span>`
+          : p.rank ? resultLabel(p.rank) : '-';
         const resultHtml = p.result ? escapeHtml(lookupValue('tournamentResults', p.result)) : '';
+        const qualHtml = p.qualified ? `<span class="qual-badge">${language === 'en' ? '代表' : '代表'}</span>` : '';
 
         return `
           <tr class="${isLk ? 'tr-lk' : ''}">
             <td class="td-rank">${rankHtml}</td>
-            <td class="td-name">${isLk ? '<span class="lk-chip">LK</span> ' : ''}${nameHtml}</td>
+            <td class="td-name">${isLk ? '<span class="lk-chip">LK</span> ' : ''}${nameHtml} ${qualHtml}</td>
             <td class="td-club">${escapeHtml(club)}</td>
             <td class="td-grade">${escapeHtml(grade)}</td>
             <td class="td-result">${resultHtml}</td>
@@ -341,17 +344,20 @@
       <div class="detail-lk-section">
         <h2 class="detail-lk-title">${lkClubLabel(cMap)} <span class="detail-lk-count">${lkPlayers.length}</span></h2>
         <div class="detail-lk-grid">
-          ${lkPlayers.sort((a, b) => (a.seed || 99) - (b.seed || 99)).map(p => {
+          ${lkPlayers.sort((a, b) => (a.rank || 99) - (b.rank || 99)).map(p => {
             const player = pMap.get(p.playerId);
             const name = fullName(player) || p.playerName;
             const club = player?.clubId ? clubName(player.clubId, cMap) : '';
+            const rankLabel = p.recommended
+              ? (language === 'en' ? 'Recommended' : '推薦')
+              : p.rank ? resultLabel(p.rank) : '';
             return `
               <a href="player.html?id=${p.playerId}" class="detail-lk-card">
                 <img src="img/${p.playerId}.jpg" alt="${escapeHtml(name)}" onerror="this.style.display='none'" />
                 <div class="detail-lk-info">
                   <b>${escapeHtml(name)}</b>
                   <small>${escapeHtml(p.division)}${club ? ` · ${escapeHtml(club)}` : ''}</small>
-                  <span>${resultLabel(p.seed)}${p.result ? ` · ${escapeHtml(lookupValue('tournamentResults', p.result))}` : ''}</span>
+                  <span>${rankLabel}${p.result ? ` · ${escapeHtml(lookupValue('tournamentResults', p.result))}` : ''}</span>
                 </div>
               </a>`;
           }).join('')}
