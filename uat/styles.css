@@ -214,7 +214,7 @@ html[lang="ja"] .matchup-axis::after { content:'この用具・利き手との�
  .admin-history-status.accepted { color: #81c784; }
  .admin-history-status.rejected { color: #c66a61; }
  @media (max-width: 760px) { .admin-history-controls { flex-direction: column; } .admin-history-controls select { width: 100%; } .admin-history-card-header { flex-direction: column; gap: 4px; } }
- .build-info { color: var(--muted); display: block; font: 600 10px "Barlow Condensed", "Noto Sans JP", sans-serif; letter-spacing: .06em; margin-top: 10px; opacity: .7; }
+ .build-info { color: var(--muted); display: block; font: 600 10px "Barlow Condensed", "Noto Sans JP", sans-serif; letter-spacing: .06em; margin-top: 4px; opacity: .7; }
  .build-env { background: rgba(214,165,22,.15); border: 1px solid rgba(214,165,22,.3); color: var(--gold); font-weight: 800; letter-spacing: .1em; margin-right: 4px; padding: 1px 5px; }
  /* ─── Tournament Page ─── */
  .tournament-page { max-width: 1280px; margin: 0 auto; padding: clamp(20px, 8vw, 132px); }
