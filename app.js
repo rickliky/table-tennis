@@ -290,9 +290,9 @@ function renderLeaderboardDashboard() {
     categoryLeaderboardEntries = new Map(categoryEntries); categoryLeaderboardYear = year; categoryLeaderboardMatches = matches;
     const participants = new Set(matches.filter(isComplete).flatMap(match => [match.player1Id, match.player2Id])).size;
     const periodEligibility = eligibility(matches);
-    const winLabel = language === 'ja' ? '勝' : 'W', lossLabel = language === 'ja' ? '負' : 'L';
     detail.textContent = language === 'en' ? `Top 3 by category · ${participants} players · ${periodEligibility.text}` : `カテゴリ別 TOP 3 · ${participants}人 · ${periodEligibility.text}`;
-    content.innerHTML = `<div class="leaderboard-podiums">${categoryEntries.map(([category, entries]) => `<section class="category-podium"><button class="category-ranking-open" data-category="${category}">🏆 ${category}<small>${t('viewAllRankings')}</small></button>${entries.slice(0, 3).map((entry, index) => { const games = entry.stats.wins + entry.stats.losses, rate = Math.round(entry.stats.wins / games * 100), categories = opponentCategoryBreakdown(matches, entry.player.playerId); return `<div><i>${rankIcon(index)}</i><figure class="monthly-avatar"><img src="img/${encodeURIComponent(entry.player.playerId)}.jpg" alt=""></figure><a class="player-link" href="player.html?id=${entry.player.playerId}">${nameFor(entry.player)}<small class="alltime-record"><b class="${rate >= 50 ? 'positive' : 'negative'}" title="${categories}">${rate}%</b><em><i class="win">${winLabel}</i>${entry.stats.wins} <i class="loss">${lossLabel}</i>${entry.stats.losses} · ${language === 'en' ? `${games}G` : `${games}試合`}</em></small></a></div>`; }).join('')}</section>`).join('')}</div>`;
+    const avatar = player => `<figure class="monthly-avatar"><img src="img/${encodeURIComponent(player.playerId)}.jpg" alt=""></figure>`;
+    content.innerHTML = `<div class="leaderboard-podiums">${categoryEntries.map(([category, entries]) => `<section class="category-podium"><button class="category-ranking-open" data-category="${category}">🏆 ${category}<small>${t('viewAllRankings')}</small></button>${entries.slice(0, 3).map((entry, index) => `<div><i>${rankIcon(index)}</i>${avatar(entry.player)}<b>${playerLink(entry.player)}</b>${recordSummary(entry.stats, matches, entry.player.playerId)}</div>`).join('')}</section>`).join('')}</div>`;
   }
 }
 
