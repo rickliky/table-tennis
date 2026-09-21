@@ -342,3 +342,4 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Leaderboard Controls Fix (2026-09-21)
 - Index leaderboard tabs and period arrows use delegated click handling rather than direct element handlers, so Month/Year switching and period navigation remain functional after redraws and on touch browsers.
+- The yearly leaderboard avatar observer must detect an avatar immediately before a direct player link as well as one before its parent wrapper; otherwise it repeatedly injects portraits and freezes the page.
