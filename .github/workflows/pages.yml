@@ -25,6 +25,8 @@ jobs:
           cat > build-info.json <<EOF
           {"version":"${VERSION}","commit":"${COMMIT}","branch":"${BRANCH}","buildDate":"${BUILD_DATE}"}
           EOF
+          # The source file is ignored locally, but the published copy must be tracked.
+          sed -i '/^build-info\.json$/d' .gitignore
 
       - name: Deploy production
         if: github.ref == 'refs/heads/main'
