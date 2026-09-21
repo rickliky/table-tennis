@@ -347,3 +347,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Build Info Deployment Fix (2026-09-21)
 - `build-info.json` is explicitly unignored and committed. This lets the Pages workflow publish its generated build stamp; the nested UAT `.gitignore` negation also overrides the stale root `gh-pages` ignore rule for `uat/build-info.json`.
+
+### Admin Match Reset Fix (2026-09-21)
+- RESET button now explicitly resolves `record.resultStatus` through `resultStatusId()` before setting the `<select>` value, preventing blank result status after reset.
+- CLEAR button defaults to `completedStatusId` instead of leaving the select empty.
