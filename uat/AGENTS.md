@@ -334,3 +334,8 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Legacy match statuses (Verified, Complete, Transcribed - review) mapped to canonical IDs via `legacyStatusMap` in admin filter.
 - **Match completion rule enforced**: 60 matches with < 3 sets were incorrectly marked Verified/Complete → corrected to Incomplete. Rule: `isComplete()` = `player1Sets >= 3 || player2Sets >= 3` (best-of-5, 3 sets to win).
 - **Head-to-head setup fix**: `player.js` head-to-head dialog now resolves lookup IDs (PS-001→ドライブ攻撃型, GH-001→横書きショートハンドル, etc.) via `lookupValue()`.
+
+### Player Profile UAT Redesign (2026-09-21)
+- Player profiles now lead with a compact three-column identity block: dossier, portrait, and key all-time/latest records.
+- The latest match day remains immediately below the profile, followed by bilingual in-page navigation for latest session, statistics, trends, and archive.
+- Existing charts, period statistics, tactical matchup analysis, head-to-head views, and full archive are retained; this is a presentation-only UAT change.
