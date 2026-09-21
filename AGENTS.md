@@ -346,4 +346,4 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Yearly podium rows now use the same `<b>` + `recordSummary()` structure as monthly rows, so avatar, name, and win/loss record align identically in the grid layout.
 
 ### Build Info Deployment Fix (2026-09-21)
-- `build-info.json` remains locally ignored, but the Pages workflow removes that ignore rule in its deployment workspace after generating the file. This ensures the `peaceiris/actions-gh-pages` staging step publishes the generated build stamp to both root (PROD) and `uat/`.
+- `build-info.json` is explicitly unignored and committed. This lets the Pages workflow publish its generated build stamp; the nested UAT `.gitignore` negation also overrides the stale root `gh-pages` ignore rule for `uat/build-info.json`.
