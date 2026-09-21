@@ -103,10 +103,11 @@
   let pendingChanges = [];
   let allPlayersList = [];
   let currentRole = '';
-  let activeTab = 'matches';
+  const launchParams = new URLSearchParams(location.search), launchPlayerId = launchParams.get('playerId') || '', launchNewMatch = launchParams.get('newMatch') === '1';
+  let activeTab = launchParams.get('tab') === 'players' ? 'players' : 'matches';
   let activePlayerSubTab = 'ourPlayers';
   let activeManageSubTab = 'pending';
-  let selectedId = '';
+  let selectedId = launchPlayerId;
 
   const el = (tag, options = {}) => Object.assign(document.createElement(tag), options);
   const text = (tag, value, className) => { const node = el(tag, { textContent: value }); if (className) node.className = className; return node; };
@@ -342,13 +343,13 @@
     const tournFilterEl = detailRow.querySelector('.player-combobox');
     if (tournFilterEl) { tournFilterEl.addEventListener('change', updateList); }
     updateList();
-    if (isTraining) { showMatchEditor(trainingMatches.find(match => match.matchId === selectedId) || trainingMatches[0] || null); }
+    if (isTraining) { showMatchEditor(launchNewMatch ? null : trainingMatches.find(match => match.matchId === selectedId) || trainingMatches[0] || null); }
     else { const tm = entityData.tournamentMatches || []; showTournamentMatchEditor(tm.find(m => m.tournamentMatchId === selectedId) || tm[0] || null); }
   }
 
   function showMatchEditor(match) {
     const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
-    const readOnly = !canEditMatches(); const record = match ? { ...match } : newMatch();
+    const readOnly = !canEditMatches(); const record = match ? { ...match } : { ...newMatch(), player1Id: launchNewMatch ? launchPlayerId : '', player1Name: launchNewMatch ? playerName(launchPlayerId) : '' };
     editor.append(text('p', readOnly ? 'VIEW ONLY / 閲覧専用' : match ? 'EDIT TRAINING MATCH / 練習試合編集' : 'NEW TRAINING MATCH / 新規練習試合', 'eyebrow'), text('h2', match ? `${record.player1Name || record.player1Id} vs ${record.player2Name || record.player2Id}` : 'Add training match / 練習試合を追加'));
     const form = el('form', { className: 'admin-player-form admin-match-form' });
     // --- Date & Event section ---
@@ -752,7 +753,7 @@
       }
     });
     const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); const catVal = catFilter.value; allPlayers.filter(player => { if (catVal && catVal === 'unassigned' && player.schoolLevel) return false; if (catVal && catVal !== 'unassigned' && player.schoolLevel !== catVal) return false; return `${player.playerId || player.externalOpponentId || ''} ${player.displayName} ${player.englishName || ''} ${player.notebookName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query); }).sort((a, b) => { const idA = a.playerId || a.externalOpponentId; const idB = b.playerId || b.externalOpponentId; return (stats[idB]?.played || 0) - (stats[idA]?.played || 0) || idA.localeCompare(idB); }).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${(player.playerId || player.externalOpponentId) === selectedId ? ' selected' : ''}` }); const names = el('span'); const id = player.playerId || player.externalOpponentId; const gradeTag = player.grade ? ` · ${player.grade}` : ''; const s = stats[id] || { played: 0, wins: 0, losses: 0 }; const statsTag = s.played > 0 ? ` · ${s.played}G ${s.wins}W ${s.losses}L` : ''; names.append(text('b', player.displayName || 'No display name'), text('small', `${id} · ${player.englishName || '-'}${player.notebookName ? ' · 📝' + player.notebookName : ''}${gradeTag}${statsTag}`)); row.append(names, text('i', playerStatusLabel(player.status) || 'Active')); row.onclick = () => { selectedId = id; updateList(); showPlayerEditor(player); }; list.append(row); }); };
-    search.oninput = updateList; catFilter.onchange = updateList; window.adminPlayerListUpdate = updateList; updateList(); showPlayerEditor(allPlayers[0] || null);
+    search.oninput = updateList; catFilter.onchange = updateList; window.adminPlayerListUpdate = updateList; updateList(); showPlayerEditor(allPlayers.find(player => (player.playerId || player.externalOpponentId) === selectedId) || allPlayers[0] || null);
   }
   function showPlayerEditor(player) {
     const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
