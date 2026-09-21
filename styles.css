@@ -420,3 +420,28 @@ html[lang="ja"] .matchup-axis::after { content:'この用具・利き手との�
 @media (min-width:761px) {
   .club-overview-content { grid-template-columns:1fr 1fr; }
 }
+
+/* Player profile: identity and the most recent session lead; detailed analysis follows. */
+.profile-hero { align-items:center; background:radial-gradient(circle at 78% 12%,rgba(214,165,22,.22),transparent 30%),linear-gradient(118deg,#151719,#090a0b); border-bottom:1px solid var(--line); display:grid; gap:clamp(22px,4vw,54px); grid-template-columns:minmax(0,1.25fr) clamp(145px,16vw,210px) minmax(290px,.8fr); min-height:0; padding:58px clamp(20px,8vw,132px); }
+.profile-hero > div:first-child,.profile-side { max-width:none; min-width:0; width:auto; }
+.profile-hero h1 { font-size:clamp(52px,7vw,104px); line-height:.82; margin-top:8px; }
+.profile-romanized { margin:14px 0 0; }
+.profile-dossier { gap:8px 14px; margin-top:18px; max-width:700px; }
+.profile-dossier span { background:rgba(246,240,226,.035); border-left-color:rgba(214,165,22,.75); padding:6px 8px; }
+.profile-dossier b { font-size:11px; }
+.profile-portrait { align-self:center; box-shadow:0 16px 34px rgba(0,0,0,.4); margin:0; width:100%; }
+.profile-side { align-self:stretch; display:flex; flex-direction:column; justify-content:center; }
+.profile-record { background:rgba(9,10,11,.45); width:100%; }
+.profile-record strong { border-color:rgba(246,240,226,.12); padding:15px 13px; }
+.profile-record strong b { font-size:36px; }
+.profile-performance-snapshot { background:rgba(9,10,11,.34); border:1px solid rgba(246,240,226,.1); margin-top:12px; padding:12px; }
+.profile-section-nav { align-items:center; background:#111315; border-bottom:1px solid var(--line); display:flex; gap:0; justify-content:center; overflow-x:auto; padding:0 clamp(20px,8vw,132px); }
+.profile-section-nav a { border-left:1px solid var(--line); color:var(--muted); flex:0 0 auto; font:800 11px "Barlow Condensed",sans-serif; letter-spacing:.1em; padding:13px 18px; text-decoration:none; text-transform:uppercase; }
+.profile-section-nav a:last-child { border-right:1px solid var(--line); }
+.profile-section-nav a:hover,.profile-section-nav a:focus-visible { background:rgba(214,165,22,.12); color:var(--gold); outline:0; }
+.profile-page > #latest-match-day { border-top:0; }
+.latest-match-day { background:linear-gradient(90deg,#17191c,#111315); }
+.latest-match-list { margin-top:12px; }
+.period-stat-section,.profile-stats,#profile-matches { scroll-margin-top:74px; }
+@media (max-width:1050px) { .profile-hero { grid-template-columns:minmax(0,1fr) minmax(260px,.8fr); } .profile-portrait { grid-column:1; grid-row:2; max-width:200px; } .profile-side { grid-column:2; grid-row:1 / span 2; } }
+@media (max-width:700px) { .profile-hero { display:flex; gap:18px; padding:38px 20px 30px; } .profile-hero h1 { font-size:clamp(48px,16vw,74px); } .profile-portrait { align-self:flex-start; max-width:min(52vw,190px); } .profile-side { width:100%; } .profile-record strong { padding:13px 10px; } .profile-record strong b { font-size:31px; } .profile-section-nav { justify-content:flex-start; padding:0 20px; } .profile-section-nav a { padding:12px 14px; } }
