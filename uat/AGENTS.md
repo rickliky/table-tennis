@@ -354,3 +354,13 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Player Profile Lookup Resolution (2026-09-21)
 - Opponent playing hand, grip, style, rubber type, and category labels now resolve through `lookupValue()` across all player profile sections: session card details, opponent insight tooltips, period setup analysis, and tactical matchup profile.
+
+### Lookup Data Normalization (2026-09-21)
+- Added `scripts/normalize-lookup-ids.js`, which converts legacy player and external-opponent lookup text to canonical `static-data.js` IDs through Worker pending changes.
+- UAT normalization is approved and verified: all player and external-opponent lookup values now use canonical IDs, eliminating separate source groups such as `右` and `PH-001`.
+- The matching 87 PROD changes are pending approval: 43 Little Kings players and 44 external opponents. No identity or match data changes.
+
+### Analytics Upgrade (2026-09-21)
+- Index now has Activity & Competition insights: latest-month activity versus prior month, participation, close-match share, most-active players with opponent diversity, and category matchup volumes.
+- Player profiles add Form & Activity insights: last-10 form, 3–2/2–3 close-match record, unique opponents, and sessions attended.
+- Head-to-head views add set differential, close-match record, recent-five form, and shared-opponent count alongside their existing timeline, streak, history, and setup context.
