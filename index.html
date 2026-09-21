@@ -46,7 +46,6 @@
           <p class="eyebrow" data-i18n="eyebrow">OFFICIAL CLUB DATABASE</p>
           <h1>LITTLE <em>KINGS</em><small>KANAGAWA <i>·</i> JAPAN</small></h1>
           <p class="hero-ja">リトルキングス</p>
-           <div class="hero-quick-access"><div><span data-i18n="quickAccess">QUICK ACCESS</span><p data-i18n="bookmarkSite">Bookmark this site</p><a href="https://tinyurl.com/ritokinryumon" target="_blank" rel="noreferrer">https://tinyurl.com/ritokinryumon</a></div><a class="bookmark-qr" href="https://tinyurl.com/ritokinryumon" target="_blank" rel="noreferrer" aria-label="Open Little Kings match database" data-i18n-aria="openDatabase"><img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&amp;data=https%3A%2F%2Ftinyurl.com%2Fritokinryumon" alt="QR code for tinyurl.com/ritokinryumon" data-i18n-alt="databaseQr" /></a></div><aside id="match-data-status" class="match-data-status"></aside>
             <div class="hero-player-finder-inline">
               <label for="hero-player-search" data-i18n="findPlayer">Find a player</label>
               <input id="hero-player-search" type="search" autocomplete="off" placeholder="Name or player ID" data-i18n-placeholder="playerSearch" />
@@ -111,9 +110,13 @@
     <dialog id="head-to-head" class="head-to-head"><button class="modal-close" aria-label="Close">×</button><div id="head-to-head-content"></div></dialog><dialog id="category-leaderboard" class="head-to-head category-leaderboard"><button class="modal-close" aria-label="Close">×</button><div id="category-leaderboard-content"></div></dialog><dialog id="how-to-read-dialog" class="head-to-head how-to-read-dialog"><button class="modal-close" aria-label="Close">×</button><div id="how-to-read-content"></div></dialog>
 
     <footer>
-      <img src="little-kings-logo.jpg" alt="" />
-      <p>LITTLE KINGS <span>/</span> リトルキングス</p>
-      <small id="last-updated"></small>
+      <div class="footer-top">
+        <img src="little-kings-logo.jpg" alt="" />
+        <p>LITTLE KINGS <span>/</span> リトルキングス</p>
+        <aside id="match-data-status" class="match-data-status"></aside>
+        <small id="last-updated"></small>
+        <div class="footer-bookmark"><span>BOOKMARK</span><a href="https://tinyurl.com/ritokinryumon" target="_blank" rel="noreferrer">tinyurl.com/ritokinryumon</a><a class="bookmark-qr" href="https://tinyurl.com/ritokinryumon" target="_blank" rel="noreferrer" aria-label="QR code for Little Kings"><img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&amp;data=https%3A%2F%2Ftinyurl.com%2Fritokinryumon" alt="QR code" /></a></div>
+      </div>
       <a href="https://ritokin.gosyuugi.com" target="_blank" rel="noreferrer" data-i18n="officialSite">Official club website</a>
     </footer>
     <script src="api-config.js"></script><script src="access-gate.js"></script><script src="static-data.js"></script><script src="data-client.js"></script><script src="category-colors.js"></script><script src="app.js"></script><script src="build-info.js"></script>
