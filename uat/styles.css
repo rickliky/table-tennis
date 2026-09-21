@@ -310,6 +310,9 @@ html[lang="ja"] .matchup-axis::after { content:'この用具・利き手との�
  .lk-chip { background: var(--gold); color: var(--black); font: 800 9px "Barlow Condensed",sans-serif; letter-spacing: .06em; padding: 1px 5px; border-radius: 3px; white-space: nowrap; }
  .lk-link { color: var(--gold); text-decoration: none; }
  .lk-link:hover { text-decoration: underline; }
+ .rank-badge { display:inline-block; font:700 10px "Barlow Condensed",sans-serif; letter-spacing:.06em; padding:2px 6px; border-radius:3px; white-space:nowrap; }
+ .rank-badge.recommended { background:rgba(214,165,22,.2); color:var(--gold); border:1px solid rgba(214,165,22,.4); }
+ .qual-badge { display:inline-block; background:rgba(76,175,80,.15); color:#81c784; font:700 9px "Barlow Condensed",sans-serif; letter-spacing:.06em; padding:1px 5px; border-radius:3px; border:1px solid rgba(76,175,80,.3); white-space:nowrap; vertical-align:middle; margin-left:4px; }
  /* Notes */
  .detail-notes { background: var(--ink); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 28px; padding: 16px 20px; }
  .detail-notes h3 { color: var(--gold); font: 700 11px "Barlow Condensed",sans-serif; letter-spacing: .1em; margin: 0 0 8px; text-transform: uppercase; }

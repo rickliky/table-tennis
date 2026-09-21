@@ -367,3 +367,9 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Player-to-Admin Shortcuts (2026-09-21)
 - Each player profile offers Add Training Match and Edit Player Profile shortcuts. URL parameters route Admin directly to the training-match form with that player preselected, or to the matching player editor.
+
+### Tournament Data Corrections (2026-09-21)
+- Fixed 2026全農杯 tournament progress: corrected rankings, added `recommended` flag for 4 推薦 pre-qualified players, added `qualified` flag for all 47 representatives.
+- Fixed 5 name spellings in external opponents (茂田翔紀, 森本陽喜, 蒋 修逸, 酬醐 宙, 鈴木伶奈).
+- Admin editor now has `rank`, `recommended`, and `qualified` fields for tournament progress.
+- Tournament page displays 推薦 badge for recommended players and 代表 badge for all representatives.
