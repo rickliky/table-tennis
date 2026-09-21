@@ -42,6 +42,14 @@ export default { async fetch(request, env) {
       await repo.write(environment, 'pending-changes', remaining);
       return json({ ok: true, deleted: changes.length - remaining.length, remaining: remaining.length });
     }
+    if (url.pathname === '/api/clear-pending' && request.method === 'POST') {
+      const actor = await session(request, env);
+      if (actor.role !== 'admin') throw new Error('Admin role required');
+      const changes = await repo.read(environment, 'pending-changes');
+      const pendingCount = changes.filter(c => c.status === 'pending').length;
+      await repo.write(environment, 'pending-changes', []);
+      return json({ ok: true, cleared: pendingCount });
+    }
     if (url.pathname === '/api/change' && request.method === 'POST') {
       const body = await request.json(); const records = {}; for (const type of types.slice(0, 8)) records[type] = await repo.read(environment, type);
       const collection = collectionFor(body.entityType); if (!collection) throw new Error('Unsupported entity type');

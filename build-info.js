@@ -2,7 +2,6 @@
   'use strict';
 
   const isUat = /\/uat(?:\/|$)/i.test(location.pathname);
-  const basePath = isUat ? 'uat/' : '';
   const versionLabel = isUat ? 'UAT' : 'PROD';
 
   function timeAgo(date) {
@@ -35,12 +34,14 @@
     node.title = `Branch: ${branch}\nCommit: ${info.commit}\nBuild: ${localDate}`;
     node.innerHTML = `<span class="build-env">${versionLabel}</span> v${version} · ${branch} · ${shortCommit} · built ${relative}`;
 
+    const lastUpdated = document.querySelector('#last-updated');
     const footer = document.querySelector('footer');
-    if (footer) footer.appendChild(node);
+    if (lastUpdated) lastUpdated.after(node);
+    else if (footer) footer.appendChild(node);
     else document.body.appendChild(node);
   }
 
-  fetch(`${basePath}build-info.json`, { cache: 'no-store' })
+  fetch('build-info.json', { cache: 'no-store' })
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(render)
     .catch(() => {});
