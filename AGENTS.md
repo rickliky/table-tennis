@@ -364,3 +364,6 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Index now has Activity & Competition insights: latest-month activity versus prior month, participation, close-match share, most-active players with opponent diversity, and category matchup volumes.
 - Player profiles add Form & Activity insights: last-10 form, 3–2/2–3 close-match record, unique opponents, and sessions attended.
 - Head-to-head views add set differential, close-match record, recent-five form, and shared-opponent count alongside their existing timeline, streak, history, and setup context.
+
+### Player-to-Admin Shortcuts (2026-09-21)
+- Each player profile offers Add Training Match and Edit Player Profile shortcuts. URL parameters route Admin directly to the training-match form with that player preselected, or to the matching player editor.
