@@ -290,7 +290,7 @@
 
     // Division sections
     const divisionSections = divisions.map(div => {
-      const divPlayers = tProgress.filter(p => p.division === div).sort((a, b) => (a.rank || 99) - (b.rank || 99));
+      const divPlayers = tProgress.filter(p => p.division === div).sort((a, b) => (a.recommended ? 0 : 1) - (b.recommended ? 0 : 1) || (a.rank || 99) - (b.rank || 99));
       const rows = divPlayers.map(p => {
         const isLk = p.playerId.startsWith('LK-');
         const player = pMap.get(p.playerId) || eMap.get(p.playerId);
@@ -344,7 +344,7 @@
       <div class="detail-lk-section">
         <h2 class="detail-lk-title">${lkClubLabel(cMap)} <span class="detail-lk-count">${lkPlayers.length}</span></h2>
         <div class="detail-lk-grid">
-          ${lkPlayers.sort((a, b) => (a.rank || 99) - (b.rank || 99)).map(p => {
+          ${lkPlayers.sort((a, b) => (a.recommended ? 0 : 1) - (b.recommended ? 0 : 1) || (a.rank || 99) - (b.rank || 99)).map(p => {
             const player = pMap.get(p.playerId);
             const name = fullName(player) || p.playerName;
             const club = player?.clubId ? clubName(player.clubId, cMap) : '';
