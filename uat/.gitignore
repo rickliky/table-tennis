@@ -3,3 +3,4 @@
 *.xlsx
 data/*
 !data/.gitkeep
+!build-info.json
