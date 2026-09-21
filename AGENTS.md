@@ -347,3 +347,15 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Build Info Deployment Fix (2026-09-21)
 - `build-info.json` is explicitly unignored and committed. This lets the Pages workflow publish its generated build stamp; the nested UAT `.gitignore` negation also overrides the stale root `gh-pages` ignore rule for `uat/build-info.json`.
+
+### Admin Match Reset Fix (2026-09-21)
+- RESET button now explicitly resolves `record.resultStatus` through `resultStatusId()` before setting the `<select>` value, preventing blank result status after reset.
+- CLEAR button defaults to `completedStatusId` instead of leaving the select empty.
+
+### Player Profile Lookup Resolution (2026-09-21)
+- Opponent playing hand, grip, style, rubber type, and category labels now resolve through `lookupValue()` across all player profile sections: session card details, opponent insight tooltips, period setup analysis, and tactical matchup profile.
+
+### Lookup Data Normalization (2026-09-21)
+- Added `scripts/normalize-lookup-ids.js`, which converts legacy player and external-opponent lookup text to canonical `static-data.js` IDs through Worker pending changes.
+- UAT normalization is approved and verified: all player and external-opponent lookup values now use canonical IDs, eliminating separate source groups such as `右` and `PH-001`.
+- The matching 87 PROD changes are pending approval: 43 Little Kings players and 44 external opponents. No identity or match data changes.
