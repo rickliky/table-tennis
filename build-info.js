@@ -35,8 +35,10 @@
     node.title = `Branch: ${branch}\nCommit: ${info.commit}\nBuild: ${localDate}`;
     node.innerHTML = `<span class="build-env">${versionLabel}</span> v${version} · ${branch} · ${shortCommit} · built ${relative}`;
 
+    const lastUpdated = document.querySelector('#last-updated');
     const footer = document.querySelector('footer');
-    if (footer) footer.appendChild(node);
+    if (lastUpdated) lastUpdated.after(node);
+    else if (footer) footer.appendChild(node);
     else document.body.appendChild(node);
   }
 
