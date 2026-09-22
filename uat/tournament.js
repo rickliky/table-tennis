@@ -16,7 +16,7 @@
       lkPlayers: 'LK Players', viewDetails: 'View Details',
       tournamentHistory: 'Tournament History', notes: 'Notes',
       noLKPlayers: 'No Little Kings players in this tournament',
-      prep: 'Preparation Brief', known: 'known to Little Kings', unscouted: 'unscouted', priority: 'Priority opponents', tournamentMatches: 'Documented Match Results', representative: 'Representative', competitionHub: 'Competition Hub', latestEvent: 'Latest event', field: 'Tournament field', qualifiers: 'Representatives', outcomes: 'Little Kings outcomes', explore: 'Explore event', eventOverview: 'Event overview', jumpToDivision: 'Jump to division'
+      prep: 'Preparation Brief', known: 'known to Little Kings', unscouted: 'unscouted', priority: 'Priority opponents', tournamentMatches: 'Documented Match Results', representative: 'Representative', competitionHub: 'Competition Hub', latestEvent: 'Latest event', field: 'Tournament field', qualifiers: 'Representatives', outcomes: 'Little Kings outcomes', explore: 'Explore event', eventOverview: 'Event overview', jumpToDivision: 'Jump to division', tournamentRecord: 'Tournament record'
     },
     ja: {
       title: '大会情報', subtitle: '大会結果・ランキング',
@@ -31,7 +31,7 @@
       lkPlayers: 'LK選手', viewDetails: '詳細を見る',
       tournamentHistory: '大会履歴', notes: '備考',
       noLKPlayers: 'リトルキングス選手がいません',
-      prep: '対戦準備ブリーフ', known: 'LK既知の対戦相手', unscouted: '未スカウト', priority: '優先対戦相手', tournamentMatches: '登録済み大会試合', representative: '代表', competitionHub: 'COMPETITION HUB', latestEvent: '最新大会', field: '大会フィールド', qualifiers: '代表', outcomes: 'リトルキングスの結果', explore: '大会を見る', eventOverview: '大会概要', jumpToDivision: '部門へ移動'
+      prep: '対戦準備ブリーフ', known: 'LK既知の対戦相手', unscouted: '未スカウト', priority: '優先対戦相手', tournamentMatches: '登録済み大会試合', representative: '代表', competitionHub: 'COMPETITION HUB', latestEvent: '最新大会', field: '大会フィールド', qualifiers: '代表', outcomes: 'リトルキングスの結果', explore: '大会を見る', eventOverview: '大会概要', jumpToDivision: '部門へ移動', tournamentRecord: '大会戦績'
     }
   };
   const t = key => words[language][key];
@@ -105,6 +105,7 @@
     : n => `${n}位`;
   const resultLabel = rank => rank ? `${resultEmoji(rank)} ${ordinal(rank)}` : '-';
   const progressLabel = item => item.recommended ? (language === 'en' ? 'Recommended' : '推薦') : item.rank ? resultLabel(item.rank) : item.result ? lookupValue('tournamentResults', item.result) : (language === 'en' ? 'Participant' : '出場');
+  const matchRecordText = (wins, losses, games) => language === 'en' ? `${wins}W-${losses}L · ${games} matches` : `${wins}勝${losses}敗 · ${games}試合`;
 
   // ─── Calendar Timeline ───
   function renderCalendarTimeline(tournamentDates) {
@@ -375,14 +376,20 @@
             const rankLabel = p.recommended
               ? (language === 'en' ? 'Recommended' : '推薦')
               : p.rank ? resultLabel(p.rank) : '';
+            const playerTournamentMatches = tournamentMatches.filter(match => match.player1Id === p.playerId || match.player2Id === p.playerId);
+            const tournamentWins = playerTournamentMatches.filter(match => match.winnerId === p.playerId).length;
+            const tournamentLosses = playerTournamentMatches.filter(match => match.winnerId && match.winnerId !== p.playerId).length;
+            const scoreSummary = playerTournamentMatches.map(match => match.player1Id === p.playerId ? `${match.player1Sets}-${match.player2Sets}` : `${match.player2Sets}-${match.player1Sets}`).join(', ');
+            const matchSummary = playerTournamentMatches.length ? `${t('tournamentRecord')} ${matchRecordText(tournamentWins, tournamentLosses, playerTournamentMatches.length)} · ${scoreSummary}` : '';
             return `
               <a href="player.html?id=${p.playerId}" class="detail-lk-card">
                 <img src="img/${p.playerId}.jpg" alt="${escapeHtml(name)}" onerror="this.style.display='none'" />
                 <div class="detail-lk-info">
                   <b>${escapeHtml(name)}</b>
-                  <small>${escapeHtml(p.division)}${club ? ` · ${escapeHtml(club)}` : ''}</small>
-                  <span>${rankLabel}${p.result ? ` · ${escapeHtml(lookupValue('tournamentResults', p.result))}` : ''}</span>
-                </div>
+                   <small>${escapeHtml(p.division)}${club ? ` · ${escapeHtml(club)}` : ''}</small>
+                   <span>${rankLabel}${p.result ? ` · ${escapeHtml(lookupValue('tournamentResults', p.result))}` : ''}</span>
+                   ${matchSummary ? `<em class="detail-lk-match-record">${escapeHtml(matchSummary)}</em>` : ''}
+                 </div>
               </a>`;
           }).join('')}
         </div>
