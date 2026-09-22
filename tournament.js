@@ -394,7 +394,7 @@
         <h3>${t('notes')}</h3>
         <p>${escapeHtml(tournament.notes)}</p>
        </div>` : '';
-    const tournamentResultsHtml = tournamentMatches.length ? `<section class="tournament-match-results"><div class="section-title"><div><p>${t('tournamentMatches')}</p><h2>${t('tournamentMatches')}</h2></div></div><div>${tournamentMatches.map(match => { const first = participantFor(match.player1Id, pMap, eMap), second = participantFor(match.player2Id, pMap, eMap), firstName = fullName(first) || match.player1Name || match.player1Id, secondName = fullName(second) || match.player2Name || match.player2Id; return `<article><span>${escapeHtml(match.round || '-')}</span><b class="${match.winnerId === match.player1Id ? 'winner' : ''}">${escapeHtml(firstName)}</b><strong>${match.player1Sets}-${match.player2Sets}</strong><b class="${match.winnerId === match.player2Id ? 'winner' : ''}">${escapeHtml(secondName)}</b></article>`; }).join('')}</div></section>` : '';
+    const tournamentResultsHtml = tournamentMatches.length ? `<section class="tournament-match-results"><header><div><p>${t('tournamentMatches')}</p><h2>${t('tournamentMatches')}</h2></div><span class="tm-count">${tournamentMatches.length}</span></header><div class="tm-grid">${tournamentMatches.map(match => { const first = participantFor(match.player1Id, pMap, eMap), second = participantFor(match.player2Id, pMap, eMap), firstName = fullName(first) || match.player1Name || match.player1Id, secondName = fullName(second) || match.player2Name || match.player2Id, firstWon = match.winnerId === match.player1Id, secondWon = match.winnerId === match.player2Id, playerName = (id, name, won) => id.startsWith('LK-') ? `<a href="player.html?id=${id}" class="${won ? 'winner' : ''}">${escapeHtml(name)}</a>` : `<b class="${won ? 'winner' : ''}">${escapeHtml(name)}</b>`; return `<article class="tm-card"><div class="tm-card-head"><span>${escapeHtml(match.round || '-')}</span><time>${formatDateShort(match.matchDate)}</time></div><div class="tm-scoreline"><div class="tm-player tm-player-left">${playerName(match.player1Id, firstName, firstWon)}</div><strong>${match.player1Sets}<i>?</i>${match.player2Sets}</strong><div class="tm-player tm-player-right">${playerName(match.player2Id, secondName, secondWon)}</div></div></article>`; }).join('')}</div></section>` : '';
 
     const qualifierCount = tProgress.filter(item => item.qualified).length;
     const divisionNav = divisions.length > 1 ? `<nav class="detail-division-nav" aria-label="${t('jumpToDivision')}">${divisions.map((div, index) => `<a href="#division-${index}">${escapeHtml(div)}</a>`).join('')}</nav>` : '';
@@ -415,11 +415,11 @@
 
        <section class="detail-content"><div class="detail-scoreboard"><div><small>${t('field')}</small><b>${tProgress.length}</b></div><div><small>${t('divisions')}</small><b>${divisions.length}</b></div><div><small>${t('qualifiers')}</small><b>${qualifierCount}</b></div><div><small>${t('lkPlayers')}</small><b>${lkPlayers.length}</b></div></div>${divisionNav}
         ${lkHighlight}
+        ${tournamentResultsHtml}
          ${notesHtml}
          <div class="detail-divisions">
            ${divisionSections}
          </div>
-         ${tournamentResultsHtml}
        </section>`;
 
     document.getElementById('back-to-list')?.addEventListener('click', () => render());
