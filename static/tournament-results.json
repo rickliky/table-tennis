@@ -8,5 +8,6 @@
   { "id": "TP-007", "name": "6位", "nameJa": "6位", "nameEn": "6th place" },
   { "id": "TP-008", "name": "7位", "nameJa": "7位", "nameEn": "7th place" },
   { "id": "TP-009", "name": "8位", "nameJa": "8位", "nameEn": "8th place" },
-  { "id": "TP-010", "name": "デフォルト", "nameJa": "デフォルト", "nameEn": "Default" }
+  { "id": "TP-010", "name": "デフォルト", "nameJa": "デフォルト", "nameEn": "Default" },
+  { "id": "TP-011", "name": "ベスト16", "nameJa": "ベスト16", "nameEn": "Top 16" }
 ]

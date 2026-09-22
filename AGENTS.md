@@ -379,3 +379,19 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Tournament detail pages now turn tournament fields into preparation briefs for Little Kings: field size, known vs. unscouted opponents, and representative/recommended priority opponents with documented LK scorelines.
 - Tournament details render documented tournament match results by stage; player profiles render an LK-only Tournament Preparation / Field Readiness card for divisions they entered.
 - Tournament preparation metrics deliberately remain separate from club-training leaderboards and training statistics; tournament and training results are used only as opponent-scouting context.
+
+### Cadet Boys Results and Tournament UI (2026-09-22)
+- UAT tournament `TOURNAMENT-0002` now has verified published-result progress records for Cadet 13U Boys (7 representatives) and Cadet 14U Boys (8 representatives plus 2 recommended players). Little Kings involvement is recorded for `LK-0005` (13U), `LK-0009` (14U Top 16), and `LK-0046` (14U Top 16).
+- Added lookup `TP-011` for bilingual `ベスト16 / Top 16` tournament outcomes in `static/tournament-results.json` and regenerated `static-data.js`.
+- The boys’ full bracket fields are not yet imported: currently UAT contains result/Little Kings records only, not all 105 13U and 143 14U participants. A review CSV exists locally for the supplied bracket PDF; do not use it as runtime data.
+- Tournament index/detail UI was refreshed: Competition Hub hero and featured event, event scoreboards, division navigation/panels, Little Kings outcomes, and source-club snapshots. Card outcomes now use `rank`, `recommended`, and `result` instead of the obsolete `seed` field.
+
+### Grade Lookup Display Fix (2026-09-22)
+- Stored grade IDs such as `GR-002` must never be shown to users. Public player profiles and tournament field tables resolve them through the bilingual `grades` lookup (`2年生` / `2nd year`).
+- Admin player-list and grade-history displays resolve grade IDs to labels; its dynamic grade selector and annual progression now retain grade IDs as values while showing labels.
+
+### Tournament Match Results Presentation (2026-09-22)
+- Documented tournament matches now appear immediately after the tournament overview and Little Kings highlights, before notes and full division fields.
+- The former dense match rows are score cards that show round/date, both players, winner emphasis, and the score; LK names remain links to player profiles.
+- Match cards prefer the full name snapshot saved on each tournament-match record (`player1Name` / `player2Name`) over a potentially abbreviated current profile display name.
+- Tournament match results use the same `match-card` layout as internal training results (date, tournament-round badge, W/L markers, score, and context) rather than a separate tournament-only card pattern.
