@@ -395,3 +395,4 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - The former dense match rows are score cards that show round/date, both players, winner emphasis, and the score; LK names remain links to player profiles.
 - Match cards prefer the full name snapshot saved on each tournament-match record (`player1Name` / `player2Name`) over a potentially abbreviated current profile display name.
 - Tournament match results use the same `match-card` layout as internal training results (date, tournament-round badge, W/L markers, score, and context) rather than a separate tournament-only card pattern.
+- Each Little Kings tournament highlight card now summarizes any documented event matches for that player: win/loss record, match count, and player-perspective scoreline(s).
