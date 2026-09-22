@@ -379,3 +379,9 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Tournament detail pages now turn tournament fields into preparation briefs for Little Kings: field size, known vs. unscouted opponents, and representative/recommended priority opponents with documented LK scorelines.
 - Tournament details render documented tournament match results by stage; player profiles render an LK-only Tournament Preparation / Field Readiness card for divisions they entered.
 - Tournament preparation metrics deliberately remain separate from club-training leaderboards and training statistics; tournament and training results are used only as opponent-scouting context.
+
+### Cadet Boys Results and Tournament UI (2026-09-22)
+- UAT tournament `TOURNAMENT-0002` now has verified published-result progress records for Cadet 13U Boys (7 representatives) and Cadet 14U Boys (8 representatives plus 2 recommended players). Little Kings involvement is recorded for `LK-0005` (13U), `LK-0009` (14U Top 16), and `LK-0046` (14U Top 16).
+- Added lookup `TP-011` for bilingual `ベスト16 / Top 16` tournament outcomes in `static/tournament-results.json` and regenerated `static-data.js`.
+- The boys’ full bracket fields are not yet imported: currently UAT contains result/Little Kings records only, not all 105 13U and 143 14U participants. A review CSV exists locally for the supplied bracket PDF; do not use it as runtime data.
+- Tournament index/detail UI was refreshed: Competition Hub hero and featured event, event scoreboards, division navigation/panels, Little Kings outcomes, and source-club snapshots. Card outcomes now use `rank`, `recommended`, and `result` instead of the obsolete `seed` field.

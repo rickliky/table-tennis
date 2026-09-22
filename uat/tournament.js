@@ -16,7 +16,7 @@
       lkPlayers: 'LK Players', viewDetails: 'View Details',
       tournamentHistory: 'Tournament History', notes: 'Notes',
       noLKPlayers: 'No Little Kings players in this tournament',
-      prep: 'Preparation Brief', known: 'known to Little Kings', unscouted: 'unscouted', priority: 'Priority opponents', tournamentMatches: 'Documented Match Results', representative: 'Representative'
+      prep: 'Preparation Brief', known: 'known to Little Kings', unscouted: 'unscouted', priority: 'Priority opponents', tournamentMatches: 'Documented Match Results', representative: 'Representative', competitionHub: 'Competition Hub', latestEvent: 'Latest event', field: 'Tournament field', qualifiers: 'Representatives', outcomes: 'Little Kings outcomes', explore: 'Explore event', eventOverview: 'Event overview', jumpToDivision: 'Jump to division'
     },
     ja: {
       title: '大会情報', subtitle: '大会結果・ランキング',
@@ -31,7 +31,7 @@
       lkPlayers: 'LK選手', viewDetails: '詳細を見る',
       tournamentHistory: '大会履歴', notes: '備考',
       noLKPlayers: 'リトルキングス選手がいません',
-      prep: '対戦準備ブリーフ', known: 'LK既知の対戦相手', unscouted: '未スカウト', priority: '優先対戦相手', tournamentMatches: '登録済み大会試合', representative: '代表'
+      prep: '対戦準備ブリーフ', known: 'LK既知の対戦相手', unscouted: '未スカウト', priority: '優先対戦相手', tournamentMatches: '登録済み大会試合', representative: '代表', competitionHub: 'COMPETITION HUB', latestEvent: '最新大会', field: '大会フィールド', qualifiers: '代表', outcomes: 'リトルキングスの結果', explore: '大会を見る', eventOverview: '大会概要', jumpToDivision: '部門へ移動'
     }
   };
   const t = key => words[language][key];
@@ -104,6 +104,7 @@
     ? n => { const s = ['th', 'st', 'nd', 'rd']; const v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
     : n => `${n}位`;
   const resultLabel = rank => rank ? `${resultEmoji(rank)} ${ordinal(rank)}` : '-';
+  const progressLabel = item => item.recommended ? (language === 'en' ? 'Recommended' : '推薦') : item.rank ? resultLabel(item.rank) : item.result ? lookupValue('tournamentResults', item.result) : (language === 'en' ? 'Participant' : '出場');
 
   // ─── Calendar Timeline ───
   function renderCalendarTimeline(tournamentDates) {
@@ -155,10 +156,7 @@
     const divisions = [...new Set(tProgress.map(p => p.division))];
     const totalParticipants = tProgress.length;
 
-    // All LK player results (sorted by seed)
-    const lkResults = lkPlayers
-      .filter(p => p.seed)
-      .sort((a, b) => a.seed - b.seed);
+    const lkResults = lkPlayers.sort((a, b) => Number(b.recommended) - Number(a.recommended) || (a.rank || 99) - (b.rank || 99));
 
     const lkResultHtml = lkResults.map(p => {
       const player = pMap.get(p.playerId);
@@ -166,14 +164,15 @@
       const club = player ? clubName(player.clubId, cMap) : '';
       const resultText = p.result ? escapeHtml(lookupValue('tournamentResults', p.result)) : '';
       return `<span class="tc-lk-result">
-        ${resultEmoji(p.seed)} <a href="player.html?id=${p.playerId}">${escapeHtml(name)}</a>
+       <a href="player.html?id=${p.playerId}">${escapeHtml(name)}</a>
         ${club ? `<small>${escapeHtml(club)}</small>` : ''}
-        ${resultText ? `<i>${resultText}</i>` : ''}
+         <i>${escapeHtml(progressLabel(p))}</i>
       </span>`;
     }).join('');
 
     // Avatars for top players
-    const topPlayers = lkPlayers.filter(p => p.seed && p.seed <= 3).sort((a, b) => a.seed - b.seed);
+    const topPlayers = lkPlayers.slice(0, 4);
+    const qualifierCount = tProgress.filter(p => p.qualified).length;
 
     return `
       <article class="tc" data-id="${tournament.tournamentId}">
@@ -186,7 +185,7 @@
             </div>
             <div class="tc-title-group">
               <h3 class="tc-title">${escapeHtml(tournament.name)}</h3>
-              <div class="tc-meta">
+              <div class="tc-kicker">${escapeHtml(tournament.category || t('competitionHub'))}</div><div class="tc-meta">
                 <span class="tc-meta-item">📍 ${escapeHtml(tournament.location || '-')}</span>
                 <span class="tc-meta-item">👥 ${totalParticipants} ${t('participant')}${totalParticipants !== 1 && language === 'en' ? 's' : ''}</span>
                 ${divisions.length ? `<span class="tc-meta-item">📋 ${divisions.map(d => escapeHtml(d)).join(', ')}</span>` : ''}
@@ -194,6 +193,7 @@
             </div>
           </div>
 
+          <div class="tc-event-strip"><span><b>${totalParticipants}</b> ${t('field')}</span><span><b>${qualifierCount}</b> ${t('qualifiers')}</span><span><b>${divisions.length}</b> ${t('divisions')}</span></div>
           ${lkPlayers.length ? `
             <div class="tc-lk-section">
               <div class="tc-lk-header">
@@ -214,7 +214,7 @@
           ` : ''}
 
           <div class="tc-footer">
-            <button class="tc-view-btn" data-id="${tournament.tournamentId}">${t('viewDetails')} →</button>
+            <button class="tc-view-btn" data-id="${tournament.tournamentId}">${t('explore')} →</button>
           </div>
         </div>
       </article>`;
@@ -238,11 +238,12 @@
 
     const calendarHtml = renderCalendarTimeline(tournamentDates);
     const cards = sorted.map(t => renderTournamentCard(t, pMap, cMap)).join('');
+    const latest = sorted[0]; const latestProgress = latest ? progress.filter(item => item.tournamentId === latest.tournamentId) : [];
 
     return `
       <section class="tp-hero">
         <div class="tp-hero-inner">
-          <p class="eyebrow">${t('title')}</p>
+          <p class="eyebrow">${t('competitionHub')}</p>
           <h1>${t('subtitle')}</h1>
           <div class="tp-stats">
             <div class="tp-stat">
@@ -263,7 +264,8 @@
         </div>
       </section>
 
-      ${calendarHtml ? `
+       ${latest ? `<section class="tp-feature" data-id="${latest.tournamentId}"><div class="tp-feature-label">${t('latestEvent')}</div><div><h2>${escapeHtml(latest.name)}</h2><p>${formatDate(latest.date)} · ${escapeHtml(latest.location || '-')}</p></div><div class="tp-feature-stats"><span><b>${latestProgress.length}</b>${t('participant')}</span><span><b>${latestProgress.filter(item => item.playerId.startsWith('LK-')).length}</b>${t('lkPlayers')}</span></div><button class="tp-feature-btn" data-id="${latest.tournamentId}">${t('explore')} →</button></section>` : ''}
+       ${calendarHtml ? `
         <section class="tp-calendar-section">
           <h2 class="tp-section-title">${t('calendarTitle')}</h2>
           ${calendarHtml}
@@ -317,7 +319,7 @@
         const isLk = p.playerId.startsWith('LK-');
         const player = pMap.get(p.playerId) || eMap.get(p.playerId);
         const name = fullName(player) || p.playerName;
-        const club = player?.clubId ? clubName(player.clubId, cMap) : '';
+        const club = p.clubName || (player?.clubId ? clubName(player.clubId, cMap) : '');
         const grade = player?.grade || '';
         const nameHtml = isLk
           ? `<a href="player.html?id=${p.playerId}" class="lk-link">${escapeHtml(name)}</a>`
@@ -339,10 +341,9 @@
       }).join('');
 
       return `
-        <div class="dv-section">
+        <div class="dv-section" id="division-${divisions.indexOf(div)}">
           <div class="dv-header">
-            <h3 class="dv-title">${escapeHtml(div)}</h3>
-            <span class="dv-count">${divPlayers.length} ${t('participant')}${divPlayers.length !== 1 && language === 'en' ? 's' : ''}</span>
+            <div><p>${t('field')}</p><h3 class="dv-title">${escapeHtml(div)}</h3></div><span class="dv-count">${divPlayers.length} ${t('participant')}${divPlayers.length !== 1 && language === 'en' ? 's' : ''}<b>${divPlayers.filter(item => item.qualified).length} ${t('qualifiers')}</b></span>
           </div>
           <div class="dv-table-wrap">
             <table class="dv-table">
@@ -395,11 +396,13 @@
        </div>` : '';
     const tournamentResultsHtml = tournamentMatches.length ? `<section class="tournament-match-results"><div class="section-title"><div><p>${t('tournamentMatches')}</p><h2>${t('tournamentMatches')}</h2></div></div><div>${tournamentMatches.map(match => { const first = participantFor(match.player1Id, pMap, eMap), second = participantFor(match.player2Id, pMap, eMap), firstName = fullName(first) || match.player1Name || match.player1Id, secondName = fullName(second) || match.player2Name || match.player2Id; return `<article><span>${escapeHtml(match.round || '-')}</span><b class="${match.winnerId === match.player1Id ? 'winner' : ''}">${escapeHtml(firstName)}</b><strong>${match.player1Sets}-${match.player2Sets}</strong><b class="${match.winnerId === match.player2Id ? 'winner' : ''}">${escapeHtml(secondName)}</b></article>`; }).join('')}</div></section>` : '';
 
+    const qualifierCount = tProgress.filter(item => item.qualified).length;
+    const divisionNav = divisions.length > 1 ? `<nav class="detail-division-nav" aria-label="${t('jumpToDivision')}">${divisions.map((div, index) => `<a href="#division-${index}">${escapeHtml(div)}</a>`).join('')}</nav>` : '';
     app.innerHTML = `
       <section class="tp-hero tp-hero-detail">
         <div class="tp-hero-inner">
           <button class="back-btn" id="back-to-list">← ${t('backToList')}</button>
-          <p class="eyebrow">${t('title')}</p>
+          <p class="eyebrow">${t('eventOverview')}</p>
           <h1>${escapeHtml(tournament.name)}</h1>
           <div class="detail-meta">
             <span class="detail-meta-item"><b>${t('date')}</b> ${formatDate(tournament.date)}</span>
@@ -410,7 +413,7 @@
         </div>
       </section>
 
-      <section class="detail-content">
+       <section class="detail-content"><div class="detail-scoreboard"><div><small>${t('field')}</small><b>${tProgress.length}</b></div><div><small>${t('divisions')}</small><b>${divisions.length}</b></div><div><small>${t('qualifiers')}</small><b>${qualifierCount}</b></div><div><small>${t('lkPlayers')}</small><b>${lkPlayers.length}</b></div></div>${divisionNav}
         ${lkHighlight}
          ${notesHtml}
          <div class="detail-divisions">
@@ -450,6 +453,13 @@
     app.querySelectorAll('.cal-dot-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const tournament = tournaments.find(t => t.date === btn.dataset.date);
+        if (tournament) showTournamentDetail(tournament.tournamentId);
+      });
+    });
+    app.querySelectorAll('.tp-feature, .tp-feature-btn').forEach(item => {
+      item.addEventListener('click', event => {
+        event.stopPropagation();
+        const tournament = tournaments.find(entry => entry.tournamentId === item.dataset.id);
         if (tournament) showTournamentDetail(tournament.tournamentId);
       });
     });
