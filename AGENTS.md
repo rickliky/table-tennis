@@ -395,3 +395,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - The former dense match rows are score cards that show round/date, both players, winner emphasis, and the score; LK names remain links to player profiles.
 - Match cards prefer the full name snapshot saved on each tournament-match record (`player1Name` / `player2Name`) over a potentially abbreviated current profile display name.
 - Tournament match results use the same `match-card` layout as internal training results (date, tournament-round badge, W/L markers, score, and context) rather than a separate tournament-only card pattern.
+
+### UAT to PROD Promotion (2026-09-22)
+- Ran `scripts/uat-to-prod.js` successfully using Worker admin authentication. PROD active collections now match UAT: 55 clubs, 86 players, 207 external opponents, 1,606 matches, 2 tournaments, 9 tournament matches, 205 tournament-progress records, and 171 rubbers.
+- The migration uses direct `/api/bulk-write` writes; it does not promote pending changes. One existing PROD pending change remains: `CHANGE-1790038391318`, external-opponent update for `EXT-0011` (佐々木真心). Review/reject it before it can overwrite the promoted record.
