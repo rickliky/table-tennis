@@ -319,7 +319,7 @@ html[lang="ja"] .matchup-axis::after { content:'この用具・利き手との�
  .detail-notes h3 { color: var(--gold); font: 700 11px "Barlow Condensed",sans-serif; letter-spacing: .1em; margin: 0 0 8px; text-transform: uppercase; }
  .detail-notes p { color: var(--muted); font: 500 13px "Noto Sans JP",sans-serif; margin: 0; line-height: 1.7; }
  /* Responsive */
- @media (max-width: 640px) {
+  @media (max-width: 640px) {
    .tp-hero h1 { font-size: 28px; }
    .tp-stats { gap: 20px; }
    .tp-stat-value { font-size: 24px; }
@@ -330,7 +330,17 @@ html[lang="ja"] .matchup-axis::after { content:'この用具・利き手との�
    .tc-title { font-size: 16px; }
    .detail-lk-grid { grid-template-columns: 1fr; }
    .detail-meta { flex-direction: column; gap: 8px; }
- }
+  }
+
+  /* Competition hub refresh */
+  .tournament-page { max-width:1360px; }
+  .tp-hero { background:radial-gradient(circle at 88% 15%,rgba(214,165,22,.14),transparent 32%),linear-gradient(135deg,rgba(26,29,31,.94),rgba(10,11,12,.8)); border:1px solid var(--line); border-radius:18px; margin-bottom:24px; overflow:hidden; padding:clamp(24px,5vw,56px); position:relative; }
+  .tp-hero::after { color:rgba(214,165,22,.08); content:'LK'; font:800 clamp(110px,22vw,260px)/.7 "Barlow Condensed",sans-serif; position:absolute; right:-14px; top:8px; }
+  .tp-hero-inner { position:relative; z-index:1; }.tp-stats { background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.07); border-radius:10px; display:inline-flex; padding:12px 18px; }
+  .tp-feature { align-items:center; background:linear-gradient(115deg,#d6a516,#e5c85d 54%,#d6a516); border-radius:14px; color:#090a0b; display:grid; gap:18px; grid-template-columns:110px minmax(0,1fr) auto auto; margin:0 0 34px; padding:18px 22px; }.tp-feature-label { font:800 12px "Barlow Condensed","Noto Sans JP",sans-serif; letter-spacing:.12em; text-transform:uppercase; }.tp-feature h2 { font:800 clamp(21px,3vw,30px)/1.1 "Barlow Condensed","Noto Sans JP",sans-serif; margin:0; }.tp-feature p { font:500 12px "Noto Sans JP",sans-serif; margin:5px 0 0; opacity:.74; }.tp-feature-stats { display:flex; gap:18px; }.tp-feature-stats span { font:700 10px "Barlow Condensed","Noto Sans JP",sans-serif; letter-spacing:.06em; text-transform:uppercase; }.tp-feature-stats b { display:block; font-size:25px; line-height:.95; }.tp-feature-btn { background:#090a0b; border:0; border-radius:7px; color:var(--cream); cursor:pointer; font:800 12px "Barlow Condensed","Noto Sans JP",sans-serif; letter-spacing:.08em; padding:11px 16px; white-space:nowrap; }
+  .tc { background:linear-gradient(105deg,rgba(20,22,24,.94),rgba(15,16,18,.84)); border-radius:14px; }.tc:hover { transform:translateY(-2px); }.tc-body { padding:22px 26px; }.tc-kicker,.dv-header p { color:var(--gold); font:700 10px "Barlow Condensed","Noto Sans JP",sans-serif; letter-spacing:.11em; margin:0 0 7px; text-transform:uppercase; }.tc-event-strip { border-bottom:1px solid var(--line); border-top:1px solid var(--line); display:flex; gap:22px; margin:18px 0 4px; padding:10px 0; }.tc-event-strip span { color:var(--muted); font:600 10px "Barlow Condensed","Noto Sans JP",sans-serif; letter-spacing:.07em; text-transform:uppercase; }.tc-event-strip b { color:var(--cream); font-size:17px; margin-right:4px; }
+  .detail-scoreboard { border:1px solid var(--line); border-radius:12px; display:grid; grid-template-columns:repeat(4,1fr); margin:0 0 18px; overflow:hidden; }.detail-scoreboard > div { background:rgba(255,255,255,.025); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:15px 18px; }.detail-scoreboard > div:last-child { border:0; }.detail-scoreboard small { color:var(--muted); font:700 10px "Barlow Condensed","Noto Sans JP",sans-serif; letter-spacing:.09em; text-transform:uppercase; }.detail-scoreboard b { color:var(--gold); font:800 30px/1 "Barlow Condensed",sans-serif; margin-top:5px; }.detail-division-nav { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 30px; }.detail-division-nav a { background:var(--ink); border:1px solid var(--line); border-radius:999px; color:var(--muted); font:600 11px "Noto Sans JP",sans-serif; padding:7px 12px; text-decoration:none; }.detail-division-nav a:hover { border-color:var(--gold); color:var(--gold); }.dv-section { background:linear-gradient(125deg,rgba(20,22,24,.86),rgba(13,14,16,.86)); border:1px solid var(--line); border-radius:14px; padding:20px; }.dv-header { justify-content:space-between; }.dv-count { align-items:flex-end; display:flex; flex-direction:column; gap:4px; }.dv-count b { color:#81c784; font:700 10px "Barlow Condensed","Noto Sans JP",sans-serif; letter-spacing:.08em; text-transform:uppercase; }.dv-table tbody tr:hover { background:rgba(255,255,255,.035); }
+  @media (max-width:700px) { .tp-feature { align-items:start; grid-template-columns:1fr auto; }.tp-feature-label,.tp-feature-stats { grid-column:1 / -1; }.detail-scoreboard { grid-template-columns:repeat(2,1fr); }.detail-scoreboard > div:nth-child(2) { border-right:0; }.detail-scoreboard > div:nth-child(-n+2) { border-bottom:1px solid var(--line); }.tc-event-strip { gap:12px; overflow-x:auto; } }
 
 /* =============================================
    INDEX PAGE REDESIGN
