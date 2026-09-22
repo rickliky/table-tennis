@@ -389,3 +389,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 ### Grade Lookup Display Fix (2026-09-22)
 - Stored grade IDs such as `GR-002` must never be shown to users. Public player profiles and tournament field tables resolve them through the bilingual `grades` lookup (`2年生` / `2nd year`).
 - Admin player-list and grade-history displays resolve grade IDs to labels; its dynamic grade selector and annual progression now retain grade IDs as values while showing labels.
+
+### Tournament Match Results Presentation (2026-09-22)
+- Documented tournament matches now appear immediately after the tournament overview and Little Kings highlights, before notes and full division fields.
+- The former dense match rows are score cards that show round/date, both players, winner emphasis, and the score; LK names remain links to player profiles.
