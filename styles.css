@@ -356,6 +356,13 @@ html[lang="ja"] .matchup-axis::after { content:'この用具・利き手との�
   .tm-player b,.tm-player a { color:var(--cream); display:block; font:600 14px "Noto Sans JP",sans-serif; overflow:hidden; text-decoration:none; text-overflow:ellipsis; white-space:nowrap; }.tm-player .winner { color:var(--gold); }.tm-player a:hover { text-decoration:underline; }
   .tm-scoreline strong { background:var(--cream); border-radius:6px; color:var(--black); font:800 22px/1 "Barlow Condensed",sans-serif; padding:7px 9px; white-space:nowrap; }.tm-scoreline strong i { font-style:normal; opacity:.5; padding:0 2px; }
   @media (max-width:460px) { .tm-grid { grid-template-columns:1fr; }.tournament-match-results { padding:16px; }.tm-player b,.tm-player a { font-size:12px; }.tm-scoreline { gap:5px; } }
+  .tournament-match-results .tournament-match-list { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .tournament-match-results .tournament-match-card { display:block; min-height:0; padding:19px 22px; }
+  .tournament-match-results .match-meta { border-bottom:1px solid rgba(246,240,226,.12); margin-bottom:9px; padding-bottom:7px; }
+  .tournament-match-results .match-player a { color:inherit; text-decoration:none; }
+  .tournament-match-results .match-player a:hover { color:var(--gold); text-decoration:underline; }
+  .tournament-match-results .match-context { min-height:20px; }
+  @media (max-width:760px) { .tournament-match-results .tournament-match-list { grid-template-columns:1fr; } }
 
 /* =============================================
    INDEX PAGE REDESIGN

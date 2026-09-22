@@ -393,3 +393,5 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 ### Tournament Match Results Presentation (2026-09-22)
 - Documented tournament matches now appear immediately after the tournament overview and Little Kings highlights, before notes and full division fields.
 - The former dense match rows are score cards that show round/date, both players, winner emphasis, and the score; LK names remain links to player profiles.
+- Match cards prefer the full name snapshot saved on each tournament-match record (`player1Name` / `player2Name`) over a potentially abbreviated current profile display name.
+- Tournament match results use the same `match-card` layout as internal training results (date, tournament-round badge, W/L markers, score, and context) rather than a separate tournament-only card pattern.
