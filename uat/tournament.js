@@ -320,7 +320,7 @@
         const player = pMap.get(p.playerId) || eMap.get(p.playerId);
         const name = fullName(player) || p.playerName;
         const club = p.clubName || (player?.clubId ? clubName(player.clubId, cMap) : '');
-        const grade = player?.grade || '';
+        const grade = player?.grade ? lookupValue('grades', player.grade) : '';
         const nameHtml = isLk
           ? `<a href="player.html?id=${p.playerId}" class="lk-link">${escapeHtml(name)}</a>`
           : escapeHtml(name);
