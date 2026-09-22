@@ -79,8 +79,8 @@
     }
     return String(val);
   };
-  const gradeOptions = { '小学生': ['1年生','2年生','3年生','4年生','5年生','6年生'], '中学生': ['1年生','2年生','3年生'], '高校生': ['1年生','2年生','3年生'] };
-  const gradeBirthYears = { '小学生': { '1年生':'2019–2020', '2年生':'2018–2019', '3年生':'2017–2018', '4年生':'2016–2017', '5年生':'2015–2016', '6年生':'2014–2015' }, '中学生': { '1年生':'2013–2014', '2年生':'2012–2013', '3年生':'2011–2012' }, '高校生': { '1年生':'2010–2011', '2年生':'2009–2010', '3年生':'2008–2009' } };
+  const gradeOptions = { '小学生': ['GR-001','GR-002','GR-003','GR-004','GR-005','GR-006'], '中学生': ['GR-001','GR-002','GR-003'], '高校生': ['GR-001','GR-002','GR-003'] };
+  const gradeBirthYears = { '小学生': { 'GR-001':'2019–2020', 'GR-002':'2018–2019', 'GR-003':'2017–2018', 'GR-004':'2016–2017', 'GR-005':'2015–2016', 'GR-006':'2014–2015' }, '中学生': { 'GR-001':'2013–2014', 'GR-002':'2012–2013', 'GR-003':'2011–2012' }, '高校生': { 'GR-001':'2010–2011', 'GR-002':'2009–2010', 'GR-003':'2008–2009' } };
   const entityFields = {
     club: [['clubId', 'クラブID / Club ID', 'text', true], ['name', '名前 / Name', 'text', true], ['nameJa', '日本語名 / Japanese name', 'text', true], ['logoUrl', 'ロゴURL / Logo URL', 'text']],
     externalOpponent: [['externalOpponentId', '外部選手ID / External opponent ID', 'text', true], ['clubId', 'クラブID / Club ID', 'select', false], ['displayName', '表示名 / Display name', 'text', true], ['englishName', 'ローマジ / Romanized name', 'text'], ['gender', '性別 / Gender', 'select', false, genderOpts], ['schoolLevel', 'カテゴリ / Category', 'select', false, schoolLevelOpts], ['playingHand', '利き手 / Playing hand', 'select', false, playingHandOpts], ['grip', 'グリップ / Grip', 'select', false, gripOpts], ['playingStyle', '戦型 / Playing style', 'select', false, playingStyleOpts], ['forehandRubberType', 'フォア面種類 / Forehand type', 'select', false, rubberTypeOpts], ['forehandRubber', 'フォア面ラバー / Forehand rubber', 'rubber'], ['backhandRubberType', 'バック面種類 / Backhand type', 'select', false, rubberTypeOpts], ['backhandRubber', 'バック面ラバー / Backhand rubber', 'rubber']],
@@ -752,7 +752,7 @@
         if (stats[loserId]) stats[loserId].losses++;
       }
     });
-    const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); const catVal = catFilter.value; allPlayers.filter(player => { if (catVal && catVal === 'unassigned' && player.schoolLevel) return false; if (catVal && catVal !== 'unassigned' && player.schoolLevel !== catVal) return false; return `${player.playerId || player.externalOpponentId || ''} ${player.displayName} ${player.englishName || ''} ${player.notebookName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query); }).sort((a, b) => { const idA = a.playerId || a.externalOpponentId; const idB = b.playerId || b.externalOpponentId; return (stats[idB]?.played || 0) - (stats[idA]?.played || 0) || idA.localeCompare(idB); }).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${(player.playerId || player.externalOpponentId) === selectedId ? ' selected' : ''}` }); const names = el('span'); const id = player.playerId || player.externalOpponentId; const gradeTag = player.grade ? ` · ${player.grade}` : ''; const s = stats[id] || { played: 0, wins: 0, losses: 0 }; const statsTag = s.played > 0 ? ` · ${s.played}G ${s.wins}W ${s.losses}L` : ''; names.append(text('b', player.displayName || 'No display name'), text('small', `${id} · ${player.englishName || '-'}${player.notebookName ? ' · 📝' + player.notebookName : ''}${gradeTag}${statsTag}`)); row.append(names, text('i', playerStatusLabel(player.status) || 'Active')); row.onclick = () => { selectedId = id; updateList(); showPlayerEditor(player); }; list.append(row); }); };
+    const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); const catVal = catFilter.value; allPlayers.filter(player => { if (catVal && catVal === 'unassigned' && player.schoolLevel) return false; if (catVal && catVal !== 'unassigned' && player.schoolLevel !== catVal) return false; return `${player.playerId || player.externalOpponentId || ''} ${player.displayName} ${player.englishName || ''} ${player.notebookName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query); }).sort((a, b) => { const idA = a.playerId || a.externalOpponentId; const idB = b.playerId || b.externalOpponentId; return (stats[idB]?.played || 0) - (stats[idA]?.played || 0) || idA.localeCompare(idB); }).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${(player.playerId || player.externalOpponentId) === selectedId ? ' selected' : ''}` }); const names = el('span'); const id = player.playerId || player.externalOpponentId; const gradeTag = player.grade ? ` · ${lookupName('grades', player.grade)}` : ''; const s = stats[id] || { played: 0, wins: 0, losses: 0 }; const statsTag = s.played > 0 ? ` · ${s.played}G ${s.wins}W ${s.losses}L` : ''; names.append(text('b', player.displayName || 'No display name'), text('small', `${id} · ${player.englishName || '-'}${player.notebookName ? ' · 📝' + player.notebookName : ''}${gradeTag}${statsTag}`)); row.append(names, text('i', playerStatusLabel(player.status) || 'Active')); row.onclick = () => { selectedId = id; updateList(); showPlayerEditor(player); }; list.append(row); }); };
     search.oninput = updateList; catFilter.onchange = updateList; window.adminPlayerListUpdate = updateList; updateList(); showPlayerEditor(allPlayers.find(player => (player.playerId || player.externalOpponentId) === selectedId) || allPlayers[0] || null);
   }
   function showPlayerEditor(player) {
@@ -813,7 +813,7 @@
       const savedGrade = preserveGrade ? gradeInput.value : '';
       gradeInput.replaceChildren();
       gradeInput.append(el('option', { value: '', textContent: '' }));
-      opts.forEach(opt => gradeInput.append(el('option', { value: opt, textContent: opt })));
+      opts.forEach(opt => gradeInput.append(el('option', { value: opt, textContent: lookupName('grades', opt) })));
       if (savedGrade && opts.includes(savedGrade)) gradeInput.value = savedGrade;
       else gradeInput.value = '';
       gradeLabelNode.style.display = opts.length > 0 ? '' : 'none';
@@ -850,7 +850,7 @@
       const histSection = el('div', { className: 'admin-derived' });
       histSection.append(text('p', '学年履歴 / Grade history'));
       const histList = el('ul');
-      record.gradeHistory.forEach(h => { histList.append(el('li', { textContent: `${h.date || ''} ${h.schoolLevel || ''} ${h.grade || ''}` })); });
+      record.gradeHistory.forEach(h => { histList.append(el('li', { textContent: `${h.date || ''} ${lookupName('schoolLevels', h.schoolLevel) || ''} ${lookupName('grades', h.grade) || ''}` })); });
       histSection.append(histList);
       form.append(histSection);
     }
@@ -900,7 +900,7 @@
   }
   function newPlayer() { const next = Math.max(0, ...players.map(player => Number((player.playerId || '').match(/\d+$/)?.[0]) || 0)) + 1; const record = Object.fromEntries(playerFields.map(([key]) => [key, key === 'playerId' ? `LK-${String(next).padStart(4, '0')}` : key === 'status' ? 'Active' : ''])); record.clubId = (entityData.clubs || [])[0]?.clubId || 'CLUB-0001'; return record; }
   function AprilRollover() {
-    const gradeProgression = { '1年生':'2年生', '2年生':'3年生', '3年生':'4年生', '4年生':'5年生', '5年生':'6年生' };
+    const gradeProgression = { 'GR-001':'GR-002', 'GR-002':'GR-003', 'GR-003':'GR-004', 'GR-004':'GR-005', 'GR-005':'GR-006' };
     const schoolProgression = { '小学生':'中学生', '中学生':'高校生', '高校生':'' };
     const today = new Date().toISOString().slice(0,10);
     const toUpdate = [];

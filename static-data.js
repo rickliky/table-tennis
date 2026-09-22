@@ -261,6 +261,12 @@ window.LK_STATIC = {
       "name": "デフォルト",
       "nameJa": "デフォルト",
       "nameEn": "Default"
+    },
+    {
+      "id": "TP-011",
+      "name": "ベスト16",
+      "nameJa": "ベスト16",
+      "nameEn": "Top 16"
     }
   ],
   "resultStatuses": [
