@@ -396,3 +396,8 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Match cards prefer the full name snapshot saved on each tournament-match record (`player1Name` / `player2Name`) over a potentially abbreviated current profile display name.
 - Tournament match results use the same `match-card` layout as internal training results (date, tournament-round badge, W/L markers, score, and context) rather than a separate tournament-only card pattern.
 - Each Little Kings tournament highlight card now summarizes any documented event matches for that player: win/loss record, match count, and player-perspective scoreline(s).
+
+### Training Match Import (2026-09-24)
+- Submitted 65 verified Little Kings training matches dated 2026-09-24 to UAT as pending changes, verified complete: `LKM-20260924-001`–`065`. All were accepted and the current UAT collections were promoted to PROD, where all 65 are live. `scripts/import-training-matches-2026-09-24.js` is repeat-safe by match ID and submits only with `--submit-uat`.
+- Confirmed aliases: ひなちゃん → `LK-0081` (三田村雛), 諏訪光 → `LK-0090` (諏訪鬼), and ケイツ → `LK-0002` (not duplicate/inactive `LK-0153`). All remaining names map to existing LK player records.
+- Four short-format results (`2-0` / `2-1`) will be saved as `RS-002` Incomplete, per the three-set completion rule. The other 61 are `RS-001` Completed. Submit to UAT first, obtain approval, then promote the approved UAT data to PROD.
