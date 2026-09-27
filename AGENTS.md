@@ -408,5 +408,5 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Grade-History Normalization (2026-09-27)
 - Player grade-history entries must store canonical lookup IDs while public UI resolves those IDs to bilingual labels. Directly displaying `GR-001` / `SL-002` is a renderer defect, not a reason to denormalize stored data.
-- `scripts/normalize-lookup-ids.js` now normalizes nested `gradeHistory[].grade` and `gradeHistory[].schoolLevel` values. Submitted 10 UAT player normalization changes (including 金子 / `LK-0016`) for approval; blank historical grades remain blank and are never inferred.
+- `scripts/normalize-lookup-ids.js` now normalizes nested `gradeHistory[].grade` and `gradeHistory[].schoolLevel` values. The 10 UAT player normalization changes (including 金子 / `LK-0016`) were accepted and synced to PROD; blank historical grades remain blank and are never inferred.
 - `player.js` now resolves grade-history values through `lookupValue('grade', ...)` and `lookupValue('schoolLevel', ...)`, matching the profile dossier display rule. This code is not yet committed or deployed.
