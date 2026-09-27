@@ -401,3 +401,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Submitted 65 verified Little Kings training matches dated 2026-09-24 to UAT as pending changes, verified complete: `LKM-20260924-001`–`065`. All were accepted and the current UAT collections were promoted to PROD, where all 65 are live. `scripts/import-training-matches-2026-09-24.js` is repeat-safe by match ID and submits only with `--submit-uat`.
 - Confirmed aliases: ひなちゃん → `LK-0081` (三田村雛), 諏訪光 → `LK-0090` (諏訪鬼), and ケイツ → `LK-0002` (not duplicate/inactive `LK-0153`). All remaining names map to existing LK player records.
 - Four short-format results (`2-0` / `2-1`) will be saved as `RS-002` Incomplete, per the three-set completion rule. The other 61 are `RS-001` Completed. Submit to UAT first, obtain approval, then promote the approved UAT data to PROD.
+
+### Training Match Import (2026-09-27)
+- Submitted and verified complete: 62 Little Kings training matches dated 2026-09-27 are pending in UAT (`LKM-20260927-001`–`062`). Approve the batch before promoting UAT data to PROD. Source aliases map to existing LK records, including 名古屋 → `LK-0011`, 金子 → `LK-0016`, 池田 → `LK-0062`, 萩谷 → `LK-0094`, 岩崎 → `LK-0085`, 吉川 → `LK-0013`, 三田村ひな → `LK-0081`, 伊従 → `LK-0155`, and 長嵐 → `LK-0152`.
+- Three short-format scores (`岡田 2-0 山本`, `福原 2-0 井関2`, `萩谷 2-0 ケイツ`) use `RS-002` Incomplete under the existing three-set completion rule; the other 59 use `RS-001` Completed.
