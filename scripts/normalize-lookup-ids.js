@@ -30,6 +30,13 @@ function canonicalId(table, value) {
 function normalize(record) {
   const next = { ...record };
   for (const [field, table] of Object.entries(fields)) next[field] = canonicalId(table, record[field]);
+  if (Array.isArray(record.gradeHistory)) {
+    next.gradeHistory = record.gradeHistory.map(entry => ({
+      ...entry,
+      grade: canonicalId('grades', entry.grade),
+      schoolLevel: canonicalId('schoolLevels', entry.schoolLevel)
+    }));
+  }
   return next;
 }
 
