@@ -398,4 +398,9 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### UAT to PROD Promotion (2026-09-22)
 - Ran `scripts/uat-to-prod.js` successfully using Worker admin authentication. PROD active collections now match UAT: 55 clubs, 86 players, 207 external opponents, 1,606 matches, 2 tournaments, 9 tournament matches, 205 tournament-progress records, and 171 rubbers.
-- The migration uses direct `/api/bulk-write` writes; it does not promote pending changes. One existing PROD pending change remains: `CHANGE-1790038391318`, external-opponent update for `EXT-0011` (佐々木真心). Review/reject it before it can overwrite the promoted record.
+- The migration uses direct `/api/bulk-write` writes; it does not promote pending changes. The historical pending change `CHANGE-1790038391318` for `EXT-0011` (佐々木真心) was later cleared during a subsequent PROD migration.
+
+### Recent Training Match Promotions (2026-09-27)
+- The 65 verified matches from 2026-09-24 and 62 verified matches from 2026-09-27 were accepted in UAT and promoted to PROD through `scripts/uat-to-prod.js`.
+- PROD now has 1,733 matches. The 2026-09-27 batch (`LKM-20260927-001`–`062`) is live and verified: 59 `RS-001` Completed and 3 `RS-002` Incomplete (`岡田 2-0 山本`, `福原 2-0 井関2`, `萩谷 2-0 ケイツ`).
+- Import inputs and repeat-safe UAT scripts: `scripts/training-matches-2026-09-27.txt` and `scripts/import-training-matches-2026-09-27.js`.
