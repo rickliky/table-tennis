@@ -397,11 +397,16 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Tournament match results use the same `match-card` layout as internal training results (date, tournament-round badge, W/L markers, score, and context) rather than a separate tournament-only card pattern.
 - Each Little Kings tournament highlight card now summarizes any documented event matches for that player: win/loss record, match count, and player-perspective scoreline(s).
 
-### Training Match Import (2026-09-24)
-- Submitted 65 verified Little Kings training matches dated 2026-09-24 to UAT as pending changes, verified complete: `LKM-20260924-001`–`065`. All were accepted and the current UAT collections were promoted to PROD, where all 65 are live. `scripts/import-training-matches-2026-09-24.js` is repeat-safe by match ID and submits only with `--submit-uat`.
-- Confirmed aliases: ひなちゃん → `LK-0081` (三田村雛), 諏訪光 → `LK-0090` (諏訪鬼), and ケイツ → `LK-0002` (not duplicate/inactive `LK-0153`). All remaining names map to existing LK player records.
-- Four short-format results (`2-0` / `2-1`) will be saved as `RS-002` Incomplete, per the three-set completion rule. The other 61 are `RS-001` Completed. Submit to UAT first, obtain approval, then promote the approved UAT data to PROD.
+### Recent Training Match Promotions (2026-09-27)
+- The 65 verified matches from 2026-09-24 and 62 verified matches from 2026-09-27 were accepted in UAT and promoted to PROD through `scripts/uat-to-prod.js`.
+- PROD now has 1,733 matches. The 2026-09-27 batch (`LKM-20260927-001`–`062`) is live and verified: 59 `RS-001` Completed and 3 `RS-002` Incomplete (`岡田 2-0 山本`, `福原 2-0 井関2`, `萩谷 2-0 ケイツ`).
+- Import inputs and repeat-safe UAT scripts: `scripts/training-matches-2026-09-27.txt` and `scripts/import-training-matches-2026-09-27.js`.
 
-### Training Match Import (2026-09-27)
-- Submitted and verified complete: 62 Little Kings training matches dated 2026-09-27 are pending in UAT (`LKM-20260927-001`–`062`). Approve the batch before promoting UAT data to PROD. Source aliases map to existing LK records, including 名古屋 → `LK-0011`, 金子 → `LK-0016`, 池田 → `LK-0062`, 萩谷 → `LK-0094`, 岩崎 → `LK-0085`, 吉川 → `LK-0013`, 三田村ひな → `LK-0081`, 伊従 → `LK-0155`, and 長嵐 → `LK-0152`.
-- Three short-format scores (`岡田 2-0 山本`, `福原 2-0 井関2`, `萩谷 2-0 ケイツ`) use `RS-002` Incomplete under the existing three-set completion rule; the other 59 use `RS-001` Completed.
+### UAT/PROD Data Alignment (2026-09-27)
+- On user confirmation, treated UAT as final and reran the full `scripts/uat-to-prod.js` collection sync. The five differing 2026-09-27 match records now match UAT in PROD, including the UAT-recorded 諏訪鬼 identities.
+- Post-sync audit found zero record-level differences across clubs, players, matches, external opponents, tournaments, tournament matches, tournament progress, and rubbers.
+
+### Grade-History Normalization (2026-09-27)
+- Player grade-history entries must store canonical lookup IDs while public UI resolves those IDs to bilingual labels. Directly displaying `GR-001` / `SL-002` is a renderer defect, not a reason to denormalize stored data.
+- `scripts/normalize-lookup-ids.js` now normalizes nested `gradeHistory[].grade` and `gradeHistory[].schoolLevel` values. The 10 UAT player normalization changes (including 金子 / `LK-0016`) were accepted and synced to PROD; blank historical grades remain blank and are never inferred.
+- `player.js` now resolves grade-history values through `lookupValue('grade', ...)` and `lookupValue('schoolLevel', ...)`, matching the profile dossier display rule. The fix is merged into both `main` and `uat`; pushing each branch deploys its respective site.
