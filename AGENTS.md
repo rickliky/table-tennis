@@ -395,10 +395,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - The former dense match rows are score cards that show round/date, both players, winner emphasis, and the score; LK names remain links to player profiles.
 - Match cards prefer the full name snapshot saved on each tournament-match record (`player1Name` / `player2Name`) over a potentially abbreviated current profile display name.
 - Tournament match results use the same `match-card` layout as internal training results (date, tournament-round badge, W/L markers, score, and context) rather than a separate tournament-only card pattern.
-
-### UAT to PROD Promotion (2026-09-22)
-- Ran `scripts/uat-to-prod.js` successfully using Worker admin authentication. PROD active collections now match UAT: 55 clubs, 86 players, 207 external opponents, 1,606 matches, 2 tournaments, 9 tournament matches, 205 tournament-progress records, and 171 rubbers.
-- The migration uses direct `/api/bulk-write` writes; it does not promote pending changes. The historical pending change `CHANGE-1790038391318` for `EXT-0011` (佐々木真心) was later cleared during a subsequent PROD migration.
+- Each Little Kings tournament highlight card now summarizes any documented event matches for that player: win/loss record, match count, and player-perspective scoreline(s).
 
 ### Recent Training Match Promotions (2026-09-27)
 - The 65 verified matches from 2026-09-24 and 62 verified matches from 2026-09-27 were accepted in UAT and promoted to PROD through `scripts/uat-to-prod.js`.

@@ -292,7 +292,8 @@ html[lang="ja"] .matchup-axis::after { content:'この用具・利き手との�
  .detail-lk-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
  .detail-lk-info b { color: var(--cream); font: 600 14px "Barlow Condensed","Noto Sans JP",sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
  .detail-lk-info small { color: var(--muted); font: 500 11px "Noto Sans JP",sans-serif; }
- .detail-lk-info span { color: var(--gold); font: 700 13px "Barlow Condensed",sans-serif; }
+  .detail-lk-info span { color: var(--gold); font: 700 13px "Barlow Condensed",sans-serif; }
+  .detail-lk-match-record { color: var(--muted); font: 600 10px "Barlow Condensed","Noto Sans JP",sans-serif; font-style: normal; letter-spacing: .04em; margin-top: 4px; }
  /* Division Sections (detail) */
  .detail-divisions { display: flex; flex-direction: column; gap: 32px; }
  .dv-section { margin-bottom: 0; }
