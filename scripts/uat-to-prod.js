@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 /**
- * uat-to-prod.js — Export UAT data and overwrite PROD collections directly.
+ * uat-to-prod.js — Preview UAT/PROD differences, then merge approved UAT changes into PROD.
  *
  * Uses the /api/bulk-write endpoint (admin auth required).
- * This REPLACES all PROD data with UAT data in one shot — no pending changes.
+ * PROD-only records are preserved. UAT records replace matching IDs only.
  *
- * Usage: node scripts/uat-to-prod.js
+ * Usage: node scripts/uat-to-prod.js [--apply] [--clear-history]
  * Requires: ADMIN_PASSWORD env var or interactive prompt
  */
 const WORKER_URL = 'https://little-kings-api.little-kings.workers.dev';
+const apply = process.argv.includes('--apply');
+const clearHistory = process.argv.includes('--clear-history');
 const ENTITIES = [
   { entityType: 'club', collection: 'clubs', idField: 'clubId' },
   { entityType: 'player', collection: 'players', idField: 'playerId' },
@@ -19,6 +21,19 @@ const ENTITIES = [
   { entityType: 'tournamentProgress', collection: 'tournamentProgress', idField: 'tournamentProgressId' },
   { entityType: 'rubber', collection: 'rubbers', idField: 'rubberId' },
 ];
+const stableJson = value => JSON.stringify(value, (_, item) => item && typeof item === 'object' && !Array.isArray(item)
+  ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item);
+const recordLabel = (record, idField) => `${record[idField]}${record.displayName ? ` (${record.displayName})` : record.nameJa ? ` (${record.nameJa})` : record.name ? ` (${record.name})` : ''}`;
+function compareAndMerge(entity, uatRecords, prodRecords) {
+  const uat = new Map(uatRecords.map(record => [record[entity.idField], record]));
+  const prod = new Map(prodRecords.map(record => [record[entity.idField], record]));
+  const prodOnly = [...prod.keys()].filter(id => !uat.has(id));
+  const uatOnly = [...uat.keys()].filter(id => !prod.has(id));
+  const changed = [...uat.keys()].filter(id => prod.has(id) && stableJson(uat.get(id)) !== stableJson(prod.get(id)));
+  const merged = new Map(prod);
+  for (const record of uatRecords) merged.set(record[entity.idField], record);
+  return { prodOnly, uatOnly, changed, records: [...merged.values()], labels: ids => ids.map(id => recordLabel((uat.get(id) || prod.get(id)), entity.idField)) };
+}
 
 async function login(adminPassword) {
   const res = await fetch(`${WORKER_URL}/api/login`, {
@@ -34,9 +49,9 @@ async function login(adminPassword) {
 async function main() {
   // Get admin password
   const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword) {
+  if (apply && !adminPassword) {
     console.error('Set ADMIN_PASSWORD environment variable:');
-    console.error('  $env:ADMIN_PASSWORD="your-password"; node scripts/uat-to-prod.js');
+    console.error('  $env:ADMIN_PASSWORD="your-password"; node scripts/uat-to-prod.js --apply');
     process.exit(1);
   }
 
@@ -53,14 +68,25 @@ async function main() {
   const prodData = await prodRes.json();
   console.log(`   PROD: ${prodData.players?.length || 0} players, ${prodData.matches?.length || 0} matches, ${prodData.externalOpponents?.length || 0} ext opponents, ${prodData.tournaments?.length || 0} tournaments, ${prodData.tournamentProgress?.length || 0} progress, ${prodData.rubbers?.length || 0} rubbers`);
 
-  console.log('\n3. Logging in as admin...');
+  console.log('\n3. Comparing collections (UAT values override matching PROD IDs; PROD-only IDs are retained)...');
+  const plans = ENTITIES.map(entity => ({ entity, ...compareAndMerge(entity, uatData[entity.collection] || [], prodData[entity.collection] || []) }));
+  for (const plan of plans) {
+    console.log(`   ${plan.entity.collection}: ${plan.uatOnly.length} UAT-only, ${plan.changed.length} changed, ${plan.prodOnly.length} PROD-only preserved`);
+    if (plan.prodOnly.length) console.log(`      PROD-only: ${plan.labels(plan.prodOnly).join(', ')}`);
+  }
+  if (!apply) {
+    console.log('\nPreview only. Review the differences, then rerun with --apply to write the merged collections.');
+    return;
+  }
+
+  console.log('\n4. Logging in as admin...');
   const token = await login(adminPassword);
   console.log('   Login OK');
 
-  console.log('\n4. Pushing UAT data to PROD...');
+  console.log('\n5. Pushing merged UAT + preserved PROD data to PROD...');
   let total = 0, failed = 0;
-  for (const entity of ENTITIES) {
-    const records = uatData[entity.collection] || [];
+  for (const plan of plans) {
+    const { entity, records } = plan;
     try {
       const res = await fetch(`${WORKER_URL}/api/bulk-write`, {
         method: 'POST',
@@ -81,7 +107,13 @@ async function main() {
     }
   }
 
-  console.log(`\n5. Clearing PROD pending changes...`);
+  if (!clearHistory) {
+    console.log('\n6. Preserved PROD history. Use --clear-history only after review.');
+    console.log(`\n✅ Migration complete: ${total} records written, ${failed} failures`);
+    console.log('   Verify PROD at: https://rickliky.github.io/table-tennis/');
+    return;
+  }
+  console.log(`\n6. Clearing PROD processed history...`);
   try {
     const res = await fetch(`${WORKER_URL}/api/clear-history`, {
       method: 'POST',
