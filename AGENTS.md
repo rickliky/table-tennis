@@ -438,3 +438,6 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Player ID Display (2026-10-01)
 - UAT player profiles now include the canonical player ID in the dossier (`Player ID` / `選手ID`) so it can be copied and used in admin/data references.
+
+### Player-to-Admin Shortcuts (2026-10-02)
+- The player-profile Edit Player Profile shortcut uses `editPlayer=<LK-ID>`. Admin recognizes this explicit launch parameter (while retaining legacy `playerId` links), selects the exact player editor, and scrolls it into view on narrow layouts.
