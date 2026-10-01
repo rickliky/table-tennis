@@ -417,3 +417,18 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Stage one submitted 107 UAT changes: tournament, 23 school/club records, and 83 external players. After acceptance, submitted the 88 Junior Boys field/progress records (`TP-0206`–`TP-0293`) as a second UAT-review batch.
 - Documented results for LK-0093 (岡田琉生明) are accepted in UAT: `TM-0010` Round 2, 3-1 win over 荒井日夏太 (`EXT-0263`, 綾瀬高); `TM-0011` Round 3, 1-3 loss to 吉川隼人 (`EXT-0265`, 日大高). The accepted tournament, field, and matches were promoted to PROD through `scripts/uat-to-prod.js`.
 - Promotion wrote 78 clubs, 86 Little Kings players, 290 external opponents, 3 tournaments, 11 tournament matches, and 293 progress records. Before overwrite PROD had 87 Little Kings players; one PROD-only player was removed because UAT (the approved source) contained 86. Confirm intended player counts before future full collection overwrites.
+
+### Tournament Progress Editor (2026-10-01)
+- UAT `admin.js` tournament-progress editor now includes division, rank, result, recommended, qualified, wins, losses, draws, and eliminated alongside tournament/player selection.
+- Tournament and player controls are ID-backed searchable comboboxes. They store IDs and present the current language’s primary name with ID as secondary context. Result stores a tournament-result lookup ID and displays the preferred-language label.
+- Division is a text combobox seeded with the selected tournament’s known divisions. On save, player name, club name, school level, and grade snapshots are refreshed automatically from the selected player; they are not free-text editable history fields.
+- Fixed the progress-editor render failure: the division input’s datalist is assigned with `setAttribute('list', ...)`, not the read-only HTMLInputElement `list` property.
+- Added canonical tournament-result lookup IDs `TP-012`–`TP-016` for `1回戦`–`5回戦` (`Round 1`–`Round 5`), so the Progress Result dropdown remains ID-backed and bilingual.
+
+### Admin Save Context (2026-10-01)
+- UAT `admin.js` now preserves the current top-level tab, sub-tab, selected record, and page scroll position after saving training matches, tournament matches, tournament progress, players, clubs, tournaments, and external players. `refreshWorkspace(stayId)` sets selection before reload so the current editor remains open whenever the saved record is already public.
+- Tournament Progress now has a live text search across player name/ID, tournament, division, and club, in addition to the existing ID-backed tournament and player filters. Combobox selection events also refresh the list immediately.
+- Tournament Progress layout places its filters/search above the Add Progress button, with the result list below both controls.
+
+### Player ID Display (2026-10-01)
+- UAT player profiles now include the canonical player ID in the dossier (`Player ID` / `選手ID`) so it can be copied and used in admin/data references.
