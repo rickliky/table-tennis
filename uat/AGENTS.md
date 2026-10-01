@@ -421,6 +421,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 ### Admin Save Context (2026-10-01)
 - UAT `admin.js` now preserves the current top-level tab, sub-tab, selected record, and page scroll position after saving training matches, tournament matches, tournament progress, players, clubs, tournaments, and external players. `refreshWorkspace(stayId)` sets selection before reload so the current editor remains open whenever the saved record is already public.
 - Tournament Progress now has a live text search across player name/ID, tournament, division, and club, in addition to the existing ID-backed tournament and player filters. Combobox selection events also refresh the list immediately.
+- Tournament Progress layout places its filters/search above the Add Progress button, with the result list below both controls.
 
 ### Player ID Display (2026-10-01)
 - UAT player profiles now include the canonical player ID in the dossier (`Player ID` / `選手ID`) so it can be copied and used in admin/data references.
