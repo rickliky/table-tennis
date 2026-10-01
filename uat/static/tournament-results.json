@@ -9,5 +9,10 @@
   { "id": "TP-008", "name": "7位", "nameJa": "7位", "nameEn": "7th place" },
   { "id": "TP-009", "name": "8位", "nameJa": "8位", "nameEn": "8th place" },
   { "id": "TP-010", "name": "デフォルト", "nameJa": "デフォルト", "nameEn": "Default" },
-  { "id": "TP-011", "name": "ベスト16", "nameJa": "ベスト16", "nameEn": "Top 16" }
+  { "id": "TP-011", "name": "ベスト16", "nameJa": "ベスト16", "nameEn": "Top 16" },
+  { "id": "TP-012", "name": "1\u56de\u6226 / Round 1", "nameJa": "1\u56de\u6226", "nameEn": "Round 1" },
+  { "id": "TP-013", "name": "2\u56de\u6226 / Round 2", "nameJa": "2\u56de\u6226", "nameEn": "Round 2" },
+  { "id": "TP-014", "name": "3\u56de\u6226 / Round 3", "nameJa": "3\u56de\u6226", "nameEn": "Round 3" },
+  { "id": "TP-015", "name": "4\u56de\u6226 / Round 4", "nameJa": "4\u56de\u6226", "nameEn": "Round 4" },
+  { "id": "TP-016", "name": "5\u56de\u6226 / Round 5", "nameJa": "5\u56de\u6226", "nameEn": "Round 5" }
 ]

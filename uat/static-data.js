@@ -267,6 +267,36 @@ window.LK_STATIC = {
       "name": "ベスト16",
       "nameJa": "ベスト16",
       "nameEn": "Top 16"
+    },
+    {
+      "id": "TP-012",
+      "name": "1回戦 / Round 1",
+      "nameJa": "1回戦",
+      "nameEn": "Round 1"
+    },
+    {
+      "id": "TP-013",
+      "name": "2回戦 / Round 2",
+      "nameJa": "2回戦",
+      "nameEn": "Round 2"
+    },
+    {
+      "id": "TP-014",
+      "name": "3回戦 / Round 3",
+      "nameJa": "3回戦",
+      "nameEn": "Round 3"
+    },
+    {
+      "id": "TP-015",
+      "name": "4回戦 / Round 4",
+      "nameJa": "4回戦",
+      "nameEn": "Round 4"
+    },
+    {
+      "id": "TP-016",
+      "name": "5回戦 / Round 5",
+      "nameJa": "5回戦",
+      "nameEn": "Round 5"
     }
   ],
   "resultStatuses": [
