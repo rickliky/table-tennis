@@ -209,6 +209,13 @@
     } catch { empty(app).append(text('p', 'Could not load admin data. / 管理データを読み込めませんでした。', 'admin-load-error')); }
   }
 
+  async function refreshWorkspace(stayId = selectedId) {
+    const scrollY = window.scrollY;
+    selectedId = stayId || '';
+    await loadWorkspace();
+    requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'instant' }));
+  }
+
   function renderWorkspace() {
     empty(app);
     const header = el('header', { className: 'site-header' });
@@ -414,7 +421,7 @@
         next.player1Sets = Number(next.player1Sets); next.player2Sets = Number(next.player2Sets); next.player1Name = playerName(next.player1Id); next.player2Name = playerName(next.player2Id); next.score = `${next.player1Sets}-${next.player2Sets}`;
         if (isIncompleteStatus(next.resultStatus) || next.player1Sets === next.player2Sets) { next.winnerId = ''; next.winnerName = ''; } else { next.winnerId = next.player1Sets > next.player2Sets ? next.player1Id : next.player2Id; next.winnerName = playerName(next.winnerId); }
         next.matchId = match?.matchId || newMatchId();
-        submitChange('match', next.matchId, next, match ? 'update' : 'create').then(loadWorkspace).catch(error => { derived.textContent = `${error.message} / 保存できませんでした`; });
+        submitChange('match', next.matchId, next, match ? 'update' : 'create').then(() => refreshWorkspace(next.matchId)).catch(error => { derived.textContent = `${error.message} / 保存できませんでした`; });
       };
     }
     editor.append(form);
@@ -470,7 +477,7 @@
         next.winnerId = isIncompleteStatus(next.resultStatus) ? '' : next.player1Sets > next.player2Sets ? next.player1Id : next.player2Sets > next.player1Sets ? next.player2Id : '';
         next.winnerName = next.winnerId ? playerName(next.winnerId) : '';
         next.tournamentMatchId = match?.tournamentMatchId || newEntityId('tournamentMatch');
-        submitChange('tournamentMatch', next.tournamentMatchId, next, match ? 'update' : 'create').then(loadWorkspace).catch(error => { derived.textContent = `${error.message} / 保存できませんでした`; });
+        submitChange('tournamentMatch', next.tournamentMatchId, next, match ? 'update' : 'create').then(() => refreshWorkspace(next.tournamentMatchId)).catch(error => { derived.textContent = `${error.message} / 保存できませんでした`; });
       };
     }
     editor.append(form);
@@ -584,7 +591,7 @@
         const selectedClub = (entityData.clubs || []).find(item => item.clubId === selectedPlayer?.clubId);
         if (selectedPlayer) { next.playerName = selectedPlayer.displayName; next.clubName = selectedClub?.nameJa || selectedClub?.name || ''; next.schoolLevel = resolveFieldValue('schoolLevels', selectedPlayer.schoolLevel); next.grade = resolveFieldValue('grades', selectedPlayer.grade); }
         next.tournamentProgressId = record?.tournamentProgressId || newEntityId('tournamentProgress');
-        submitChange('tournamentProgress', next.tournamentProgressId, next, record ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
+        submitChange('tournamentProgress', next.tournamentProgressId, next, record ? 'update' : 'create').then(() => refreshWorkspace(next.tournamentProgressId)).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
       };
     }
     editor.append(form);
@@ -904,17 +911,7 @@
         if (!next.gradeHistory) next.gradeHistory = record.gradeHistory || [];
         next.gradeHistory = [...next.gradeHistory, { date: new Date().toISOString().slice(0, 10), schoolLevel: record.schoolLevel || '', grade: record.grade || '' }];
       }
-      submitChange(submitEntityType, submitId, next, player ? 'update' : 'create').then(async () => {
-        await loadWorkspace();
-        // Stay on the same player after submit
-        const stayId = submitId;
-        if (stayId && window.adminPlayerListUpdate) {
-          selectedId = stayId;
-          window.adminPlayerListUpdate();
-          const refreshed = allPlayersList.find(p => (p.playerId || p.externalOpponentId) === stayId);
-          if (refreshed) showPlayerEditor(refreshed);
-        }
-      }).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
+      submitChange(submitEntityType, submitId, next, player ? 'update' : 'create').then(() => refreshWorkspace(submitId)).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
     };
     editor.append(form);
     if (player) {
@@ -1066,7 +1063,7 @@
     form.onsubmit = event => {
       event.preventDefault(); const next = record ? { ...record, ...Object.fromEntries(new FormData(form)) } : Object.fromEntries(new FormData(form));
       Object.keys(next).forEach(key => { if (next[key] === '' && fields.find(f => f[0] === key && f[2] === 'number')) next[key] = 0; });
-      submitChange(entityType, next[idField], next, record ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
+      submitChange(entityType, next[idField], next, record ? 'update' : 'create').then(() => refreshWorkspace(next[idField])).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
     };
     editor.append(form);
     if (record) {

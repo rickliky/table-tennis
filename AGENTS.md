@@ -415,3 +415,6 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - UAT `admin.js` tournament-progress editor now includes division, rank, result, recommended, qualified, wins, losses, draws, and eliminated alongside tournament/player selection.
 - Tournament and player controls are ID-backed searchable comboboxes. They store IDs and present the current language’s primary name with ID as secondary context. Result stores a tournament-result lookup ID and displays the preferred-language label.
 - Division is a text combobox seeded with the selected tournament’s known divisions. On save, player name, club name, school level, and grade snapshots are refreshed automatically from the selected player; they are not free-text editable history fields.
+
+### Admin Save Context (2026-10-01)
+- UAT `admin.js` now preserves the current top-level tab, sub-tab, selected record, and page scroll position after saving training matches, tournament matches, tournament progress, players, clubs, tournaments, and external players. `refreshWorkspace(stayId)` sets selection before reload so the current editor remains open whenever the saved record is already public.
