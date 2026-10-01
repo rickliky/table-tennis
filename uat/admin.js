@@ -556,7 +556,7 @@
     const tournamentInput = tournamentSelect('tournamentId', rec.tournamentId || '');
     const playerInput = playerSelect('playerId', rec.playerId || '');
     const divisionListId = `progress-division-${rec.tournamentProgressId}`;
-    const division = el('input', { name: 'division', type: 'text', value: rec.division || '', list: divisionListId, placeholder: 'Division / ディビジョン' });
+    const division = el('input', { name: 'division', type: 'text', value: rec.division || '', placeholder: 'Division / ディビジョン' }); division.setAttribute('list', divisionListId);
     const divisionList = el('datalist', { id: divisionListId });
     const refreshDivisionOptions = () => { const tournament = (entityData.tournaments || []).find(item => item.tournamentId === tournamentInput.value); const values = [...new Set([tournament?.category, ...(entityData.tournamentProgress || []).filter(item => item.tournamentId === tournamentInput.value).map(item => item.division)].filter(Boolean))]; divisionList.replaceChildren(...values.map(value => el('option', { value }))); };
     refreshDivisionOptions(); tournamentInput.addEventListener('change', refreshDivisionOptions);
