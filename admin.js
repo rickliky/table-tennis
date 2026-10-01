@@ -502,10 +502,7 @@
     const subTab = (id, label) => { const node = button(label, () => { activeTournSubTab = id; selectedId = ''; renderWorkspace(); }, `admin-sub-tab${activeTournSubTab === id ? ' active' : ''}`); return node; };
     subTabs.append(subTab('list', 'LIST / 一覧'), subTab('progress', 'PROGRESS / 進捗'));
     listPanel.append(subTabs);
-    if (canEditMatches()) {
-      if (activeTournSubTab === 'list') listPanel.append(button('+ ADD TOURNAMENT / 大会追加', () => showEntityEditor('tournament', null), 'primary'));
-      else listPanel.append(button('+ ADD PROGRESS / 進捗追加', () => showTournamentProgressEditor(null), 'primary'));
-    }
+    if (canEditMatches() && activeTournSubTab === 'list') listPanel.append(button('+ ADD TOURNAMENT / 大会追加', () => showEntityEditor('tournament', null), 'primary'));
     const list = el('div', { className: 'admin-player-list' }); listPanel.append(list);
     const editor = el('section', { className: 'admin-panel admin-editor-panel' }); workspace.append(listPanel, editor); app.append(workspace);
     if (activeTournSubTab === 'list') {
@@ -529,7 +526,8 @@
       playerFilter.querySelector('input').placeholder = '選手で絞り込み / Filter by player...';
       const search = el('input', { type: 'search', className: 'admin-filter-search', placeholder: 'Search player, ID, tournament, division, club... / \u691c\u7d22' });
       filters.append(text('span', '大会:', 'admin-filter-label'), tournFilter, text('span', '選手:', 'admin-filter-label'), playerFilter, search);
-      listPanel.append(filters);
+      listPanel.insertBefore(filters, list);
+      if (canEditMatches()) listPanel.insertBefore(button('+ ADD PROGRESS / 進捗追加', () => showTournamentProgressEditor(null), 'primary'), list);
       const tournName = tid => { const t = tourns.find(x => x.tournamentId === tid); return t ? t.name : tid; };
       const updateList = () => {
         empty(list); const tq = tournFilter.value; const pq = playerFilter.value; const query = search.value.trim().toLowerCase();
