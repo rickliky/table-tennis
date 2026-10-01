@@ -402,11 +402,16 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - PROD now has 1,733 matches. The 2026-09-27 batch (`LKM-20260927-001`–`062`) is live and verified: 59 `RS-001` Completed and 3 `RS-002` Incomplete (`岡田 2-0 山本`, `福原 2-0 井関2`, `萩谷 2-0 ケイツ`).
 - Import inputs and repeat-safe UAT scripts: `scripts/training-matches-2026-09-27.txt` and `scripts/import-training-matches-2026-09-27.js`.
 
+### Training Match Import (2026-10-01)
+- The 60 2026-10-01 training matches (`LKM-20261001-001`–`060`) were accepted in UAT and promoted through the safe PROD overlay. `scripts/import-training-matches-2026-10-01.js` / `scripts/training-matches-2026-10-01.txt` are repeat-safe.
+- 諏訪光 is confirmed as `LK-0090` (current display name 諏訪免). The duplicate `土屋 3-2 石塚` source row is intentionally imported once. Three short scores (`坪内父 2-0 金子`, `向井 1-1 吉川`, `岡崎 2-0 下田`) are `RS-002` Incomplete; the remaining 57 are `RS-001` Completed.
+
 ### UAT/PROD Data Alignment (2026-09-27)
 - On user confirmation, treated UAT as final and reran the full `scripts/uat-to-prod.js` collection sync. The five differing 2026-09-27 match records now match UAT in PROD, including the UAT-recorded 諏訪鬼 identities.
 - Post-sync audit found zero record-level differences across clubs, players, matches, external opponents, tournaments, tournament matches, tournament progress, and rubbers.
 - **Future promotion rule:** never replace PROD collections with UAT collections directly. `scripts/uat-to-prod.js` now defaults to a diff-only preview, reports UAT-only/changed/PROD-only IDs, preserves PROD-only records, and overlays UAT records only with explicit `--apply`. It also preserves PROD history unless `--clear-history` is explicitly supplied.
 - Applied the safe overlay on 2026-10-01: no PROD-only records existed. UAT added `LK-0156` (井関) and updated `LK-0065`, `LK-0090`, five 2026-09-27 matches, and `TP-0261`; all collections now use the UAT version for matching IDs without deleting PROD-only records.
+- PROD→UAT synchronization on 2026-10-01 mirrored the current PROD player collection only after comparison found no UAT-only player records. It brought UAT profiles for 笹岡 (`LK-0088`), 青山 (`LK-0032`), and 諏訪免 (`LK-0090`) into exact parity with PROD, including canonical equipment, grade, category, and grade-history updates.
 
 ### Grade-History Normalization (2026-09-27)
 - Player grade-history entries must store canonical lookup IDs while public UI resolves those IDs to bilingual labels. Directly displaying `GR-001` / `SL-002` is a renderer defect, not a reason to denormalize stored data.
