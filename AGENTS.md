@@ -406,6 +406,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - On user confirmation, treated UAT as final and reran the full `scripts/uat-to-prod.js` collection sync. The five differing 2026-09-27 match records now match UAT in PROD, including the UAT-recorded 諏訪鬼 identities.
 - Post-sync audit found zero record-level differences across clubs, players, matches, external opponents, tournaments, tournament matches, tournament progress, and rubbers.
 - **Future promotion rule:** never replace PROD collections with UAT collections directly. `scripts/uat-to-prod.js` now defaults to a diff-only preview, reports UAT-only/changed/PROD-only IDs, preserves PROD-only records, and overlays UAT records only with explicit `--apply`. It also preserves PROD history unless `--clear-history` is explicitly supplied.
+- Applied the safe overlay on 2026-10-01: no PROD-only records existed. UAT added `LK-0156` (井関) and updated `LK-0065`, `LK-0090`, five 2026-09-27 matches, and `TP-0261`; all collections now use the UAT version for matching IDs without deleting PROD-only records.
 
 ### Grade-History Normalization (2026-09-27)
 - Player grade-history entries must store canonical lookup IDs while public UI resolves those IDs to bilingual labels. Directly displaying `GR-001` / `SL-002` is a renderer defect, not a reason to denormalize stored data.
