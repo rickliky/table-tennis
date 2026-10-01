@@ -527,12 +527,13 @@
       tournFilter.querySelector('input').placeholder = '大会で絞り込み / Filter by tournament...';
       const playerFilter = playerSelect('playerFilter', '');
       playerFilter.querySelector('input').placeholder = '選手で絞り込み / Filter by player...';
-      filters.append(text('span', '大会:', 'admin-filter-label'), tournFilter, text('span', '選手:', 'admin-filter-label'), playerFilter);
+      const search = el('input', { type: 'search', className: 'admin-filter-search', placeholder: 'Search player, ID, tournament, division, club... / \u691c\u7d22' });
+      filters.append(text('span', '大会:', 'admin-filter-label'), tournFilter, text('span', '選手:', 'admin-filter-label'), playerFilter, search);
       listPanel.append(filters);
       const tournName = tid => { const t = tourns.find(x => x.tournamentId === tid); return t ? t.name : tid; };
       const updateList = () => {
-        empty(list); const tq = tournFilter.value; const pq = playerFilter.value;
-        const results = records.filter(r => { if (tq && r.tournamentId !== tq) return false; if (pq && r.playerId !== pq) return false; return true; });
+        empty(list); const tq = tournFilter.value; const pq = playerFilter.value; const query = search.value.trim().toLowerCase();
+        const results = records.filter(r => { if (tq && r.tournamentId !== tq) return false; if (pq && r.playerId !== pq) return false; const haystack = `${r.playerName || ''} ${playerName(r.playerId)} ${r.playerId || ''} ${r.tournamentId || ''} ${tournName(r.tournamentId)} ${r.division || ''} ${r.clubName || ''}`.toLowerCase(); return !query || haystack.includes(query); });
         if (!results.length) { list.append(text('p', '該当する記録がありません / No records found.', 'admin-empty')); return; }
         results.forEach(r => {
           const row = el('button', { type: 'button', className: `admin-player-row${r.tournamentProgressId === selectedId ? ' selected' : ''}` });
@@ -543,7 +544,7 @@
           list.append(row);
         });
       };
-      tournFilter.onchange = updateList; playerFilter.onchange = updateList;
+      tournFilter.onchange = updateList; playerFilter.onchange = updateList; tournFilter.addEventListener('change', updateList); playerFilter.addEventListener('change', updateList); search.oninput = updateList;
       updateList(); showTournamentProgressEditor(records.find(r => r.tournamentProgressId === selectedId) || records[0] || null);
     }
   }
