@@ -418,3 +418,6 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Admin Save Context (2026-10-01)
 - UAT `admin.js` now preserves the current top-level tab, sub-tab, selected record, and page scroll position after saving training matches, tournament matches, tournament progress, players, clubs, tournaments, and external players. `refreshWorkspace(stayId)` sets selection before reload so the current editor remains open whenever the saved record is already public.
+
+### Player ID Display (2026-10-01)
+- UAT player profiles now include the canonical player ID in the dossier (`Player ID` / `選手ID`) so it can be copied and used in admin/data references.
