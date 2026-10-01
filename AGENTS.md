@@ -410,3 +410,8 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Player grade-history entries must store canonical lookup IDs while public UI resolves those IDs to bilingual labels. Directly displaying `GR-001` / `SL-002` is a renderer defect, not a reason to denormalize stored data.
 - `scripts/normalize-lookup-ids.js` now normalizes nested `gradeHistory[].grade` and `gradeHistory[].schoolLevel` values. The 10 UAT player normalization changes (including 金子 / `LK-0016`) were accepted and synced to PROD; blank historical grades remain blank and are never inferred.
 - `player.js` now resolves grade-history values through `lookupValue('grade', ...)` and `lookupValue('schoolLevel', ...)`, matching the profile dossier display rule. The fix is merged into both `main` and `uat`; pushing each branch deploys its respective site.
+
+### Tournament Progress Editor (2026-10-01)
+- UAT `admin.js` tournament-progress editor now includes division, rank, result, recommended, qualified, wins, losses, draws, and eliminated alongside tournament/player selection.
+- Tournament and player controls are ID-backed searchable comboboxes. They store IDs and present the current language’s primary name with ID as secondary context. Result stores a tournament-result lookup ID and displays the preferred-language label.
+- Division is a text combobox seeded with the selected tournament’s known divisions. On save, player name, club name, school level, and grade snapshots are refreshed automatically from the selected player; they are not free-text editable history fields.

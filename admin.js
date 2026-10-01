@@ -12,8 +12,17 @@
     if (item.nameEn) return item.nameEn;
     return item.name || item.id;
   };
+  const preferredName = item => {
+    if (!item) return '';
+    if (language === 'en') return item.nameEn || item.englishName || item.name || item.nameJa || item.displayName || item.id || '';
+    return item.nameJa || item.displayName || item.name || item.englishName || item.nameEn || item.id || '';
+  };
   const toOpts = (list, empty) => {
     const opts = (list || []).map(x => ({ id: x.id, name: bilingual(x) }));
+    return empty !== false ? [{ id: '', name: '' }, ...opts] : opts;
+  };
+  const toPreferredOpts = (list, empty) => {
+    const opts = (list || []).map(x => ({ id: x.id, name: preferredName(x) }));
     return empty !== false ? [{ id: '', name: '' }, ...opts] : opts;
   };
   const genderOpts = toOpts(S.genders);
@@ -26,6 +35,7 @@
   const gradeOpts = toOpts(S.grades);
   const roundOpts = toOpts(S.tournamentRounds);
   const resultOpts = toOpts(S.tournamentResults);
+  const resultPreferredOpts = toPreferredOpts(S.tournamentResults);
   const resultStatusOpts = toOpts(S.resultStatuses);
   const completedStatusId = (S.resultStatuses || []).find(x => x.nameEn === 'Completed' || x.name === 'Completed')?.id || 'RS-001';
   const incompleteStatusId = (S.resultStatuses || []).find(x => x.nameEn === 'Incomplete' || x.name === 'Incomplete')?.id || 'RS-002';
@@ -56,6 +66,10 @@
     // Backward compat: if id is a display text, try to find it
     const byName = (S[table] || []).find(x => x.name === id || x.nameJa === id || x.nameEn === id);
     return byName ? bilingual(byName) : id;
+  };
+  const preferredLookupName = (table, value) => {
+    const entry = (S[table] || []).find(item => item.id === value || item.name === value || item.nameJa === value || item.nameEn === value);
+    return entry ? preferredName(entry) : value || '';
   };
   const resolveFieldValue = (table, value) => {
     if (!value) return '';
@@ -529,19 +543,33 @@
 
   function showTournamentProgressEditor(record) {
     const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
-    const readOnly = !canEditMatches(); const rec = record ? { ...record } : { tournamentProgressId: newEntityId('tournamentProgress'), tournamentId: '', playerId: '', totalWins: 0, totalLosses: 0, totalDraws: 0, eliminated: '' };
+    const readOnly = !canEditMatches(); const rec = record ? { ...record } : { tournamentProgressId: newEntityId('tournamentProgress'), tournamentId: '', playerId: '', division: '', rank: '', result: '', recommended: false, qualified: false, totalWins: 0, totalLosses: 0, totalDraws: 0, eliminated: false };
     editor.append(text('p', readOnly ? 'VIEW ONLY / 閲覧専用' : record ? 'EDIT PROGRESS / 進捗編集' : 'NEW PROGRESS / 新規進捗', 'eyebrow'), text('h2', record ? `${playerName(rec.playerId) || rec.playerId} - ${rec.tournamentId}` : 'Add progress record / 進捗記録を追加'));
     const form = el('form', { className: 'admin-player-form' });
     const tournamentInput = tournamentSelect('tournamentId', rec.tournamentId || '');
     const playerInput = playerSelect('playerId', rec.playerId || '');
+    const divisionListId = `progress-division-${rec.tournamentProgressId}`;
+    const division = el('input', { name: 'division', type: 'text', value: rec.division || '', list: divisionListId, placeholder: 'Division / ディビジョン' });
+    const divisionList = el('datalist', { id: divisionListId });
+    const refreshDivisionOptions = () => { const tournament = (entityData.tournaments || []).find(item => item.tournamentId === tournamentInput.value); const values = [...new Set([tournament?.category, ...(entityData.tournamentProgress || []).filter(item => item.tournamentId === tournamentInput.value).map(item => item.division)].filter(Boolean))]; divisionList.replaceChildren(...values.map(value => el('option', { value }))); };
+    refreshDivisionOptions(); tournamentInput.addEventListener('change', refreshDivisionOptions);
+    const rank = el('input', { name: 'rank', type: 'number', min: '1', step: '1', value: rec.rank ?? '' });
+    const result = select('result', resultPreferredOpts, resolveFieldValue('tournamentResults', rec.result || ''));
+    const boolOptions = [['', '—'], ['true', 'Yes / はい'], ['false', 'No / いいえ']];
+    const recommended = select('recommended', boolOptions, String(rec.recommended ?? ''));
+    const qualified = select('qualified', boolOptions, String(rec.qualified ?? ''));
     const wins = el('input', { name: 'totalWins', type: 'number', min: '0', step: '1', value: String(rec.totalWins ?? 0) });
     const losses = el('input', { name: 'totalLosses', type: 'number', min: '0', step: '1', value: String(rec.totalLosses ?? 0) });
     const draws = el('input', { name: 'totalDraws', type: 'number', min: '0', step: '1', value: String(rec.totalDraws ?? 0) });
-    const eliminated = select('eliminated', [['', '—'], ['true', 'Yes / はい'], ['false', 'No / いいえ']], rec.eliminated || '');
+    const eliminated = select('eliminated', boolOptions, String(rec.eliminated ?? ''));
+    const snapshot = el('p', { className: 'admin-progress-snapshot' });
+    const renderSnapshot = () => { const id = playerInput.value; const p = [...players, ...(entityData.externalOpponents || [])].find(item => (item.playerId || item.externalOpponentId) === id); const club = (entityData.clubs || []).find(item => item.clubId === p?.clubId); snapshot.textContent = p ? `${preferredName(p)} · ${preferredName(club)} · ${preferredLookupName('schoolLevels', p.schoolLevel)}${p.grade ? ` · ${preferredLookupName('grades', p.grade)}` : ''}` : 'Player snapshot / 選手スナップショット'; };
     const addField = (label, input) => { const l = el('label'); l.append(text('span', label), input); form.append(l); };
-    addField('大会 / Tournament', tournamentInput); addField('選手 / Player', playerInput);
-    addField('勝利 / Wins', wins); addField('敗北 / Losses', losses); addField('引分 / Draws', draws); addField('敗退 / Eliminated', eliminated);
-    [tournamentInput, playerInput, wins, losses, draws, eliminated].forEach(input => { input.disabled = readOnly; });
+    addField('大会 / Tournament', tournamentInput); addField('選手 / Player', playerInput); addField('ディビジョン / Division', division); form.append(divisionList);
+    addField('順位 / Rank', rank); addField('結果 / Result', result); addField('推薦 / Recommended', recommended); addField('代表 / Qualified', qualified);
+    addField('勝利 / Wins', wins); addField('敗北 / Losses', losses); addField('引分 / Draws', draws); addField('敗退 / Eliminated', eliminated); form.append(snapshot); renderSnapshot();
+    playerInput.addEventListener('change', renderSnapshot);
+    [tournamentInput, playerInput, division, rank, result, recommended, qualified, wins, losses, draws, eliminated].forEach(input => { input.disabled = readOnly; });
     if (!readOnly) {
       const actions = el('div', { className: 'admin-editor-actions' });
       actions.append(button('SAVE / 保存', () => { if (confirm(record ? 'Submit this progress change? / この進捗の変更を申請しますか？' : 'Submit this new progress? / 新規進捗を申請しますか？')) form.requestSubmit(); }, 'primary'));
@@ -549,6 +577,12 @@
       form.onsubmit = event => {
         event.preventDefault(); const next = record ? { ...rec, ...Object.fromEntries(new FormData(form)) } : Object.fromEntries(new FormData(form));
         next.totalWins = Number(next.totalWins); next.totalLosses = Number(next.totalLosses); next.totalDraws = Number(next.totalDraws);
+        next.result = resolveFieldValue('tournamentResults', next.result); if (!next.result) delete next.result;
+        if (next.rank === '') delete next.rank; else next.rank = Number(next.rank);
+        ['recommended', 'qualified', 'eliminated'].forEach(field => { next[field] = next[field] === 'true'; });
+        const selectedPlayer = [...players, ...(entityData.externalOpponents || [])].find(item => (item.playerId || item.externalOpponentId) === next.playerId);
+        const selectedClub = (entityData.clubs || []).find(item => item.clubId === selectedPlayer?.clubId);
+        if (selectedPlayer) { next.playerName = selectedPlayer.displayName; next.clubName = selectedClub?.nameJa || selectedClub?.name || ''; next.schoolLevel = resolveFieldValue('schoolLevels', selectedPlayer.schoolLevel); next.grade = resolveFieldValue('grades', selectedPlayer.grade); }
         next.tournamentProgressId = record?.tournamentProgressId || newEntityId('tournamentProgress');
         submitChange('tournamentProgress', next.tournamentProgressId, next, record ? 'update' : 'create').then(loadWorkspace).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
       };
@@ -565,8 +599,8 @@
   function playerSelect(name, value) {
     const activePlayers = players.filter(isActivePlayer).sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja'));
     const allPlayers = [...activePlayers, ...(entityData.externalOpponents || [])];
-    const clubName = cid => { const c = (entityData.clubs || []).find(cl => cl.clubId === cid); return c ? (c.nameJa || c.name || '') : ''; };
-    const playerLabel = p => { const parts = [p.displayName]; if (p.englishName) parts.push(p.englishName); parts.push(p.playerId || p.externalOpponentId); const cn = clubName(p.clubId); if (cn) parts.push(cn); return parts.join(' · '); };
+    const clubName = cid => { const c = (entityData.clubs || []).find(cl => cl.clubId === cid); return preferredName(c); };
+    const playerLabel = p => { const parts = [preferredName(p), p.playerId || p.externalOpponentId]; const cn = clubName(p.clubId); if (cn) parts.push(cn); return parts.filter(Boolean).join(' · '); };
     const selected = allPlayers.find(p => (p.playerId || p.externalOpponentId) === value);
     const hidden = el('input', { name, type: 'hidden', value: value || '' });
     const input = el('input', { type: 'text', className: 'player-combobox-input', value: selected ? playerLabel(selected) : '', autocomplete: 'off', placeholder: '選手名で検索 / Type to search players...' });
@@ -588,8 +622,9 @@
       matches.forEach((p) => {
         const item = el('div', { className: 'player-combobox-item' });
         const nameSpan = el('span', { className: 'player-combobox-name' });
-        nameSpan.textContent = p.displayName;
-        if (p.englishName) nameSpan.append(el('small', { textContent: ` ${p.englishName}` }));
+        nameSpan.textContent = preferredName(p);
+        const secondaryName = language === 'en' ? p.displayName : p.englishName;
+        if (secondaryName) nameSpan.append(el('small', { textContent: ` ${secondaryName}` }));
         const idSpan = el('span', { className: 'player-combobox-id' });
         idSpan.textContent = p.playerId || p.externalOpponentId;
         item.append(nameSpan, idSpan);
@@ -602,6 +637,7 @@
           originalLabel = playerLabel(p);
           justSelected = true;
           dropdown.style.display = 'none';
+          hidden.dispatchEvent(new Event('change', { bubbles: true }));
         });
         dropdown.append(item);
       });
@@ -631,7 +667,7 @@
   }
   function tournamentSelect(name, value) {
     const tourns = (entityData.tournaments || []).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    const tournLabel = t => { const parts = [t.name]; if (t.nameJa) parts.push(t.nameJa); if (t.date) parts.push(t.date); parts.push(t.tournamentId); return parts.join(' · '); };
+    const tournLabel = t => [preferredName(t), t.date, t.tournamentId].filter(Boolean).join(' · ');
     const selected = tourns.find(t => t.tournamentId === value);
     const hidden = el('input', { name, type: 'hidden', value: value || '' });
     const input = el('input', { type: 'text', className: 'player-combobox-input', value: selected ? tournLabel(selected) : '', autocomplete: 'off', placeholder: '大会名で検索 / Type to search tournaments...' });
@@ -653,7 +689,7 @@
       matches.forEach((t) => {
         const item = el('div', { className: 'player-combobox-item' });
         const nameSpan = el('span', { className: 'player-combobox-name' });
-        nameSpan.textContent = t.name;
+        nameSpan.textContent = preferredName(t);
         if (t.date) nameSpan.append(el('small', { textContent: ` ${t.date}` }));
         const idSpan = el('span', { className: 'player-combobox-id' });
         idSpan.textContent = t.tournamentId;
@@ -666,6 +702,7 @@
           originalLabel = tournLabel(t);
           justSelected = true;
           dropdown.style.display = 'none';
+          hidden.dispatchEvent(new Event('change', { bubbles: true }));
         });
         dropdown.append(item);
       });
