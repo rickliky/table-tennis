@@ -11,6 +11,10 @@ export function validateEntity(entityType, record, data, targetId = record?.[({ 
     if (!record.player1Id || !record.player2Id || record.player1Id === record.player2Id) throw new Error('A match requires two different players');
     if (!validSetCounts([record.player1Sets, record.player2Sets])) throw new Error('Set counts must be non-negative integers');
     if (!participantExists(record.player1Id) || !participantExists(record.player2Id)) throw new Error('Match players must exist');
+    if (record.sessionId && !/^[A-Za-z0-9_-]{4,64}$/.test(record.sessionId)) throw new Error('Session ID may contain only letters, numbers, underscores, and hyphens');
+    if (record.matchFormat && !['Best of 5', 'Best of 3', 'Short practice'].includes(record.matchFormat)) throw new Error('Unsupported match format');
+    if (record.verifiedAt && !/^\d{4}-\d{2}-\d{2}$/.test(record.verifiedAt)) throw new Error('Verified date must use YYYY-MM-DD');
+    for (const field of ['source', 'coachGoal', 'coachNote']) if (record[field] && String(record[field]).length > 500) throw new Error(`${field} must be 500 characters or fewer`);
   }
   if (entityType === 'tournamentMatch') {
     if (!record.tournamentId || !data.tournaments.some(item => item.tournamentId === record.tournamentId)) throw new Error('Tournament match must reference an existing tournament');

@@ -1,0 +1,184 @@
+(() => {
+  'use strict';
+
+  const app = document.querySelector('#insights-app');
+  let data;
+  let language = localStorage.getItem('lk-language') || 'ja';
+  let activeView = location.hash.slice(1) || 'session';
+  let selectedDate = '';
+  let growthSearch = '';
+  let growthCategory = '';
+  const growthPageSize = 12;
+  let growthLimit = growthPageSize;
+  let sessionChart;
+
+  const words = {
+    en: {
+      title: 'Training Insights', subtitle: 'Session trends, player development, and match patterns',
+      session: 'Session Insights', growth: 'Player Growth', tournament: 'Tournament Readiness',
+      completedOnly: 'Completed statistics require one player to reach three sets. Match participation is not attendance.',
+      selectSession: 'Training date', recorded: 'Recorded matches', complete: 'Completed', participants: 'Match participants', pairings: 'Unique pairings',
+      close: 'Close matches', incomplete: 'Incomplete records', attention: 'Attention & progress signals', noSignals: 'No notable signals for this session.',
+      workload: 'Recorded / complete', record: 'Record', setDiff: 'Avg. set diff.', change: 'vs previous 5', diversity: 'Opponents', confidence: 'Evidence',
+      stronger: 'Stronger', medium: 'Medium', limited: 'Limited', improving: 'Improving', declining: 'Downward', stable: 'Stable', more: 'More matches needed',
+      oneMatch: 'Only one recorded match', closeLoss: 'Close loss to review', decisiveLoss: 'Decisive-loss pattern', movementUp: 'Set differential improved', movementDown: 'Set differential declined',
+      sessionPlayers: 'Player session summary', recurring: 'Recurring pairings', matches: 'Session matches', priorMeetings: 'prior meetings',
+      playerSearch: 'Search player', allCategories: 'All categories', growthIntro: 'Transparent rolling indicators; not an official ranking or development score.',
+      sampledPlayers: 'Players with 10-match sample', improvingPlayers: 'Improving signals', limitedPlayers: 'Limited samples', inactivePlayers: 'No matches in last 3 sessions',
+      last10: 'Last 10', previous10: 'Previous 10', lastFive: 'Last 5', previousFive: 'Previous 5', scorelines: 'Scorelines', sessions: 'Sessions',
+      normalized: 'Last 10 per match day', activity: 'Recorded-match activity', opponentMix: 'Opponent category mix',
+      readinessIntro: 'Training and tournament records remain separate. Training results are scouting context only.', field: 'Field opponents', known: 'Known opponents', coverage: 'Field coverage', priority: 'Priority opponents', recentForm: 'Recent training form', missing: 'Missing scouting data', noTournaments: 'No Little Kings tournament entries found.',
+      openProfile: 'Open profile', openTournament: 'Open tournament hub', lastUpdated: 'Last updated', unknown: 'Unassigned', noData: 'No data available.'
+    },
+    ja: {
+      title: '練習分析', subtitle: '練習セッション・選手の成長・対戦傾向を分析',
+      session: 'セッション分析', growth: '選手の成長', tournament: '大会準備',
+      completedOnly: '完了スタッツはどちらかが3セット到達した試合のみ。試合参加は出席記録ではありません。',
+      selectSession: '練習日', recorded: '登録試合', complete: '完了', participants: '試合参加選手', pairings: '対戦組合せ',
+      close: '接戦', incomplete: '未完了記録', attention: '注目・成長シグナル', noSignals: 'このセッションに顕著なシグナルはありません。',
+      workload: '登録 / 完了', record: '戦績', setDiff: '平均セット差', change: '前5試合比', diversity: '対戦相手', confidence: 'データ量',
+      stronger: '比較的十分', medium: '中程度', limited: '少数', improving: '改善傾向', declining: '下降傾向', stable: '横ばい', more: 'データ不足',
+      oneMatch: '登録試合が1試合のみ', closeLoss: '振り返りたい接戦負け', decisiveLoss: '大差敗戦の傾向', movementUp: 'セット差が改善', movementDown: 'セット差が下降',
+      sessionPlayers: '選手別セッション概要', recurring: '継続対戦カード', matches: 'セッション試合', priorMeetings: '過去対戦',
+      playerSearch: '選手を検索', allCategories: '全カテゴリ', growthIntro: '透明性のある移動指標です。公式ランキングや総合成長スコアではありません。',
+      sampledPlayers: '10試合サンプル', improvingPlayers: '改善シグナル', limitedPlayers: '少数サンプル', inactivePlayers: '直近3回に試合なし',
+      last10: '直近10試合', previous10: 'その前の10試合', lastFive: '直近5試合', previousFive: 'その前の5試合', scorelines: 'スコア内訳', sessions: '試合日',
+      normalized: '直近10試合の日別平均', activity: '試合記録のある直近活動', opponentMix: '対戦カテゴリ構成',
+      readinessIntro: '練習試合と大会結果は分けて表示します。練習結果はスカウティング参考情報のみです。', field: '同部門の対戦候補', known: '対戦記録あり', coverage: 'フィールド把握率', priority: '優先対戦相手', recentForm: '直近の練習成績', missing: '未スカウト', noTournaments: 'リトルキングス選手の大会登録がありません。',
+      openProfile: 'プロフィールを見る', openTournament: '大会ハブを開く', lastUpdated: '最終更新', unknown: '未設定', noData: 'データがありません。'
+    }
+  };
+  const t = key => words[language][key];
+  const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' })[character]);
+  const eventType = match => /club|training|練習/i.test(`${match.event || ''} ${match.division || ''}`) ? 'Training' : 'Tournament';
+  const isComplete = match => Number(match.player1Sets) >= 3 || Number(match.player2Sets) >= 3;
+  const trainingMatches = () => (data.matches || []).filter(match => eventType(match) === 'Training');
+  const completedMatches = () => trainingMatches().filter(isComplete);
+  const playerMap = () => new Map((data.players || []).map(player => [player.playerId, player]));
+  const nameFor = player => language === 'en' && player?.englishName ? `${player.displayName} | ${player.englishName.toUpperCase()}` : player?.displayName || player?.playerId || '-';
+  const opponentId = (match, id) => match.player1Id === id ? match.player2Id : match.player1Id;
+  const scoreFor = (match, id) => ({ own:Number(match.player1Id === id ? match.player1Sets : match.player2Sets), other:Number(match.player1Id === id ? match.player2Sets : match.player1Sets) });
+  const won = (match, id) => match.winnerId === id;
+  const lookup = (table, value) => {
+    const entry = (window.LK_STATIC?.[table] || []).find(item => item.id === value || item.name === value || item.nameJa === value || item.nameEn === value);
+    return entry ? (language === 'en' ? entry.nameEn : entry.nameJa) : value || t('unknown');
+  };
+  const summary = (matches, id) => {
+    const wins = matches.filter(match => won(match,id)).length;
+    const sets = matches.reduce((total,match) => { const score=scoreFor(match,id); return { own:total.own+score.own, other:total.other+score.other }; }, {own:0,other:0});
+    return { games:matches.length, wins, losses:matches.length-wins, setDiff:sets.own-sets.other, average:matches.length ? (sets.own-sets.other)/matches.length : 0 };
+  };
+  const signed = value => `${value > 0 ? '+' : ''}${Number(value).toFixed(1)}`;
+  const confidence = count => count >= 10 ? t('stronger') : count >= 5 ? t('medium') : t('limited');
+  const checked = value => value === true || value === 'true' || value === 1;
+  const dates = () => [...new Set(trainingMatches().map(match => match.matchDate).filter(Boolean))].sort();
+  const categoryOf = player => lookup('schoolLevels', player?.schoolLevel);
+  const resultLabel = (wins, losses) => language === 'en' ? `${wins}W-${losses}L` : `${wins}勝-${losses}負`;
+  const playerMatches = id => completedMatches().filter(match => match.player1Id === id || match.player2Id === id).sort((a,b) => `${a.matchDate}${a.matchId || ''}`.localeCompare(`${b.matchDate}${b.matchId || ''}`));
+  function growthRecord(player) {
+    const all = playerMatches(player.playerId), last10 = all.slice(-10), previous10 = all.slice(-20,-10), last5 = all.slice(-5), previous5 = all.slice(-10,-5);
+    const current = summary(last10,player.playerId), prior = summary(previous10,player.playerId), recent = summary(last5,player.playerId), previous = summary(previous5,player.playerId);
+    const enough = last5.length >= 3 && previous5.length >= 3, delta = recent.average - previous.average;
+    const signal = !enough ? 'more' : delta >= .5 ? 'improving' : delta <= -.5 ? 'declining' : 'stable';
+    const opponents = new Set(last10.map(match => opponentId(match,player.playerId))), sessions = new Set(last10.map(match => match.matchDate)), latestSix = dates().slice(-6), activeDates = new Set(trainingMatches().filter(match => latestSix.includes(match.matchDate) && (match.player1Id === player.playerId || match.player2Id === player.playerId)).map(match => match.matchDate)), people = new Map([...(data.players || []).map(item => [item.playerId,item]),...(data.externalOpponents || []).map(item => [item.externalOpponentId,item])]), categoryCounts = new Map();
+    last10.forEach(match => { const opponent = people.get(opponentId(match,player.playerId)), category = categoryOf(opponent); categoryCounts.set(category,(categoryCounts.get(category)||0)+1); });
+    const categoryMix = [...categoryCounts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'ja'));
+    return { player, all, last10, previous10, last5, previous5, current, prior, recent, previous, delta, signal, opponents:opponents.size, sessions:sessions.size, activeDates:activeDates.size, recentSessionCount:latestSix.length, categoryMix };
+  }
+
+  function shell(content) {
+    const labels = { session:t('session'), growth:t('growth'), tournament:t('tournament') };
+    return `<section class="insights-hero"><div><p class="eyebrow">TRAINING INTELLIGENCE</p><h1>${t('title')}</h1><span>${t('subtitle')}</span></div><aside><b>${dates().length}</b><small>${language === 'en' ? 'recorded training dates' : '登録練習日'}</small><em>${t('lastUpdated')}: ${new Date(data.lastUpdated).toLocaleString(language === 'en' ? 'en-GB' : 'ja-JP')}</em></aside></section><nav class="insights-tabs" aria-label="${t('title')}">${Object.entries(labels).map(([key,label]) => `<button type="button" data-insights-view="${key}" class="${activeView === key ? 'active' : ''}">${label}</button>`).join('')}</nav><p class="insights-method">${activeView === 'tournament' ? t('readinessIntro') : t('completedOnly')}</p><section id="insights-content">${content}</section>`;
+  }
+
+  function sessionPlayerRecord(player, recorded, completed) {
+    const recordedMatches = recorded.filter(match => match.player1Id === player.playerId || match.player2Id === player.playerId), currentMatches = completed.filter(match => match.player1Id === player.playerId || match.player2Id === player.playerId), current = summary(currentMatches,player.playerId), prior = playerMatches(player.playerId).filter(match => match.matchDate < selectedDate).slice(-5), priorStats = summary(prior,player.playerId), delta = currentMatches.length >= 2 && prior.length >= 3 ? current.average-priorStats.average : null, opponents = new Set(recordedMatches.map(match => opponentId(match,player.playerId)));
+    return { player,recordedMatches,currentMatches,current,prior,priorStats,delta,opponents:opponents.size };
+  }
+
+  function renderSession() {
+    const allDates = dates(); selectedDate = allDates.includes(selectedDate) ? selectedDate : allDates.at(-1) || '';
+    const recorded = trainingMatches().filter(match => match.matchDate === selectedDate), completed = recorded.filter(isComplete), ids = [...new Set(recorded.flatMap(match => [match.player1Id,match.player2Id]))], map = playerMap(), rows = ids.map(id => sessionPlayerRecord(map.get(id) || {playerId:id,displayName:id},recorded,completed));
+    const pairingKeys = new Set(completed.map(match => [match.player1Id,match.player2Id].sort().join('|'))), close = completed.filter(match => Math.abs(Number(match.player1Sets)-Number(match.player2Sets)) === 1);
+    const latestThree = allDates.slice(-3), activeRecent = new Set(trainingMatches().filter(match => latestThree.includes(match.matchDate)).flatMap(match => [match.player1Id,match.player2Id])), stale = (data.players || []).filter(player => !activeRecent.has(player.playerId));
+    const signals = [];
+    rows.forEach(row => {
+      if (row.recordedMatches.length === 1) signals.push({tone:'neutral',player:row.player,text:t('oneMatch')});
+      const closeLosses = row.currentMatches.filter(match => !won(match,row.player.playerId) && Math.abs(scoreFor(match,row.player.playerId).own-scoreFor(match,row.player.playerId).other) === 1).length;
+      if (closeLosses) signals.push({tone:'neutral',player:row.player,text:`${t('closeLoss')}: ${closeLosses}`});
+      if (row.current.games >= 2 && row.current.average <= -2) signals.push({tone:'negative',player:row.player,text:`${t('decisiveLoss')}: ${signed(row.current.average)}`});
+      if (row.delta !== null && row.delta >= .75) signals.push({tone:'positive',player:row.player,text:`${t('movementUp')}: ${signed(row.delta)}`});
+      if (row.delta !== null && row.delta <= -.75) signals.push({tone:'negative',player:row.player,text:`${t('movementDown')}: ${signed(row.delta)}`});
+    });
+    signals.sort((left,right) => ({negative:0,positive:1,neutral:2}[left.tone]-{negative:0,positive:1,neutral:2}[right.tone]));
+    const pairingRows = [...pairingKeys].map(key => { const [one,two]=key.split('|'), session=completed.filter(match => [match.player1Id,match.player2Id].sort().join('|')===key), history=completedMatches().filter(match => match.matchDate < selectedDate && [match.player1Id,match.player2Id].sort().join('|')===key), oneWins=session.filter(match => match.winnerId===one).length; return {one,two,session,history,oneWins}; }).sort((a,b) => b.history.length-a.history.length || b.session.length-a.session.length);
+    const content = `<div class="insights-filter-bar"><label><span>${t('selectSession')}</span><select id="insights-session-date">${[...allDates].reverse().map(date => `<option value="${date}" ${date===selectedDate?'selected':''}>${date}</option>`).join('')}</select></label></div>
+      <div class="insights-kpis"><article><small>${t('recorded')}</small><b>${recorded.length}</b><span>${t('complete')} ${completed.length} · ${t('incomplete')} ${recorded.length-completed.length}</span></article><article><small>${t('participants')}</small><b>${ids.length}</b><span>${language === 'en' ? 'with recorded matches' : '試合記録あり'}</span></article><article><small>${t('pairings')}</small><b>${pairingKeys.size}</b><span>${completed.length} ${t('matches').toLowerCase()}</span></article><article><small>${t('close')}</small><b>${completed.length ? Math.round(close.length/completed.length*100) : 0}%</b><span>${close.length} · 3–2 / 2–3</span></article></div>
+      <div class="insights-session-grid"><section class="insights-panel insights-attention"><header><p>${t('attention')}</p><b>${signals.length}</b></header><div>${signals.slice(0,8).map(signal => `<a class="${signal.tone}" href="player.html?id=${encodeURIComponent(signal.player.playerId)}#matches"><strong>${escapeHtml(nameFor(signal.player))}</strong><span>${escapeHtml(signal.text)}</span></a>`).join('') || `<p class="empty">${t('noSignals')}</p>`}</div>${signals.length>8?`<p class="insights-result-note">${language==='en'?`Showing 8 highest-priority signals of ${signals.length}`:`優先度の高い8件を表示（全${signals.length}件）`}</p>`:''}${stale.length ? `<details><summary>${t('inactivePlayers')} · ${stale.length}</summary><div class="insights-chip-list">${stale.map(player => `<a href="player.html?id=${encodeURIComponent(player.playerId)}#matches">${escapeHtml(nameFor(player))}</a>`).join('')}</div></details>` : ''}</section><article class="chart-card insights-score-chart"><h3>${language === 'en' ? 'Session scoreline distribution' : 'セッションスコア内訳'}</h3><canvas id="insights-session-chart" role="img" aria-label="${language === 'en' ? 'Completed match scoreline distribution for the selected training date' : '選択した練習日の完了試合スコア内訳'}"></canvas></article></div>
+      <section class="insights-panel"><header><div><p>${t('sessionPlayers')}</p><small>${selectedDate}</small></div></header><div class="insights-table-wrap"><table class="insights-table"><thead><tr><th>${language==='en'?'Player':'選手'}</th><th>${t('workload')}</th><th>${t('record')}</th><th>${t('setDiff')}</th><th>${t('change')}</th><th>${t('diversity')}</th></tr></thead><tbody>${rows.sort((a,b)=>b.recordedMatches.length-a.recordedMatches.length||b.current.average-a.current.average).map(row => `<tr><th><a href="player.html?id=${encodeURIComponent(row.player.playerId)}#matches">${escapeHtml(nameFor(row.player))}</a><small>${escapeHtml(categoryOf(row.player))}</small></th><td>${row.recordedMatches.length} / ${row.current.games}</td><td>${resultLabel(row.current.wins,row.current.losses)}</td><td class="${row.current.average>0?'positive':row.current.average<0?'negative':''}">${row.current.games?signed(row.current.average):'—'}</td><td>${row.delta===null?'—':signed(row.delta)}</td><td>${row.opponents}</td></tr>`).join('')}</tbody></table></div></section>
+      <section class="insights-panel"><header><div><p>${t('recurring')}</p><small>${language==='en'?'Top 6 by prior meetings':'過去対戦数 上位6組'}</small></div></header><div class="insights-pairings">${pairingRows.slice(0,6).map(pair => { const one=map.get(pair.one)||{playerId:pair.one,displayName:pair.one},two=map.get(pair.two)||{playerId:pair.two,displayName:pair.two}; return `<article><div><a href="player.html?id=${encodeURIComponent(pair.one)}&opponent=${encodeURIComponent(pair.two)}#opponents">${escapeHtml(nameFor(one))}</a><i>VS</i><a href="player.html?id=${encodeURIComponent(pair.two)}&opponent=${encodeURIComponent(pair.one)}#opponents">${escapeHtml(nameFor(two))}</a></div><b>${pair.oneWins}-${pair.session.length-pair.oneWins}</b><small>${pair.history.length} ${t('priorMeetings')}</small></article>`; }).join('') || `<p class="empty">${t('noData')}</p>`}</div></section>
+      <details class="insights-panel insights-match-details"><summary>${t('matches')} · ${recorded.length}</summary><div class="insights-match-list">${recorded.map(match => { const one=map.get(match.player1Id)||{displayName:match.player1Name},two=map.get(match.player2Id)||{displayName:match.player2Name},session=match.sessionId||(language==='en'?'Session ID not recorded':'セッションID未登録'),format=match.matchFormat||(language==='en'?'Format not recorded':'形式未登録'); return `<article class="${isComplete(match)?'':'incomplete'}"><small>${session} · ${format}</small><span><b>${escapeHtml(nameFor(one))}</b><strong>${match.player1Sets}-${match.player2Sets}</strong><b>${escapeHtml(nameFor(two))}</b></span></article>`; }).join('')}</div></details>`;
+    app.innerHTML = shell(content); bindCommon();
+    document.querySelector('#insights-session-date').onchange = event => { selectedDate=event.target.value; renderSession(); };
+    const scorelines=['3-0','3-1','3-2'], values=scorelines.map(score => completed.filter(match => { const high=Math.max(Number(match.player1Sets),Number(match.player2Sets)),low=Math.min(Number(match.player1Sets),Number(match.player2Sets)); return `${high}-${low}`===score; }).length);
+    sessionChart = new Chart(document.querySelector('#insights-session-chart'),{type:'bar',data:{labels:scorelines,datasets:[{data:values,backgroundColor:scorelines.map(score=>score.startsWith('3-')?'#d6a516':'#8c423a'),borderRadius:4}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#f6f0e2'},grid:{display:false}},y:{beginAtZero:true,ticks:{color:'#a5a198',precision:0},grid:{color:'rgba(246,240,226,.08)'}}}}});
+  }
+
+  function growthRow(record) {
+    const p=record.player, scorelines=['3-0','3-1','3-2','2-3','1-3','0-3'];
+    const scoreCount=scorelines.map(score => record.last10.filter(match => { const s=scoreFor(match,p.playerId); return `${s.own}-${s.other}`===score; }).length);
+    const matchesPerSession=record.sessions?record.current.games/record.sessions:0,winsPerSession=record.sessions?record.current.wins/record.sessions:0,mix=record.categoryMix.slice(0,3).map(([category,count])=>`${category} ${count}`).join(' · ')||'—';
+    return `<article class="growth-row" data-name="${escapeHtml(`${p.displayName||''} ${p.englishName||''} ${p.playerId}`.toLowerCase())}" data-category="${escapeHtml(p.schoolLevel||'')}"><header><div><a href="player.html?id=${encodeURIComponent(p.playerId)}#matches">${escapeHtml(nameFor(p))}</a><small>${escapeHtml(categoryOf(p))} · ${record.all.length} ${language==='en'?'completed matches':'完了試合'}</small></div><span class="signal ${record.signal}">${t(record.signal)}</span></header><div class="growth-metrics"><span><small>${t('last10')}</small><b>${resultLabel(record.current.wins,record.current.losses)}</b><em>${t('setDiff')} ${signed(record.current.average)}</em></span><span><small>${t('change')}</small><b>${record.delta===null?'—':signed(record.delta)}</b><em>${t('confidence')} ${confidence(record.last10.length)}</em></span><span><small>${t('diversity')}</small><b>${record.opponents}</b><em>${record.sessions} ${t('sessions')}</em></span><span><small>${t('normalized')}</small><b>${matchesPerSession.toFixed(1)}</b><em>${winsPerSession.toFixed(1)} ${language==='en'?'wins / day':'勝 / 日'}</em></span></div><div class="growth-context"><span><small>${t('activity')}</small><b>${record.activeDates} / ${record.recentSessionCount || '—'}</b></span><span><small>${t('opponentMix')}</small><b>${escapeHtml(mix)}</b></span></div><div class="growth-scorelines">${scorelines.map((score,index)=>`<span class="${score.startsWith('3-')?'win':'loss'}"><b>${score}</b><i>${scoreCount[index]}</i></span>`).join('')}</div></article>`;
+  }
+
+  function renderGrowth() {
+    const records=(data.players||[]).map(growthRecord), sampled=records.filter(record=>record.last10.length>=10), improving=records.filter(record=>record.signal==='improving'), limited=records.filter(record=>record.last10.length<5), latestThree=dates().slice(-3), recentIds=new Set(trainingMatches().filter(match=>latestThree.includes(match.matchDate)).flatMap(match=>[match.player1Id,match.player2Id])), inactive=records.filter(record=>!recentIds.has(record.player.playerId));
+    const categories=[...new Map((data.players||[]).map(player=>[player.schoolLevel||'',categoryOf(player)])).entries()];
+    const signalOrder={improving:0,stable:1,declining:2,more:3}, sorted=[...records].sort((a,b)=>signalOrder[a.signal]-signalOrder[b.signal]||b.last10.length-a.last10.length||nameFor(a.player).localeCompare(nameFor(b.player),'ja'));
+    const content=`<div class="insights-filter-bar growth-filters"><label><span>${t('playerSearch')}</span><input id="growth-search" type="search" value="${escapeHtml(growthSearch)}" placeholder="${t('playerSearch')}" /></label><label><span>${language==='en'?'Category':'カテゴリ'}</span><select id="growth-category"><option value="">${t('allCategories')}</option>${categories.map(([value,label])=>`<option value="${escapeHtml(value)}" ${growthCategory===value?'selected':''}>${escapeHtml(label)}</option>`).join('')}</select></label></div><p class="growth-method">${t('growthIntro')}</p>
+      <div class="insights-kpis"><article><small>${t('sampledPlayers')}</small><b>${sampled.length}</b><span>${language==='en'?'10 completed matches':'完了10試合'}</span></article><article><small>${t('improvingPlayers')}</small><b>${improving.length}</b><span>≥ +0.5 ${t('setDiff')}</span></article><article><small>${t('limitedPlayers')}</small><b>${limited.length}</b><span>&lt; 5 ${language==='en'?'matches':'試合'}</span></article><article><small>${t('inactivePlayers')}</small><b>${inactive.length}</b><span>${latestThree.join(' · ')}</span></article></div><section class="growth-list"></section><button id="growth-load-more" class="progressive-load" type="button"></button>`;
+    app.innerHTML=shell(content); bindCommon();
+    const list=document.querySelector('.growth-list'),moreButton=document.querySelector('#growth-load-more');
+    const paint=()=>{const filtered=sorted.filter(record=>{const haystack=`${record.player.displayName||''} ${record.player.englishName||''} ${record.player.playerId}`.toLowerCase();return(!growthSearch||haystack.includes(growthSearch.toLowerCase()))&&(!growthCategory||record.player.schoolLevel===growthCategory);});list.innerHTML=filtered.slice(0,growthLimit).map(growthRow).join('')||`<p class="empty">${t('noData')}</p>`;const remaining=Math.max(0,filtered.length-growthLimit);moreButton.hidden=!remaining;moreButton.textContent=language==='en'?`Show ${Math.min(growthPageSize,remaining)} more · ${remaining} remaining`:`さらに${Math.min(growthPageSize,remaining)}件表示 · 残り${remaining}件`;};
+    document.querySelector('#growth-search').oninput=event=>{growthSearch=event.target.value.trim();growthLimit=growthPageSize;paint();};
+    document.querySelector('#growth-category').onchange=event=>{growthCategory=event.target.value;growthLimit=growthPageSize;paint();};
+    moreButton.onclick=()=>{growthLimit+=growthPageSize;paint();}; paint();
+  }
+
+  function renderTournamentReadiness() {
+    const tournaments=new Map((data.tournaments||[]).map(item=>[item.tournamentId,item])), progress=data.tournamentProgress||[], people=new Map([...(data.players||[]).map(item=>[item.playerId,item]),...(data.externalOpponents||[]).map(item=>[item.externalOpponentId,item])]), training=completedMatches(), eventMatches=(data.tournamentMatches||[]).filter(isComplete);
+    const entries=progress.filter(item=>String(item.playerId||'').startsWith('LK-')).sort((a,b)=>(tournaments.get(b.tournamentId)?.date||'').localeCompare(tournaments.get(a.tournamentId)?.date||'')||String(a.division).localeCompare(String(b.division),'ja'));
+    const pairMatches=(list,one,two)=>list.filter(match=>(match.player1Id===one&&match.player2Id===two)||(match.player2Id===one&&match.player1Id===two));
+    const cards=entries.map(entry=>{
+      const tournament=tournaments.get(entry.tournamentId)||{name:entry.tournamentId}, player=people.get(entry.playerId)||{playerId:entry.playerId,displayName:entry.playerName||entry.playerId}, field=progress.filter(item=>item.tournamentId===entry.tournamentId&&item.division===entry.division&&item.playerId!==entry.playerId), known=field.map(item=>{const trainingRecord=pairMatches(training,entry.playerId,item.playerId),eventRecord=pairMatches(eventMatches,entry.playerId,item.playerId),matches=[...trainingRecord,...eventRecord];return {item,trainingRecord,eventRecord,matches,stats:summary(matches,entry.playerId)};}).filter(record=>record.matches.length).sort((a,b)=>b.matches.length-a.matches.length), priority=field.filter(item=>checked(item.recommended)||checked(item.qualified)).slice(0,6), recent=growthRecord(player), coverage=field.length?Math.round(known.length/field.length*100):0;
+      const knownRows=known.slice(0,6).map(record=>{const person=people.get(record.item.playerId)||{displayName:record.item.playerName||record.item.playerId},href=record.trainingRecord.length?`player.html?id=${encodeURIComponent(entry.playerId)}&opponent=${encodeURIComponent(record.item.playerId)}#opponents`:'tournament.html',sources=[];if(record.trainingRecord.length)sources.push(`${language==='en'?'training':'練習'} ${record.trainingRecord.length}`);if(record.eventRecord.length)sources.push(`${language==='en'?'event':'大会'} ${record.eventRecord.length}`);return `<a href="${href}">${escapeHtml(nameFor(person))}<small>${resultLabel(record.stats.wins,record.stats.losses)} · ${sources.join(' / ')}</small></a>`;}).join('');
+      return `<article class="readiness-workspace-card"><header><div><p>${escapeHtml(tournament.name||tournament.nameJa||entry.tournamentId)}</p><h2><a href="player.html?id=${encodeURIComponent(entry.playerId)}#overview">${escapeHtml(nameFor(player))}</a></h2><small>${escapeHtml(entry.division||'')} · ${escapeHtml(tournament.date||'')}</small></div><span>${coverage}%<small>${t('coverage')}</small></span></header><div class="readiness-workspace-metrics"><span><small>${t('field')}</small><b>${field.length}</b></span><span><small>${t('known')}</small><b>${known.length}</b></span><span><small>${t('missing')}</small><b>${field.length-known.length}</b></span><span><small>${t('recentForm')}</small><b>${resultLabel(recent.current.wins,recent.current.losses)}</b></span></div><section><h3>${t('known')}</h3><div class="insights-chip-list readiness-known">${knownRows||'—'}</div></section><section><h3>${t('priority')}</h3><div class="insights-chip-list">${priority.map(item=>{const person=people.get(item.playerId)||{displayName:item.playerName||item.playerId};return `<span>${escapeHtml(nameFor(person))}<small>${checked(item.recommended)?(language==='en'?'Recommended':'推薦'):(language==='en'?'Representative':'代表')}</small></span>`;}).join('')||'—'}</div></section></article>`;
+    });
+    const initialLimit=6;
+    app.innerHTML=shell(`<div class="readiness-toolbar"><a href="tournament.html">${t('openTournament')} →</a></div><section class="readiness-workspace">${cards.slice(0,initialLimit).join('')||`<p class="empty">${t('noTournaments')}</p>`}</section>${cards.length>initialLimit?`<button id="readiness-load-more" class="progressive-load" type="button">${language==='en'?`Show ${cards.length-initialLimit} more`:`さらに${cards.length-initialLimit}件表示`}</button>`:''}`); bindCommon();
+    document.querySelector('#readiness-load-more')?.addEventListener('click',event=>{document.querySelector('.readiness-workspace').innerHTML=cards.join('');event.currentTarget.remove();});
+  }
+
+  function bindCommon() {
+    document.documentElement.lang=language;
+    document.querySelector('#language-toggle').textContent=language==='en'?'日本語':'ENGLISH';
+    const tournamentNav=document.querySelector('#nav-tournaments'),insightsNav=document.querySelector('#nav-insights'),maintenanceNav=document.querySelector('#nav-maintenance');
+    const homeNav=document.querySelector('#insights-nav-home'),playersNav=document.querySelector('#insights-nav-players'),sessionsNav=document.querySelector('#insights-nav-sessions');
+    if(homeNav)homeNav.textContent=language==='en'?'Home':'ホーム';
+    if(playersNav)playersNav.textContent=language==='en'?'Players':'選手';
+    if(sessionsNav)sessionsNav.textContent=language==='en'?'Sessions':'セッション';
+    if(tournamentNav)tournamentNav.textContent=language==='en'?'Tournaments':'大会';
+    if(insightsNav)insightsNav.textContent=language==='en'?'Training Insights':'練習分析';
+    if(maintenanceNav)maintenanceNav.textContent=language==='en'?'Data Maintenance':'データメンテナンス';
+    document.querySelectorAll('[data-insights-view]').forEach(button=>button.onclick=()=>{activeView=button.dataset.insightsView;history.replaceState(null,'',`#${activeView}`);render();});
+  }
+  function render() {
+    if (sessionChart) { sessionChart.destroy(); sessionChart=null; }
+    if (!['session','growth','tournament'].includes(activeView)) activeView='session';
+    if (activeView==='growth') renderGrowth(); else if (activeView==='tournament') renderTournamentReadiness(); else renderSession();
+  }
+  document.querySelector('#language-toggle').onclick=()=>{language=language==='en'?'ja':'en';localStorage.setItem('lk-language',language);render();};
+  document.querySelector('#menu-toggle').onclick=event=>{const nav=document.querySelector('.site-header nav');const open=nav.classList.toggle('open');event.currentTarget.setAttribute('aria-expanded',String(open));};
+  window.addEventListener('hashchange',()=>{activeView=location.hash.slice(1)||'session';render();});
+  window.LKData.loadPublicData().then(result=>{data=result;selectedDate=dates().at(-1)||'';render();}).catch(error=>{app.innerHTML=`<section class="insights-loading"><p class="empty">${escapeHtml(error.message)}</p></section>`;});
+})();
