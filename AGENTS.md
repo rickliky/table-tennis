@@ -206,17 +206,25 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 ## Session Context
 
 ### UAT Audit Remediation (2026-10-02) — LIVE, AWAITING PROD APPROVAL
-- UAT behavior commits `b03995c` and `e8422a6` are deployed. GitHub Actions run `36969779447` passed the syntax gate and UAT deployment. Nothing from this remediation has been promoted to `main`.
+- UAT behavior commits `b03995c`, `e8422a6`, `ee61ee8`, and `f599174` are deployed. Nothing from this remediation has been promoted to `main`.
 - The password gate now blocks public-data requests until site login succeeds. Direct supplement-page login uses the Worker URL, the password controls appear in the first mobile viewport, and the long club introduction is collapsed by default.
 - The obsolete Google Apps Script/static-JSON supplement workflow was retired. `player-profile-supplements.html` reads approved Upstash data through `data-client.js`; `player-profile-supplement.html` is now a safe redirect to the player editor in Data Maintenance.
 - Public lookup IDs no longer leak from audited home/profile renderers. Profile images use `profile-images.js` so players without photos load `NoProfilePic.jpg` directly instead of causing dozens of 404 requests.
 - Progressive rendering is live: home initially shows 12 of 60 latest-session matches and 24 of 86 player cards; LK-0093 initially shows five match days (32 cards instead of 153); Admin initially renders 100 of 1,793 match rows. Tournament fields are collapsed by default and searchable.
 - Responsive/accessibility fixes are live: no horizontal overflow at 320, 390, 768, 1024, or 1440 px in audited views; Admin approver modal locks body scroll and closes on Escape; Admin has an `<h1>` and labeled status filter; visible charts have accessible labels; invalid player IDs hide all empty profile sections.
 - Live Playwright verification found zero console errors, failed asset/image requests, or raw `GD-*`/`PH-*`/`PS-*`/`GH-*`/`SL-*` values on the audited UAT pages. Home initial DOM dropped from 4,098 to about 1,500 nodes; mobile overflow is zero; expansion controls restore full lists on demand.
-- The cache-bust token `?v=20261002-audit2` is intentionally applied to changed CSS/JS references so GitHub Pages does not combine old cached assets with the new HTML.
+- Cache-bust tokens `?v=20261002-audit2` and `audit3` are intentionally applied to changed CSS/JS references so GitHub Pages does not combine old cached assets with new HTML.
 - One-time `gh-pages` cleanup commit `2703627` removed 10 obsolete files under `/uat/`: old admin JSON, `lookups.js`, `opencode.jsonc`, legacy supplement JS/JSON, `public-data.json`, `rubbers.js`, old build script, and `temp_matches.json`. All return 404; the replacement singular supplement redirect returns 200. Production-root stale files were not touched because production promotion has not been approved.
-- Duplicate player fix is submitted through the Worker as pending UAT change `CHANGE-1790919051810`; it changes only `LK-0153.status` from `ST-001` to `ST-002`. It still needs an approver login/acceptance. Until approved, UAT public data remains 87 players and `LK-0153` remains active.
-- Before production: approve and verify `CHANGE-1790919051810`, obtain explicit user approval for this release, promote UAT code to `main`, then remove equivalent obsolete production-root published files without deleting valid content.
+- Duplicate-player change `CHANGE-1790919051810` was accepted: `LK-0153.status` is now `ST-002`. The Worker still returns all 87 player records from `/api/public-data`, so `data-client.js` now filters inactive players on non-Admin pages while Admin retains all records; the public UI correctly shows 86 active players. Long term, split active-only `/api/public-data` from an authenticated all-records Admin endpoint.
+- Admin match pagination now sorts all filtered records newest-first before taking the first 100; it also displays each date's full result count and opens the newest record by default.
+- Before production: obtain explicit user approval for this release, promote UAT code to `main`, then remove equivalent obsolete production-root published files without deleting valid content.
+
+### Product UX and Analytics Review (2026-10-02)
+- Durable roadmap: `docs/PRODUCT-UX-ROADMAP.md`. It covers visitor/coach information architecture, player-profile navigation, recommended statistics, Data Maintenance overview and health queue, import workflow, API/schema foundations, visual direction, and phased delivery.
+- Current UAT evidence: 86 active players, 1,793 training matches, 1,700 complete under the 3-set rule, 93 incomplete, 39 training dates, average 24 match participants/date, 3 tournaments, 293 tournament progress records, and 290 external opponents.
+- Data completeness limits advanced analysis: 39 active players lack category, 47 lack hand/grip/style, 48 lack forehand/backhand rubber, 72 lack grade, and only 24 have profile photos.
+- Data-quality review found 42 legacy `Verified` scores of 2-0, 2-1, or 1-0. Do not bulk-change them: add an explicit match format (`Best of 3`, `Best of 5`, `Short practice`) and review whether these are valid short-format matches.
+- Recommended next UAT package: (1) Admin Overview + Data Health queue, (2) compact Home hero/search + Club Pulse, (3) player-profile Overview/Performance/Opponents/Matches views, and (4) sticky editor actions, dirty-state warning, and status/completeness filters.
 
 ### Data Rules (CRITICAL)
 - **Upstash Redis is the SOLE golden source of truth** for ALL data — never load from local files at runtime
