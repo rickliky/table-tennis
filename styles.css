@@ -662,3 +662,79 @@ body.access-locked,body.modal-open { overflow:hidden; }
   .dv-header { align-items:flex-start; gap:8px; }
   .dv-title { font-size:18px; overflow-wrap:anywhere; }
 }
+
+/* Opponent progress dashboard */
+#opponent-stats.opponent-stats { display:block; min-width:0; }
+.opponent-trend-dashboard { display:grid; gap:18px; min-width:0; }
+.opponent-trend-dashboard > * { min-width:0; }
+.opponent-trend-toolbar { align-items:end; background:linear-gradient(110deg,#17191c,#101214); border:1px solid var(--line); display:flex; gap:18px; justify-content:space-between; padding:18px; }
+.opponent-trend-toolbar label { display:grid; flex:1 1 420px; gap:7px; max-width:620px; }
+.opponent-trend-toolbar label > span,.opponent-evidence,.opponent-trend-kpis small,.opponent-comparison-card small,.opponent-scoreline-card small,.opponent-milestones small { color:var(--muted); font:800 10px "Noto Sans JP",sans-serif; letter-spacing:.07em; text-transform:uppercase; }
+.opponent-trend-toolbar select { appearance:none; background:#090a0b; border:1px solid var(--gold); color:var(--cream); font:800 18px "Noto Sans JP",sans-serif; min-height:46px; padding:10px 38px 10px 12px; width:100%; }
+.opponent-trend-toolbar > div { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+.opponent-trend-toolbar a,.opponent-trend-toolbar button { align-items:center; background:transparent; border:1px solid var(--gold); color:var(--gold); cursor:pointer; display:inline-flex; font:800 11px "Noto Sans JP",sans-serif; justify-content:center; min-height:44px; padding:9px 12px; text-decoration:none; }
+.opponent-trend-toolbar a:hover,.opponent-trend-toolbar a:focus-visible,.opponent-trend-toolbar button:hover,.opponent-trend-toolbar button:focus-visible { background:var(--gold); color:var(--black); }
+.opponent-evidence { border-left:2px solid var(--gold); margin:-8px 0 0; padding-left:10px; text-transform:none; }
+.opponent-trend-kpis { display:grid; gap:1px; grid-template-columns:repeat(4,minmax(0,1fr)); }
+.opponent-trend-kpis article { background:#101214; border:1px solid var(--line); display:grid; min-height:128px; padding:18px; }
+.opponent-trend-kpis b { color:var(--cream); font:800 clamp(34px,4vw,52px)/1 "Barlow Condensed",sans-serif; margin:auto 0 5px; }
+.opponent-trend-kpis span { color:var(--gold); font:700 11px "Noto Sans JP",sans-serif; }
+.opponent-trend-chart-card { height:370px; min-height:370px; }
+.opponent-trend-chart-card h3 { padding-right:0; }
+.opponent-trend-chart-card canvas { height:285px !important; max-height:none; width:100% !important; }
+.opponent-trend-detail-grid { display:grid; gap:14px; grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr); }
+.opponent-comparison-card,.opponent-scoreline-card,.opponent-milestones { background:#101214; border:1px solid var(--line); padding:20px; }
+.opponent-comparison-card header,.opponent-scoreline-card header,.opponent-milestones header { align-items:start; display:flex; justify-content:space-between; }
+.opponent-comparison-card h3,.opponent-scoreline-card h3,.opponent-milestones h3 { color:var(--cream); font-size:24px; margin:4px 0 0; }
+.opponent-comparison-card header > b { border:1px solid var(--line); color:var(--muted); font:800 28px "Barlow Condensed",sans-serif; padding:5px 9px; }
+.opponent-comparison-card header > b.improving { border-color:var(--gold); color:var(--gold); }
+.opponent-comparison-card header > b.declining { border-color:#a95147; color:#dc8176; }
+.opponent-comparison-card > div { display:grid; gap:1px; grid-template-columns:1fr 1fr; margin-top:18px; }
+.opponent-comparison-card > div span { background:rgba(246,240,226,.035); display:grid; padding:14px; }
+.opponent-comparison-card > div b { color:var(--cream); font:800 34px "Barlow Condensed",sans-serif; margin:5px 0; }
+.opponent-comparison-card em,.opponent-scoreline-card em { color:var(--muted); font:600 10px "Noto Sans JP",sans-serif; font-style:normal; }
+.opponent-comparison-card > p { color:var(--muted); font:600 10px/1.5 "Noto Sans JP",sans-serif; margin:12px 0 0; }
+.opponent-scoreline-card > div { display:grid; gap:6px; grid-template-columns:repeat(6,minmax(0,1fr)); margin-top:18px; }
+.opponent-scoreline-card > div span { border-top:3px solid var(--line); display:grid; padding:12px 8px; text-align:center; }
+.opponent-scoreline-card > div span.win { border-color:var(--gold); }
+.opponent-scoreline-card > div span.loss { border-color:#8c423a; }
+.opponent-scoreline-card > div b { color:var(--cream); font:800 30px "Barlow Condensed",sans-serif; margin:3px 0; }
+.opponent-milestones > div { display:grid; gap:1px; grid-template-columns:repeat(5,minmax(0,1fr)); margin-top:18px; }
+.opponent-milestones > div span { background:rgba(246,240,226,.035); display:grid; min-height:78px; padding:12px; }
+.opponent-milestones > div b { color:var(--cream); font:800 18px "Barlow Condensed",sans-serif; margin-top:auto; }
+.opponent-matrix { background:#101214; border:1px solid var(--line); max-width:100%; min-width:0; overflow:hidden; width:100%; }
+.opponent-matrix > summary { cursor:pointer; list-style:none; min-height:64px; padding:16px 20px; }
+.opponent-matrix > summary::-webkit-details-marker { display:none; }
+.opponent-matrix > summary span { display:grid; gap:3px; position:relative; }
+.opponent-matrix > summary span::after { color:var(--gold); content:'＋'; font-size:22px; position:absolute; right:0; top:0; }
+.opponent-matrix[open] > summary span::after { content:'−'; }
+.opponent-matrix > summary b { color:var(--cream); font:800 20px "Barlow Condensed",sans-serif; }
+.opponent-matrix > summary small { color:var(--muted); font:600 10px "Noto Sans JP",sans-serif; }
+.opponent-matrix > div { border-top:1px solid var(--line); max-width:100%; min-width:0; overflow-x:auto; width:100%; }
+.opponent-matrix table { border-collapse:collapse; min-width:760px; width:100%; }
+.opponent-matrix th,.opponent-matrix td { border-bottom:1px solid var(--line); border-right:1px solid var(--line); padding:10px; text-align:center; }
+.opponent-matrix th { color:var(--muted); font:800 10px "Noto Sans JP",sans-serif; }
+.opponent-matrix tbody th { min-width:170px; text-align:left; }
+.opponent-matrix tbody th a { color:var(--cream); text-decoration:none; }
+.opponent-matrix tbody th small,.opponent-matrix td small { color:var(--muted); display:block; font:700 9px "Noto Sans JP",sans-serif; margin-top:3px; }
+.opponent-matrix td b { color:var(--cream); font:800 18px "Barlow Condensed",sans-serif; }
+.opponent-matrix td.positive { background:rgba(214,165,22,.12); }
+.opponent-matrix td.negative { background:rgba(140,66,58,.16); }
+.opponent-matrix td.empty { color:#555; }
+@media (max-width:900px) {
+  .opponent-trend-detail-grid { grid-template-columns:1fr; }
+  .opponent-scoreline-card > div { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .opponent-milestones > div { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (max-width:700px) {
+  .opponent-trend-toolbar { align-items:stretch; flex-direction:column; }
+  .opponent-trend-toolbar label { flex-basis:auto; }
+  .opponent-trend-toolbar > div { display:grid; grid-template-columns:1fr 1fr; }
+  .opponent-trend-kpis { grid-template-columns:1fr 1fr; }
+  .opponent-trend-kpis article { min-height:112px; padding:14px; }
+  .opponent-trend-chart-card { height:420px; padding:14px; }
+  .opponent-trend-chart-card canvas { height:330px !important; }
+  .opponent-comparison-card > div { grid-template-columns:1fr; }
+  .opponent-scoreline-card > div { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .opponent-milestones > div { grid-template-columns:1fr 1fr; }
+}
