@@ -3,6 +3,8 @@
 
   "instructions": ["AGENTS.md"],
 
+  "model": "opencode/mimo-v2.6-flash-free",
+
   "compaction": {
     "auto": true,
     "tail_turns": 15
