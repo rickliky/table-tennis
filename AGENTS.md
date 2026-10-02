@@ -52,6 +52,17 @@ GitHub Pages (static hosting)
 - `main` → Production (deployed to `/`)
 - `uat` → UAT/Testing (deployed to `/uat/`) — contains admin tool + data/ source files
 
+### MANDATORY Workflow: UAT First, Prod Only With Approval
+
+**All changes go to the `uat` branch first. Never edit `main` directly.**
+
+1. Branch from / switch to `uat`, make the change, commit, and push to `uat`
+2. Let the UAT site deploy and test the change there (check `gh run list --branch uat`)
+3. Report results and **wait for the user to explicitly confirm**
+4. Only then promote to `main` (`git checkout uat && git merge uat`-style fast-forward, or `git push origin uat:main`) and push
+
+Pushing to `main` without the user's explicit confirmation is a rule violation — even if the UAT test looked clean. The single exception is docs-only commits that change no site behavior (e.g. `AGENTS.md`, `.opencode/` config), which may go straight to `main` AND `uat` together so the branches stay in sync.
+
 ## Key Files
 
 ### Core (both branches)
@@ -156,8 +167,12 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - `git status`, `git diff`, `git log`, `git branch`, `git show`, `git pull`
 
 ### Requires confirmation
-- Nothing routine — SSH is configured and the user has authorized the agent to commit and push without asking (2026-10-02)
+- **ANY push to `main`** — changes must land on `uat`, be tested, then be approved by the user before promoting to production (see "MANDATORY Workflow: UAT First" under Branches). Ask every time; do not treat prior approval as standing approval.
 - `git rebase`, `git revert`, force-writing history, or committing files not touched as part of the task — ask first
+
+### Requires no confirmation
+- Commit + push to `uat` — SSH is configured and the user has authorized this (2026-10-02)
+- Docs-only commits that change no site behavior (may be pushed to both branches together)
 
 ### Never auto-run
 - `git push --force`
@@ -246,6 +261,12 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - GitHub CLI (`gh`) is installed and authenticated as `rickliky` (scopes: repo, admin:public_key)
 - **Agent MAY commit and push directly without asking** (user instruction, 2026-10-02) — still pull before working, and never force-push or use destructive git operations
 - PC 2 still needs its own key: generate one, then add it via `gh api user/keys` after `gh auth login`
+
+### Branch Workflow Rule (2026-10-02) — MANDATORY
+- **All code/data changes go to `uat` first, get tested on the UAT site, then require the user's explicit per-change confirmation before pushing to `main`.**
+- The agent may commit and push to `uat` freely, but **any push to `main` must be asked about each time** — prior approval is not standing approval.
+- Exception: docs-only commits (no site behavior change) may go to both branches together to keep them in sync.
+- At the time of this rule, `main` and `uat` were fast-forwarded to the same commit `5a3ce3c`, so they start in sync.
 
 ### SSH Auto-Commit/Push Enabled (2026-10-02)
 - PC 1 now has full SSH access: `~/.ssh/id_ed25519` (ed25519, no passphrase) registered with GitHub as `rick-pc1-2026-10-02` (key ID 165123503)
