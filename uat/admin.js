@@ -115,19 +115,25 @@
   let trainingMatches = [];
   let entityData = {};
   let pendingChanges = [];
+  let allChanges = [];
   let allPlayersList = [];
   let currentRole = '';
   const launchParams = new URLSearchParams(location.search), launchPlayerId = launchParams.get('editPlayer') || launchParams.get('playerId') || '', launchEditPlayer = Boolean(launchParams.get('editPlayer')), launchNewMatch = launchParams.get('newMatch') === '1';
-  let activeTab = launchParams.get('tab') === 'players' ? 'players' : 'matches';
+  const requestedTab = launchParams.get('tab');
+  let activeTab = ['overview', 'matches', 'players', 'tournaments', 'clubs', 'manage'].includes(requestedTab) ? requestedTab : 'overview';
   let activePlayerSubTab = 'ourPlayers';
   let activeManageSubTab = 'pending';
+  let activeMatchHealthFilter = '';
+  let activePlayerHealthFilter = '';
   let selectedId = launchPlayerId;
+  let activeFormDirty = false;
 
   const el = (tag, options = {}) => Object.assign(document.createElement(tag), options);
   const text = (tag, value, className) => { const node = el(tag, { textContent: value }); if (className) node.className = className; return node; };
+  const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[character]);
   function createDiff(before, after) { const keys = new Set([...Object.keys(before || {}), ...Object.keys(after || {})]); return [...keys].filter(key => key === 'gradeHistory' || JSON.stringify(before?.[key]) !== JSON.stringify(after?.[key])).map(field => ({ field, before: before?.[field] ?? '', after: after?.[field] ?? '' })); }
   function computeDiff(change) { if (change.diff && change.diff.length) return change.diff; if (change.changedFields && change.before && change.after) { return change.changedFields.filter(f => f !== 'gradeHistory').map(f => ({ field: f, before: change.before[f] ?? '', after: change.after[f] ?? '' })).filter(d => JSON.stringify(d.before) !== JSON.stringify(d.after)); } if (change.before && change.after) return createDiff(change.before, change.after); return []; }
-  async function loadPendingChanges() { try { const result = await window.LKData.request('/api/pending'); pendingChanges = (result.changes || []).filter(c => c.status === 'pending'); } catch { pendingChanges = []; } }
+  async function loadPendingChanges() { try { const result = await window.LKData.request('/api/pending'); allChanges = result.changes || []; pendingChanges = allChanges.filter(c => c.status === 'pending'); } catch { allChanges = []; pendingChanges = []; } }
   function findPendingChange(entityType, targetId) { return pendingChanges.find(c => c.entityType === entityType && c.targetId === targetId); }
   function renderPendingInfo(change) {
     const box = el('div', { className: 'admin-pending-info' });
@@ -167,7 +173,26 @@
   }
   const empty = node => { node.replaceChildren(); return node; };
   const canEditMatches = () => currentRole === 'admin' || currentRole === 'approver';
+  const matchIsComplete = match => Number(match.player1Sets) >= 3 || Number(match.player2Sets) >= 3;
+  const profileFields = ['gender', 'schoolLevel', 'playingHand', 'grip', 'playingStyle', 'forehandRubber', 'backhandRubber'];
+  const profileCompleteness = player => Math.round(profileFields.filter(field => player[field]).length / profileFields.length * 100);
+  const profileIsComplete = player => profileFields.every(field => player[field]);
   const playerName = id => players.find(player => player.playerId === id)?.displayName || (entityData.externalOpponents || []).find(e => e.externalOpponentId === id)?.displayName || id || '';
+  const formSnapshot = form => JSON.stringify([...new FormData(form).entries()]);
+  const trackDirtyForm = form => {
+    activeFormDirty = false;
+    const initial = formSnapshot(form), indicator = text('p', language === 'en' ? 'Unsaved changes' : '未保存の変更があります', 'admin-unsaved-indicator');
+    indicator.hidden = true;
+    form.prepend(indicator);
+    const update = () => { activeFormDirty = formSnapshot(form) !== initial; indicator.hidden = !activeFormDirty; };
+    form.addEventListener('input', update); form.addEventListener('change', update); form.addEventListener('click', () => requestAnimationFrame(update)); form.addEventListener('focusout', () => setTimeout(update, 200));
+  };
+  app.addEventListener('click', event => {
+    if (!activeFormDirty || !event.target.closest('.admin-tab,.admin-sub-tab,.admin-player-row,.brand')) return;
+    if (confirm(language === 'en' ? 'Discard unsaved changes?' : '未保存の変更を破棄しますか？')) { activeFormDirty = false; return; }
+    event.preventDefault(); event.stopImmediatePropagation();
+  }, true);
+  window.addEventListener('beforeunload', event => { if (!activeFormDirty) return; event.preventDefault(); event.returnValue = ''; });
 
   function shell() {
     currentRole = 'admin';
@@ -197,7 +222,7 @@
       event.preventDefault(); status.textContent = 'Verifying... / 確認中...';
       try {
         const result = await window.LKData.request('/api/login', { method: 'POST', body: JSON.stringify({ role: 'approver', password: password.value }) });
-        localStorage.setItem('lk-admin-session', result.token); currentRole = result.role; closeLogin(); renderWorkspace();
+        localStorage.setItem('lk-admin-session', result.token); currentRole = result.role; activeTab = 'manage'; closeLogin(); renderWorkspace();
       } catch { status.textContent = 'Sign-in failed. / パスワードを確認してください。'; }
     });
   }
@@ -222,6 +247,7 @@
 
   function renderWorkspace() {
     empty(app);
+    if (currentRole === 'approver') activeTab = 'manage';
     const header = el('header', { className: 'site-header' });
     const brand = el('a', { className: 'brand', href: 'index.html', 'aria-label': 'Little Kings home' });
     const brandText = el('span');
@@ -238,17 +264,55 @@
     }
     header.append(text('h1', language === 'en' ? 'Data Maintenance' : 'データメンテナンス', 'visually-hidden'), brand, nav, headerActions);
     const tabs = el('nav', { className: 'admin-tabs', ariaLabel: 'Data maintenance sections' });
-    tabs.append(tab('matches', 'MATCHES / 試合'));
-    tabs.append(tab('players', 'PLAYERS / 選手'));
-    tabs.append(tab('tournaments', 'TOURNAMENTS / 大会'));
-    if (currentRole === 'admin') tabs.append(tab('clubs', 'CLUBS / クラブ'));
-    tabs.append(tab('manage', 'MANAGE / 管理'));
+    if (currentRole === 'approver') tabs.append(tab('manage', 'REVIEW / 承認'));
+    else {
+      tabs.append(tab('overview', 'OVERVIEW / 概要'));
+      tabs.append(tab('matches', 'MATCHES / 試合'));
+      tabs.append(tab('players', 'PLAYERS / 選手'));
+      tabs.append(tab('tournaments', 'TOURNAMENTS / 大会'));
+      tabs.append(tab('clubs', 'CLUBS / クラブ'));
+      tabs.append(tab('manage', 'MANAGE / 管理'));
+    }
     app.append(header, tabs);
-    if (activeTab === 'matches') renderAllMatches(); else if (activeTab === 'players') renderPlayers(activePlayerSubTab); else if (activeTab === 'tournaments') renderTournaments(); else if (activeTab === 'clubs') renderEntity('clubs'); else if (activeTab === 'manage') renderManage(); else renderAllMatches();
+    if (activeTab === 'overview') renderOverview(); else if (activeTab === 'matches') renderAllMatches(); else if (activeTab === 'players') renderPlayers(activePlayerSubTab); else if (activeTab === 'tournaments') renderTournaments(); else if (activeTab === 'clubs') renderEntity('clubs'); else if (activeTab === 'manage') renderManage(); else renderOverview();
   }
   function button(label, onclick, className = '') { const node = el('button', { className: `admin-button ${className}`.trim(), type: 'button', textContent: label }); node.onclick = onclick; return node; }
   function tab(id, label) { const node = button(label, () => { activeTab = id; selectedId = ''; renderWorkspace(); }, `admin-tab${activeTab === id ? ' active' : ''}`); return node; }
   function roleLabel(role) { return ({ admin: '管理者', approver: '承認者' })[role] || role; }
+
+  function renderOverview() {
+    const activePlayers = players.filter(isActivePlayer);
+    const inactivePlayers = players.filter(player => !isActivePlayer(player));
+    const dates = [...new Set(trainingMatches.map(match => match.matchDate).filter(Boolean))].sort().reverse();
+    const latestDate = dates[0] || '';
+    const latestMatches = trainingMatches.filter(match => match.matchDate === latestDate);
+    const latestComplete = latestMatches.filter(matchIsComplete);
+    const shortCompleted = trainingMatches.filter(match => resultStatusId(match.resultStatus) === completedStatusId && !matchIsComplete(match));
+    const completeMarkedIncomplete = trainingMatches.filter(match => isIncompleteStatus(match.resultStatus) && matchIsComplete(match));
+    const missingCategory = activePlayers.filter(player => !player.schoolLevel);
+    const incompleteProfiles = activePlayers.filter(player => !profileIsComplete(player));
+    const missingGrade = activePlayers.filter(player => ['SL-001', 'SL-002', 'SL-003'].includes(player.schoolLevel) && !player.grade);
+    const recentAccepted = allChanges.filter(change => change.status === 'accepted').sort((a, b) => (b.reviewedAt || b.createdAt || '').localeCompare(a.reviewedAt || a.createdAt || '')).slice(0, 5);
+    const go = (target, setup) => { if (setup) setup(); activeTab = target; selectedId = ''; renderWorkspace(); };
+    const labels = language === 'en' ? {
+      kicker:'DATA MAINTENANCE', title:'Overview', subtitle:'What needs attention now', active:'Active players', inactive:'Inactive', matches:'Training matches', pending:'Pending approval', latest:'Latest session', complete:'completed', incomplete:'not complete', actions:'Quick actions', addMatch:'Add training match', addPlayer:'Add player', addTournament:'Add tournament', review:'Review pending changes', health:'Data health', rule:'Kept exactly as recorded and excluded from completed statistics until a player reaches three sets.', missingCategory:'Active players without category', incompleteProfiles:'Incomplete active profiles', missingGrade:'Student players without grade', statusMismatch:'Complete score marked incomplete', recent:'Recently accepted', none:'No accepted changes yet', view:'View records'
+    } : {
+      kicker:'データメンテナンス', title:'概要', subtitle:'いま確認が必要な項目', active:'アクティブ選手', inactive:'無効', matches:'練習試合', pending:'承認待ち', latest:'最新セッション', complete:'完了', incomplete:'未完了', actions:'クイック操作', addMatch:'練習試合を追加', addPlayer:'選手を追加', addTournament:'大会を追加', review:'承認待ちを確認', health:'データヘルス', rule:'記録はそのまま保持し、どちらかの選手が3セットに達するまでは完了統計から除外します。', missingCategory:'カテゴリ未設定のアクティブ選手', incompleteProfiles:'プロフィール未完成のアクティブ選手', missingGrade:'学年未設定の学生選手', statusMismatch:'完了スコアだが未完了ステータス', recent:'最近の承認', none:'承認履歴はまだありません', view:'記録を見る'
+    };
+    const section = el('section', { className: 'admin-overview' });
+    section.innerHTML = `<header class="admin-overview-hero"><div><p class="eyebrow">${labels.kicker}</p><h2>${labels.title}</h2><span>${labels.subtitle}</span></div><aside><b>${window.LKData.environment.toUpperCase()}</b><small>${new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'ja-JP')}</small></aside></header>
+      <div class="admin-overview-kpis"><article><small>${labels.active}</small><b>${activePlayers.length}</b><span>${inactivePlayers.length} ${labels.inactive}</span></article><article><small>${labels.matches}</small><b>${trainingMatches.length}</b><span>${dates.length} ${language === 'en' ? 'dates' : '試合日'}</span></article><article><small>${labels.pending}</small><b>${pendingChanges.length}</b><span>${pendingChanges.length ? (language === 'en' ? 'Review required' : '確認が必要') : (language === 'en' ? 'Queue clear' : '承認待ちなし')}</span></article><article><small>${labels.latest}</small><b>${latestDate || '—'}</b><span>${latestComplete.length} ${labels.complete} · ${latestMatches.length - latestComplete.length} ${labels.incomplete}</span></article></div>
+      <div class="admin-overview-grid"><section class="admin-overview-panel admin-health-panel"><header><p class="eyebrow">QUALITY</p><h3>${labels.health}</h3></header><div class="admin-health-list"></div></section><section class="admin-overview-panel"><header><p class="eyebrow">ACTIONS</p><h3>${labels.actions}</h3></header><div class="admin-quick-actions"></div><header class="admin-recent-head"><p class="eyebrow">HISTORY</p><h3>${labels.recent}</h3></header><div class="admin-recent-list">${recentAccepted.length ? recentAccepted.map(change => `<span><b>${escapeHtml(change.summary || change.targetId || change.entityType)}</b><small>${formatPendingDate(change.reviewedAt || change.createdAt)}</small></span>`).join('') : `<p>${labels.none}</p>`}</div></section></div>`;
+    const healthList = section.querySelector('.admin-health-list');
+    const healthItem = (count, title, detail, severity, action) => { const row = el('article', { className: `admin-health-item ${severity}` }); row.innerHTML = `<i>${count}</i><span><b>${title}</b><small>${detail}</small></span>`; if (action) row.append(button(labels.view, action, 'secondary')); healthList.append(row); };
+    healthItem(shortCompleted.length, language === 'en' ? 'Below 3 sets — not counted complete' : '3セット未満（完了統計の対象外）', labels.rule, 'info', () => go('matches', () => { activeMatchHealthFilter = 'short-completed'; }));
+    healthItem(completeMarkedIncomplete.length, labels.statusMismatch, language === 'en' ? 'Score and status disagree.' : 'スコアとステータスが一致していません。', completeMarkedIncomplete.length ? 'error' : 'ok', () => go('matches', () => { activeMatchHealthFilter = 'complete-marked-incomplete'; }));
+    healthItem(incompleteProfiles.length, labels.incompleteProfiles, language === 'en' ? `${missingCategory.length} also lack a category.` : `うち${missingCategory.length}名はカテゴリも未設定です。`, 'review', () => go('players', () => { activePlayerHealthFilter = 'incomplete'; }));
+    healthItem(missingGrade.length, labels.missingGrade, language === 'en' ? 'Grade-based views may be incomplete.' : '学年別表示が不完全になる可能性があります。', 'info', () => go('players', () => { activePlayerHealthFilter = 'missing-grade'; }));
+    const actions = section.querySelector('.admin-quick-actions');
+    actions.append(button(`＋ ${labels.addMatch}`, () => { activeTab = 'matches'; selectedId = ''; renderWorkspace(); requestAnimationFrame(() => showMatchEditor(null)); }, 'primary'), button(`＋ ${labels.addPlayer}`, () => { activeTab = 'players'; activePlayerSubTab = 'ourPlayers'; selectedId = ''; renderWorkspace(); requestAnimationFrame(() => showPlayerEditor(null)); }, 'primary'), button(`＋ ${labels.addTournament}`, () => { activeTab = 'tournaments'; selectedId = ''; renderWorkspace(); requestAnimationFrame(() => showEntityEditor('tournament', null)); }, 'secondary'), button(labels.review, () => go('manage'), pendingChanges.length ? 'danger' : 'secondary'));
+    app.append(section);
+  }
 
   let activeMatchSubTab = 'training';
 
@@ -288,6 +352,14 @@
       detailRow.append(text('span', '大会:', 'admin-filter-label'), tournFilter);
     }
     filters.append(detailRow);
+    if (isTraining && activeMatchHealthFilter) {
+      const healthBanner = el('div', { className: 'admin-active-health-filter' });
+      const label = activeMatchHealthFilter === 'short-completed'
+        ? (language === 'en' ? 'Showing completed-status records where neither player reached 3 sets' : 'どちらも3セット未満の完了ステータス記録を表示中')
+        : (language === 'en' ? 'Showing complete scores marked incomplete' : '完了スコアで未完了ステータスの記録を表示中');
+      healthBanner.append(text('span', label), button(language === 'en' ? 'Clear' : '解除', () => { activeMatchHealthFilter = ''; renderWorkspace(); }, 'secondary'));
+      filters.append(healthBanner);
+    }
     listPanel.append(filters);
     if (canEditMatches()) listPanel.append(button('+ ADD MATCH / 試合追加', () => isTraining ? showMatchEditor(null) : showTournamentMatchEditor(null), 'primary'));
     const list = el('div', { className: 'admin-player-list admin-match-list' }); listPanel.append(list);
@@ -308,6 +380,8 @@
         const results = trainingMatches.filter(match => {
           if (sf && resultStatusId(match.resultStatus) !== sf) return false;
           if (dateVal && match.matchDate !== dateVal) return false;
+          if (activeMatchHealthFilter === 'short-completed' && !(resultStatusId(match.resultStatus) === completedStatusId && !matchIsComplete(match))) return false;
+          if (activeMatchHealthFilter === 'complete-marked-incomplete' && !(isIncompleteStatus(match.resultStatus) && matchIsComplete(match))) return false;
           if (pq) {
             const hay = `${match.player1Name || ''} ${match.player2Name || ''} ${match.player1Id || ''} ${match.player2Id || ''}`.toLowerCase();
             if (!hay.includes(pq)) return false;
@@ -439,7 +513,7 @@
         submitChange('match', next.matchId, next, match ? 'update' : 'create').then(() => refreshWorkspace(next.matchId)).catch(error => { derived.textContent = `${error.message} / 保存できませんでした`; });
       };
     }
-    editor.append(form);
+    trackDirtyForm(form); editor.append(form);
     if (match) {
       const pending = findPendingChange('match', match.matchId);
       if (pending) editor.append(renderPendingInfo(pending));
@@ -495,7 +569,7 @@
         submitChange('tournamentMatch', next.tournamentMatchId, next, match ? 'update' : 'create').then(() => refreshWorkspace(next.tournamentMatchId)).catch(error => { derived.textContent = `${error.message} / 保存できませんでした`; });
       };
     }
-    editor.append(form);
+    trackDirtyForm(form); editor.append(form);
     if (match) {
       const pending = findPendingChange('tournamentMatch', match.tournamentMatchId);
       if (pending) editor.append(renderPendingInfo(pending));
@@ -608,7 +682,7 @@
         submitChange('tournamentProgress', next.tournamentProgressId, next, record ? 'update' : 'create').then(() => refreshWorkspace(next.tournamentProgressId)).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
       };
     }
-    editor.append(form);
+    trackDirtyForm(form); editor.append(form);
     if (record) {
       const pending = findPendingChange('tournamentProgress', record.tournamentProgressId);
       if (pending) editor.append(renderPendingInfo(pending));
@@ -776,13 +850,19 @@
     const searchRow = el('div', { className: 'admin-match-filter-row' });
     searchRow.append(text('span', '🔍', 'admin-filter-icon'), search);
     filters.append(searchRow);
-    // Row 2: Category filter
+    // Row 2: Category, status and profile completeness filters
     const catFilter = el('select', { ariaLabel: 'Filter by category' });
     catFilter.append(el('option', { value: '', textContent: language === 'en' ? 'ALL CATEGORIES' : 'すべてのカテゴリ' }));
     catFilter.append(el('option', { value: 'unassigned', textContent: language === 'en' ? 'Unassigned' : '未設定' }));
     (S.schoolLevels || []).forEach(sl => { catFilter.append(el('option', { value: sl.id, textContent: language === 'en' ? sl.nameEn : sl.nameJa })); });
     const detailRow = el('div', { className: 'admin-match-filter-row' });
     detailRow.append(text('span', 'CATEGORY:', 'admin-filter-label'), catFilter);
+    const statusFilter = el('select', { ariaLabel: 'Filter by player status' });
+    statusFilter.append(el('option', { value: '', textContent: language === 'en' ? 'ALL STATUS' : 'すべての状態' }), el('option', { value: 'active', textContent: language === 'en' ? 'ACTIVE' : '有効' }), el('option', { value: 'inactive', textContent: language === 'en' ? 'INACTIVE' : '無効' }));
+    const completenessFilter = el('select', { ariaLabel: 'Filter by profile completeness' });
+    completenessFilter.append(el('option', { value: '', textContent: language === 'en' ? 'ALL PROFILES' : 'すべてのプロフィール' }), el('option', { value: 'complete', textContent: language === 'en' ? 'COMPLETE PROFILES' : '完成プロフィール' }), el('option', { value: 'incomplete', textContent: language === 'en' ? 'INCOMPLETE PROFILES' : '未完成プロフィール' }), el('option', { value: 'missing-grade', textContent: language === 'en' ? 'MISSING GRADE' : '学年未設定' }));
+    if (!isExtTab) detailRow.append(text('span', 'STATUS:', 'admin-filter-label'), statusFilter, text('span', 'PROFILE:', 'admin-filter-label'), completenessFilter);
+    if (!isExtTab && activePlayerHealthFilter) completenessFilter.value = activePlayerHealthFilter;
     filters.append(detailRow);
     listPanel.append(listHeader, subTabs, filters);
     const addBtn = isExtTab
@@ -800,7 +880,7 @@
     const stats = {};
     allPlayers.forEach(p => { const id = p.playerId || p.externalOpponentId; stats[id] = { played: 0, wins: 0, losses: 0 }; });
     (trainingMatches || []).forEach(m => {
-      if (isIncompleteStatus(m.resultStatus)) return;
+      if (!matchIsComplete(m)) return;
       const s1 = stats[m.player1Id]; const s2 = stats[m.player2Id];
       if (s1) s1.played++;
       if (s2) s2.played++;
@@ -810,8 +890,31 @@
         if (stats[loserId]) stats[loserId].losses++;
       }
     });
-    const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); const catVal = catFilter.value; allPlayers.filter(player => { if (catVal && catVal === 'unassigned' && player.schoolLevel) return false; if (catVal && catVal !== 'unassigned' && player.schoolLevel !== catVal) return false; return `${player.playerId || player.externalOpponentId || ''} ${player.displayName} ${player.englishName || ''} ${player.notebookName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query); }).sort((a, b) => { const idA = a.playerId || a.externalOpponentId; const idB = b.playerId || b.externalOpponentId; return (stats[idB]?.played || 0) - (stats[idA]?.played || 0) || idA.localeCompare(idB); }).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${(player.playerId || player.externalOpponentId) === selectedId ? ' selected' : ''}` }); const names = el('span'); const id = player.playerId || player.externalOpponentId; const gradeTag = player.grade ? ` · ${lookupName('grades', player.grade)}` : ''; const s = stats[id] || { played: 0, wins: 0, losses: 0 }; const statsTag = s.played > 0 ? ` · ${s.played}G ${s.wins}W ${s.losses}L` : ''; names.append(text('b', player.displayName || 'No display name'), text('small', `${id} · ${player.englishName || '-'}${player.notebookName ? ' · 📝' + player.notebookName : ''}${gradeTag}${statsTag}`)); row.append(names, text('i', playerStatusLabel(player.status) || 'Active')); row.onclick = () => { selectedId = id; updateList(); showPlayerEditor(player); }; list.append(row); }); };
-    search.oninput = updateList; catFilter.onchange = updateList; window.adminPlayerListUpdate = updateList; updateList(); const selectedPlayer = allPlayers.find(player => (player.playerId || player.externalOpponentId) === selectedId) || allPlayers[0] || null; showPlayerEditor(selectedPlayer);
+    let visiblePlayers = [];
+    const updateList = () => {
+      empty(list);
+      const query = search.value.trim().toLowerCase(), catVal = catFilter.value, statusVal = statusFilter.value, completenessVal = completenessFilter.value;
+      visiblePlayers = allPlayers.filter(player => {
+        if (catVal === 'unassigned' && player.schoolLevel) return false;
+        if (catVal && catVal !== 'unassigned' && player.schoolLevel !== catVal) return false;
+        if (!isExtTab && statusVal === 'active' && !isActivePlayer(player)) return false;
+        if (!isExtTab && statusVal === 'inactive' && isActivePlayer(player)) return false;
+        if (!isExtTab && completenessVal === 'complete' && !profileIsComplete(player)) return false;
+        if (!isExtTab && completenessVal === 'incomplete' && profileIsComplete(player)) return false;
+        if (!isExtTab && completenessVal === 'missing-grade' && !(['SL-001', 'SL-002', 'SL-003'].includes(player.schoolLevel) && !player.grade)) return false;
+        return `${player.playerId || player.externalOpponentId || ''} ${player.displayName} ${player.englishName || ''} ${player.notebookName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query);
+      }).sort((a, b) => { const idA = a.playerId || a.externalOpponentId, idB = b.playerId || b.externalOpponentId; return (stats[idB]?.played || 0) - (stats[idA]?.played || 0) || idA.localeCompare(idB); });
+      visiblePlayers.forEach(player => {
+        const row = el('button', { type: 'button', className: `admin-player-row${(player.playerId || player.externalOpponentId) === selectedId ? ' selected' : ''}` });
+        const names = el('span'), id = player.playerId || player.externalOpponentId, gradeTag = player.grade ? ` · ${lookupName('grades', player.grade)}` : '', s = stats[id] || { played: 0, wins: 0, losses: 0 }, statsTag = s.played > 0 ? ` · ${s.played}G ${s.wins}W ${s.losses}L` : '', completenessTag = !isExtTab ? ` · ${profileCompleteness(player)}%` : '';
+        names.append(text('b', player.displayName || 'No display name'), text('small', `${id} · ${player.englishName || '-'}${player.notebookName ? ' · 📝' + player.notebookName : ''}${gradeTag}${statsTag}${completenessTag}`));
+        row.append(names, text('i', playerStatusLabel(player.status) || 'Active'));
+        row.onclick = () => { selectedId = id; updateList(); showPlayerEditor(player); };
+        list.append(row);
+      });
+      if (!visiblePlayers.length) list.append(text('p', language === 'en' ? 'No matching players.' : '該当する選手がいません。', 'admin-empty'));
+    };
+    search.oninput = updateList; catFilter.onchange = updateList; statusFilter.onchange = () => { activePlayerHealthFilter = ''; updateList(); }; completenessFilter.onchange = () => { activePlayerHealthFilter = ''; updateList(); }; window.adminPlayerListUpdate = updateList; updateList(); const selectedPlayer = visiblePlayers.find(player => (player.playerId || player.externalOpponentId) === selectedId) || visiblePlayers[0] || null; showPlayerEditor(selectedPlayer);
     if (launchEditPlayer && selectedPlayer && (selectedPlayer.playerId || selectedPlayer.externalOpponentId) === launchPlayerId) requestAnimationFrame(() => document.querySelector('.admin-editor-panel')?.scrollIntoView({ block: 'start', behavior: 'instant' }));
   }
   function showPlayerEditor(player) {
@@ -928,7 +1031,7 @@
       }
       submitChange(submitEntityType, submitId, next, player ? 'update' : 'create').then(() => refreshWorkspace(submitId)).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
     };
-    editor.append(form);
+    trackDirtyForm(form); editor.append(form);
     if (player) {
       const pending = findPendingChange(entityType, recordId);
       if (pending) editor.append(renderPendingInfo(pending));
@@ -1080,7 +1183,7 @@
       Object.keys(next).forEach(key => { if (next[key] === '' && fields.find(f => f[0] === key && f[2] === 'number')) next[key] = 0; });
       submitChange(entityType, next[idField], next, record ? 'update' : 'create').then(() => refreshWorkspace(next[idField])).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
     };
-    editor.append(form);
+    trackDirtyForm(form); editor.append(form);
     if (record) {
       const pending = findPendingChange(entityType, record[idField]);
       if (pending) editor.append(renderPendingInfo(pending));
