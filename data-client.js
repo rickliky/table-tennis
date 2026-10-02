@@ -6,6 +6,7 @@
   const endpoint = `${configuredBase.replace(/\/$/, '')}/api/public-data?environment=${environment}`;
 
   async function loadPublicData() {
+    if (window.LK_ACCESS_READY) await window.LK_ACCESS_READY;
     const response = await fetch(endpoint, { cache: 'no-store' });
     if (!response.ok) throw new Error(`Public API returned ${response.status}`);
     const result = await response.json();
