@@ -12,7 +12,7 @@
 At the end of every conversation (or at natural stopping points), the agent MUST:
 1. Update the "Session Context" section of this file with key decisions, new rules, and current status
 2. Commit this file so the other PC can pick up the context
-3. Remind the user to `git push` if SSH is not configured
+3. Commit the updated `AGENTS.md` and `git push` it (SSH is configured on PC 1)
 
 ---
 
@@ -156,8 +156,8 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - `git status`, `git diff`, `git log`, `git branch`, `git show`, `git pull`
 
 ### Requires confirmation
-- `git commit` — ask before committing
-- `git push` — ask before pushing
+- Nothing routine — SSH is configured and the user has authorized the agent to commit and push without asking (2026-10-02)
+- `git rebase`, `git revert`, force-writing history, or committing files not touched as part of the task — ask first
 
 ### Never auto-run
 - `git push --force`
@@ -197,7 +197,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Local `backup/` files are **offline-only reference** — never used at runtime, never used as fallback
 - Always push data changes to Upstash via Worker API (`/api/change`) after modifying data
 - Always commit and push code changes to git so the other PC can pick them up
-- When the agent modifies data, it should push to Upstash AND commit to git, then tell the user to push
+- When the agent modifies data, it should push to Upstash AND commit + push to git (no manual user push needed)
 
 ### Rubber System (Implemented)
 - 203 unique rubbers with IDs (`RB-0001` etc.), bilingual canonical names, type, brand
@@ -239,10 +239,21 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
   2. OR set `GOOGLE_API_KEY` environment variable for Google Gemini free tier
   3. OpenCode config (`opencode.json`) is in the repo — will be picked up automatically
 
-### SSH Not Configured
-- `git push` hangs on credential prompt — user must set up SSH keys
-- Run: `git remote set-url origin git@github.com:rickliky/table-tennis.git`
-- Until then, user must push manually after agent commits
+### SSH Configured on PC 1 (2026-10-02)
+- SSH key `~/.ssh/id_ed25519` (ed25519, no passphrase) registered with GitHub as `rick-pc1-2026-10-02` (key ID 165123503)
+- Remote is `git@github.com:rickliky/table-tennis.git` (SSH) — `git pull` / `git push` work non-interactively
+- `~/.ssh/config` points github.com at the key with `UserKnownHostsFile ~/.ssh/known_hosts_github` (the old `known_hosts` file is ACL-locked and unusable — do not delete it)
+- GitHub CLI (`gh`) is installed and authenticated as `rickliky` (scopes: repo, admin:public_key)
+- **Agent MAY commit and push directly without asking** (user instruction, 2026-10-02) — still pull before working, and never force-push or use destructive git operations
+- PC 2 still needs its own key: generate one, then add it via `gh api user/keys` after `gh auth login`
+
+### SSH Auto-Commit/Push Enabled (2026-10-02)
+- PC 1 now has full SSH access: `~/.ssh/id_ed25519` (ed25519, no passphrase) registered with GitHub as `rick-pc1-2026-10-02` (key ID 165123503)
+- Remote switched from HTTPS to `git@github.com:rickliky/table-tennis.git` — `git pull`/`git push` run non-interactively with no credential prompt
+- The legacy `~/.ssh/known_hosts` file is ACL-locked (cannot be read, rewritten, or deleted) — `~/.ssh/config` bypasses it with `UserKnownHostsFile ~/.ssh/known_hosts_github`. Leave that locked file alone.
+- GitHub CLI installed (`winget install GitHub.cli`, v2.102.0) and authenticated as `rickliky` with `repo` + `admin:public_key`; used to register the SSH key via `gh api user/keys`
+- **New rule**: the agent commits and pushes directly on its own — no more asking the user to push. `git pull` first, and destructive git commands remain forbidden.
+- PC 2 still needs setup: `ssh-keygen -t ed25519`, then `gh auth login` + `gh api user/keys` to register its key, then `git remote set-url origin git@github.com:rickliky/table-tennis.git`
 
 ### Recent Changes (This Session)
 - **Admin combo boxes now use IDs** with bilingual labels
