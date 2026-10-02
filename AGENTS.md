@@ -404,6 +404,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Training Match Import (2026-10-01)
 - The 60 2026-10-01 training matches (`LKM-20261001-001`–`060`) were accepted in UAT and promoted through the safe PROD overlay. `scripts/import-training-matches-2026-10-01.js` / `scripts/training-matches-2026-10-01.txt` are repeat-safe.
+- A subsequent approved UAT correction updated `LKM-20261001-007`, `LKM-20261001-041`, and `LKM-20261001-058` in PROD on 2026-10-02. The corrected opponent is 長島(向); UAT and PROD were verified identical after the safe overlay.
 - 諏訪光 is confirmed as `LK-0090` (current display name 諏訪免). The duplicate `土屋 3-2 石塚` source row is intentionally imported once. Three short scores (`坪内父 2-0 金子`, `向井 1-1 吉川`, `岡崎 2-0 下田`) are `RS-002` Incomplete; the remaining 57 are `RS-001` Completed.
 
 ### UAT/PROD Data Alignment (2026-09-27)
@@ -441,3 +442,15 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Player-to-Admin Shortcuts (2026-10-02)
 - The player-profile Edit Player Profile shortcut uses `editPlayer=<LK-ID>`. Admin recognizes this explicit launch parameter (while retaining legacy `playerId` links), selects the exact player editor, and scrolls it into view on narrow layouts.
+
+### OpenCode 2 CLI + VS Code Setup (2026-10-02, PC 1)
+- Installed `@opencode/cli` **v2.0.21** globally with npm → `C:\Users\rick\AppData\Roaming\npm\opencode.ps1`.
+- **npm 11 blocks postinstall scripts**, so a plain `npm install -g @opencode/cli` does NOT select the native binary. Use:
+  `npm install -g --allow-scripts=@opencode/cli @opencode/cli`
+- Windows package managers (winget/scoop/choco) are **not supported** by OpenCode — use npm, the curl installer, or the standalone binary zip.
+- Visual Studio Code **1.140.0** (User setup) installed via `winget install --id Microsoft.VisualStudioCode -e --source winget`.
+- Extension `sst-dev.opencode-v2` **v0.1.1** ("OpenCode Beta", the V2 extension) installed via `code --install-extension sst-dev.opencode-v2`.
+- No `opencode auth login` needed — credentials (Google Gemini API key, OpenAI OAuth) are already in the shared SQLite DB used by the Desktop app (`opencode auth list` confirms).
+- Usage in VS Code: `Ctrl+Esc` opens the OpenCode panel, `Ctrl+Shift+Esc` starts a new session, `Alt+Ctrl+K` inserts file references. Running `opencode` in the integrated terminal opens the full TUI.
+- Other editors (Zed/JetBrains/Neovim) connect through ACP: configure them to run `opencode acp`. Docs: https://opencode.ai/v2/docs/cli/acp
+- V2 docs are the source of truth: https://opencode.ai/v2/docs/ (`/docs/` paths without `/v2/` are V1).
