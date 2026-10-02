@@ -451,6 +451,20 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Visual Studio Code **1.140.0** (User setup) installed via `winget install --id Microsoft.VisualStudioCode -e --source winget`.
 - Extension `sst-dev.opencode-v2` **v0.1.1** ("OpenCode Beta", the V2 extension) installed via `code --install-extension sst-dev.opencode-v2`.
 - No `opencode auth login` needed — credentials (Google Gemini API key, OpenAI OAuth) are already in the shared SQLite DB used by the Desktop app (`opencode auth list` confirms).
-- Usage in VS Code: `Ctrl+Esc` opens the OpenCode panel, `Ctrl+Shift+Esc` starts a new session, `Alt+Ctrl+K` inserts file references. Running `opencode` in the integrated terminal opens the full TUI.
+- **The VS Code extension `sst-dev.opencode-v2` is NOT usable with CLI 2.0.21** — do not debug it again. Verified four faults: (1) its sidebar view never registers a provider (`registerWebviewViewProvider` = 0 hits → "There is no data provider registered"); (2) `spawn("opencode", ...)` without `shell:true` fails with ENOENT on Windows because npm only creates `.cmd`/`.ps1` shims; (3) it waits for a stdout line starting with `opencode server listening` while v2 prints `server listening on ...`; (4) it calls the **V1** server API (`/config`, `/session`, `/agent`, `/project/current`) while V2 serves `/api/*` behind `OPENCODE_PASSWORD` auth. Two local patches were applied to `dist\extension.js` (backup `dist\extension.js.bak`) for faults 2–3, but fault 4 is architectural — extension updates overwrite patches anyway.
+- **Working path in VS Code: run `opencode` in the integrated terminal** (full TUI).
 - Other editors (Zed/JetBrains/Neovim) connect through ACP: configure them to run `opencode acp`. Docs: https://opencode.ai/v2/docs/cli/acp
 - V2 docs are the source of truth: https://opencode.ai/v2/docs/ (`/docs/` paths without `/v2/` are V1).
+
+### Agents Shared Between Desktop GUI and CLI (2026-10-02)
+- **Agents are config files, not GUI state.** The Desktop GUI and the CLI/TUI read identical files, so GUI agents need **no setup** to be reused in VS Code — just launch `opencode` from the project root.
+- Verified by running `opencode serve` with `cwd` = project and querying `/api/agent`: **all 12 agents load**.
+  - From `opencode.json` legacy `agent` map: `gemini-flash`, `gemini-lite`, plus `build`/`plan` overrides
+  - From `.opencode/agents/*.md`: `debugger`, `pro-specialist`, `reviewer`
+  - Builtins: `build`, `plan`, `general`, `explore` (+ hidden `compaction`, `title`, `summary`)
+  - From `.opencode/commands/*.md`: `draft-plan`, `final-plan`, `free-build`
+- **Folder matters.** Launching from `C:\Users\rick` returns only the 7 builtins and drops every custom agent — discovery walks from cwd up to the project root.
+- Global `~/.config/opencode/opencode.jsonc` currently holds only a plugin; `~/.config/opencode/agents/` does not exist. Create that directory to make an agent available in every project.
+- V1 syntax still works: `agent`/`provider`/`permission` (singular) are normalized in memory, and V1 agent frontmatter `permission:` auto-translates to `permissions`. No rewrite required.
+- **`compaction.tail_turns` is ignored in V2** (accepted-but-unsupported field) — the project's `opencode.json` sets `tail_turns: 15`; use `compaction.keep.tokens` if a token budget is wanted.
+- Verification recipe: `opencode serve --port <N>` with cwd = project, then `opencode api get /api/agent --server <url>` with env `OPENCODE_PASSWORD=<password printed by serve>`. Auth is `OPENCODE_PASSWORD`, **not** `Authorization: Bearer`. Agents load asynchronously — poll for a few seconds before concluding they are missing.
