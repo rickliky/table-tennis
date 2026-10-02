@@ -17,7 +17,7 @@
           "UPSTASH_REDIS_REST_URL": "{env:UPSTASH_REDIS_REST_URL}",
           "UPSTASH_REDIS_REST_TOKEN": "{env:UPSTASH_REDIS_REST_TOKEN}"
         },
-        "disabled": true
+        "timeout": { "startup": 90000 }
       }
     }
   },
