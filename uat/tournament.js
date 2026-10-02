@@ -35,6 +35,8 @@
     }
   };
   const t = key => words[language][key];
+  const profileImage = playerId => window.lkProfileImage ? window.lkProfileImage(playerId) : 'img/NoProfilePic.jpg';
+  const participantLabel = count => `${t('participant')}${count !== 1 && language === 'en' ? 's' : ''}`;
 
   const lookupValue = (table, value) => {
     if (!value) return value;
@@ -188,7 +190,7 @@
               <h3 class="tc-title">${escapeHtml(tournament.name)}</h3>
               <div class="tc-kicker">${escapeHtml(tournament.category || t('competitionHub'))}</div><div class="tc-meta">
                 <span class="tc-meta-item">📍 ${escapeHtml(tournament.location || '-')}</span>
-                <span class="tc-meta-item">👥 ${totalParticipants} ${t('participant')}${totalParticipants !== 1 && language === 'en' ? 's' : ''}</span>
+                <span class="tc-meta-item">👥 ${totalParticipants} ${participantLabel(totalParticipants)}</span>
                 ${divisions.length ? `<span class="tc-meta-item">📋 ${divisions.map(d => escapeHtml(d)).join(', ')}</span>` : ''}
               </div>
             </div>
@@ -207,7 +209,7 @@
                   const player = pMap.get(p.playerId);
                   const name = fullName(player) || p.playerName;
                   return `<a href="player.html?id=${p.playerId}" class="tc-avatar" title="${escapeHtml(name)}">
-                    <img src="img/${p.playerId}.jpg" alt="${escapeHtml(name)}" onerror="this.parentElement.innerHTML='<span>${escapeHtml(name).charAt(0)}</span>'" />
+                    <img src="${profileImage(p.playerId)}" alt="${escapeHtml(name)}" />
                   </a>`;
                 }).join('')}
               </div>
@@ -265,7 +267,7 @@
         </div>
       </section>
 
-       ${latest ? `<section class="tp-feature" data-id="${latest.tournamentId}"><div class="tp-feature-label">${t('latestEvent')}</div><div><h2>${escapeHtml(latest.name)}</h2><p>${formatDate(latest.date)} · ${escapeHtml(latest.location || '-')}</p></div><div class="tp-feature-stats"><span><b>${latestProgress.length}</b>${t('participant')}</span><span><b>${latestProgress.filter(item => item.playerId.startsWith('LK-')).length}</b>${t('lkPlayers')}</span></div><button class="tp-feature-btn" data-id="${latest.tournamentId}">${t('explore')} →</button></section>` : ''}
+       ${latest ? `<section class="tp-feature" data-id="${latest.tournamentId}"><div class="tp-feature-label">${t('latestEvent')}</div><div><h2>${escapeHtml(latest.name)}</h2><p>${formatDate(latest.date)} · ${escapeHtml(latest.location || '-')}</p></div><div class="tp-feature-stats"><span><b>${latestProgress.length}</b>${participantLabel(latestProgress.length)}</span><span><b>${latestProgress.filter(item => item.playerId.startsWith('LK-')).length}</b>${t('lkPlayers')}</span></div><button class="tp-feature-btn" data-id="${latest.tournamentId}">${t('explore')} →</button></section>` : ''}
        ${calendarHtml ? `
         <section class="tp-calendar-section">
           <h2 class="tp-section-title">${t('calendarTitle')}</h2>
@@ -342,10 +344,11 @@
       }).join('');
 
       return `
-        <div class="dv-section" id="division-${divisions.indexOf(div)}">
-          <div class="dv-header">
-            <div><p>${t('field')}</p><h3 class="dv-title">${escapeHtml(div)}</h3></div><span class="dv-count">${divPlayers.length} ${t('participant')}${divPlayers.length !== 1 && language === 'en' ? 's' : ''}<b>${divPlayers.filter(item => item.qualified).length} ${t('qualifiers')}</b></span>
-          </div>
+        <details class="dv-section" id="division-${divisions.indexOf(div)}">
+          <summary class="dv-header">
+            <span><small>${t('field')}</small><strong class="dv-title">${escapeHtml(div)}</strong></span><span class="dv-count">${divPlayers.length} ${participantLabel(divPlayers.length)}<b>${divPlayers.filter(item => item.qualified).length} ${t('qualifiers')}</b></span>
+          </summary>
+          <div class="dv-section-body">
           <div class="dv-table-wrap">
             <table class="dv-table">
               <thead>
@@ -361,7 +364,8 @@
             </table>
           </div>
           ${preparationBrief(divPlayers, div, pMap, eMap)}
-        </div>`;
+          </div>
+        </details>`;
     }).join('');
 
     // LK Player highlight cards
@@ -383,7 +387,7 @@
             const matchSummary = playerTournamentMatches.length ? `${t('tournamentRecord')} ${matchRecordText(tournamentWins, tournamentLosses, playerTournamentMatches.length)} · ${scoreSummary}` : '';
             return `
               <a href="player.html?id=${p.playerId}" class="detail-lk-card">
-                <img src="img/${p.playerId}.jpg" alt="${escapeHtml(name)}" onerror="this.style.display='none'" />
+                <img src="${profileImage(p.playerId)}" alt="${escapeHtml(name)}" />
                 <div class="detail-lk-info">
                   <b>${escapeHtml(name)}</b>
                    <small>${escapeHtml(p.division)}${club ? ` · ${escapeHtml(club)}` : ''}</small>
@@ -424,12 +428,22 @@
         ${lkHighlight}
         ${tournamentResultsHtml}
          ${notesHtml}
-         <div class="detail-divisions">
+          ${tProgress.length > 20 ? `<label class="tournament-field-filter">${language === 'en' ? 'Search tournament field' : '大会参加者を検索'}<input id="tournament-field-search" type="search" placeholder="${language === 'en' ? 'Player, club, grade or result' : '選手名・クラブ・学年・結果'}" /></label>` : ''}
+          <div class="detail-divisions">
            ${divisionSections}
          </div>
        </section>`;
 
     document.getElementById('back-to-list')?.addEventListener('click', () => render());
+    document.getElementById('tournament-field-search')?.addEventListener('input', event => {
+      const query = event.target.value.trim().toLowerCase();
+      app.querySelectorAll('.dv-section').forEach(section => {
+        let matches = 0;
+        section.querySelectorAll('tbody tr').forEach(row => { const show = !query || row.textContent.toLowerCase().includes(query); row.hidden = !show; if (show) matches++; });
+        section.hidden = Boolean(query) && !matches;
+        if (query && matches) section.open = true;
+      });
+    });
   }
 
   // ─── Helpers ───

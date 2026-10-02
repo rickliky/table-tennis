@@ -175,7 +175,7 @@
   }
 
   function showApproverLogin() {
-    const loginOverlay = el('div', { className: 'admin-login-overlay' });
+    const loginOverlay = el('div', { className: 'admin-login-overlay', role: 'dialog', ariaModal: 'true', ariaLabel: 'Approver sign-in' });
     const login = el('section', { className: 'admin-login admin-panel' });
     login.append(text('p', 'APPROVER SIGN-IN / 承認者ログイン', 'eyebrow'), text('h2', '承認者アクセス / Approver Access'), text('p', '承認待ちの変更を確認・承認できます。管理者権限はありません。\nYou can review and approve pending changes. No admin privileges.', 'admin-login-desc'));
     const form = el('form', { className: 'admin-login-form' });
@@ -186,14 +186,18 @@
     actions.append(submit, cancelBtn);
     const status = el('p', { className: 'admin-status', role: 'status' });
     form.append(password, actions); login.append(form, status); loginOverlay.append(login); app.append(loginOverlay);
-    loginOverlay.addEventListener('click', e => { if (e.target === loginOverlay) loginOverlay.remove(); });
-    cancelBtn.onclick = () => loginOverlay.remove();
+    document.body.classList.add('modal-open');
+    const closeLogin = () => { loginOverlay.remove(); document.body.classList.remove('modal-open'); document.removeEventListener('keydown', onKeydown); };
+    const onKeydown = event => { if (event.key === 'Escape') closeLogin(); };
+    document.addEventListener('keydown', onKeydown);
+    loginOverlay.addEventListener('click', e => { if (e.target === loginOverlay) closeLogin(); });
+    cancelBtn.onclick = closeLogin;
     password.focus();
     form.addEventListener('submit', async event => {
       event.preventDefault(); status.textContent = 'Verifying... / 確認中...';
       try {
         const result = await window.LKData.request('/api/login', { method: 'POST', body: JSON.stringify({ role: 'approver', password: password.value }) });
-        localStorage.setItem('lk-admin-session', result.token); currentRole = result.role; loginOverlay.remove(); renderWorkspace();
+        localStorage.setItem('lk-admin-session', result.token); currentRole = result.role; closeLogin(); renderWorkspace();
       } catch { status.textContent = 'Sign-in failed. / パスワードを確認してください。'; }
     });
   }
@@ -232,7 +236,7 @@
     } else {
       headerActions.append(button('APPROVER LOGIN / 承認者ログイン', () => showApproverLogin(), 'language-toggle'));
     }
-    header.append(brand, nav, headerActions);
+    header.append(text('h1', language === 'en' ? 'Data Maintenance' : 'データメンテナンス', 'visually-hidden'), brand, nav, headerActions);
     const tabs = el('nav', { className: 'admin-tabs', ariaLabel: 'Data maintenance sections' });
     tabs.append(tab('matches', 'MATCHES / 試合'));
     tabs.append(tab('players', 'PLAYERS / 選手'));
@@ -275,15 +279,13 @@
     const allDates = [...new Set((isTraining ? trainingMatches : (entityData.tournamentMatches || [])).map(m => m.matchDate).filter(Boolean))].sort().reverse();
     dateSelect.append(el('option', { value: '', textContent: language === 'en' ? 'ALL DATES' : 'すべての日付' }));
     allDates.forEach(d => { dateSelect.append(el('option', { value: d, textContent: d })); });
-    const statusFilter = el('select');
+    const statusFilter = el('select', { ariaLabel: 'Filter by match status' });
     ['', completedStatusId, incompleteStatusId].forEach(s => { statusFilter.append(el('option', { value: s, textContent: s ? statusLabel(s) : (language === 'en' ? 'ALL STATUS' : 'すべてのステータス') })); });
     detailRow.append(text('span', 'DATE:', 'admin-filter-label'), dateSelect, text('span', 'STATUS:', 'admin-filter-label'), statusFilter);
     if (!isTraining) {
       const tournFilter = tournamentSelect('tournFilter', '');
       tournFilter.querySelector('input').placeholder = '大会 / Tournament...';
       detailRow.append(text('span', '大会:', 'admin-filter-label'), tournFilter);
-      // Wire up tournament filter change
-      tournFilter.onchange = updateList;
     }
     filters.append(detailRow);
     listPanel.append(filters);
@@ -292,6 +294,12 @@
     const editor = el('section', { className: 'admin-panel admin-editor-panel' }); workspace.append(listPanel, editor); app.append(workspace);
     const statusColor = s => isIncompleteStatus(s) || s === 'Void' ? 'status-incomplete' : 'status-complete';
     const tournName = tid => { const t = tourns.find(x => x.tournamentId === tid); return t ? t.name : tid; };
+    let visibleLimit = 100;
+    const appendMore = total => {
+      if (total <= visibleLimit) return;
+      const more = button(language === 'en' ? `Show next ${Math.min(100, total - visibleLimit)} of ${total}` : `${total}件中、次の${Math.min(100, total - visibleLimit)}件を表示`, () => { visibleLimit += 100; updateList(); }, 'progressive-load admin-load-more');
+      list.append(more);
+    };
     const updateList = () => {
       empty(list);
       const dateVal = dateSelect.value; const sf = statusFilter.value;
@@ -307,7 +315,7 @@
           return true;
         });
         if (!results.length) { list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty')); return; }
-        const groups = {}; results.forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
+        const groups = {}; results.slice(0, visibleLimit).forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
         Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(date => {
           const dateHeader = el('div', { className: 'admin-match-date-header' });
           dateHeader.append(text('span', date === 'No date' ? 'No date / 日付なし' : date, 'admin-match-date'));
@@ -325,6 +333,7 @@
             list.append(row);
           });
         });
+        appendMore(results.length);
       } else {
         const tournFilterEl = detailRow.querySelector('.player-combobox');
         const tq = tournFilterEl ? tournFilterEl.querySelector('input')?.dataset?.value || '' : '';
@@ -339,7 +348,7 @@
           return true;
         });
         if (!results.length) { list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty')); return; }
-        const groups = {}; results.forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
+        const groups = {}; results.slice(0, visibleLimit).forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
         Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(date => {
           const dateHeader = el('div', { className: 'admin-match-date-header' });
           dateHeader.append(text('span', date === 'No date' ? 'No date / 日付なし' : date, 'admin-match-date'));
@@ -357,12 +366,14 @@
             list.append(row);
           });
         });
+        appendMore(results.length);
       }
     };
-    dateSelect.onchange = updateList; statusFilter.onchange = updateList;
-    playerSearch.oninput = updateList;
+    const resetAndUpdate = () => { visibleLimit = 100; updateList(); };
+    dateSelect.onchange = resetAndUpdate; statusFilter.onchange = resetAndUpdate;
+    playerSearch.oninput = resetAndUpdate;
     const tournFilterEl = detailRow.querySelector('.player-combobox');
-    if (tournFilterEl) { tournFilterEl.addEventListener('change', updateList); }
+    if (tournFilterEl) { tournFilterEl.addEventListener('change', resetAndUpdate); }
     updateList();
     if (isTraining) { showMatchEditor(launchNewMatch ? null : trainingMatches.find(match => match.matchId === selectedId) || trainingMatches[0] || null); }
     else { const tm = entityData.tournamentMatches || []; showTournamentMatchEditor(tm.find(m => m.tournamentMatchId === selectedId) || tm[0] || null); }
