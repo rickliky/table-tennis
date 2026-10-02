@@ -215,10 +215,11 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Follow-up UAT fix `3967edc` removed a legacy CSS rule that hid the new Opponents view. The tab now displays monthly/yearly most-played, most-beaten, and most-lost-to lists with W/L history dots and opponent profile links; live mobile verification found 2 period panels, 30 links, zero overflow, and zero console errors.
 - Live UAT Playwright verification passed at 320, 390, 768, 1024, and 1440 px with zero horizontal overflow or console errors. UAT shows 86 active/1 inactive players, 1,793 matches over 39 dates, and 57 completed + 3 incomplete matches on 2026-10-01.
 
-### Opponent Improvement Trends (2026-10-02) — PROPOSED
-- Recommended primary view: select one opponent, then show a monthly timeline combining match volume, W-L/win rate, average set differential, and close-match conversion. Set differential should be the main improvement signal because progress from 0-3 to 2-3 appears before win rate changes.
-- Add a recent-versus-previous comparison (last 5 completed matches against that opponent versus the prior 5), milestones such as first win and first decisive win, and an all-opponents month matrix for scanning recurring matchups.
-- Use only matches complete under the three-set rule. Always display sample size and confidence (`1-2` low, `3-5` medium, `6+` stronger); do not label improvement or decline when the sample is too small.
+### Opponent Improvement Trends (2026-10-02) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commit `4e2ec4c` replaces the standalone monthly/yearly lists with a selected-opponent improvement dashboard. It combines monthly match volume, win rate, and average set differential; set differential is the primary early-progress signal because movement from 0-3 to 2-3 can appear before win rate changes.
+- The dashboard includes overall W-L, set differential, 3-2/2-3 conversion, evidence strength, recent five versus previous five, scoreline progression, first-win/decisive-win/streak milestones, direct Head to Head access, and a collapsible six-active-month all-opponents matrix.
+- Only matches complete under the three-set rule are included. Confidence is visible (`1-2` low, `3-5` medium, `6+` stronger); improvement/decline requires at least 3 matches in both comparison windows and an average-set-differential change of at least `±0.5`. Empty calendar months are gaps, not zero performance.
+- Live UAT verification passed in Japanese and English at 320, 390, 768, 1024, and 1440 px with zero page overflow or console errors. Low-sample opponents show `More matches needed` rather than a trend claim, the matrix scrolls internally on mobile, and Head to Head opens for the selected opponent.
 
 ### UAT Audit Remediation (2026-10-02) — LIVE, AWAITING PROD APPROVAL
 - UAT behavior commits `b03995c`, `e8422a6`, `ee61ee8`, and `f599174` are deployed. Nothing from this remediation has been promoted to `main`.
