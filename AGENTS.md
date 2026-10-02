@@ -70,6 +70,7 @@ Pushing to `main` without the user's explicit confirmation is a rule violation �
 |------|---------|
 | `app.js` (78KB) | Main page logic: leaderboards, session calendar, charts, player grid, match cards |
 | `player.js` (88KB) | Player profile: stats, charts, opponent analysis, match archive |
+| `insights.html` / `insights.js` | Training Insights workspace: session review, player growth, and tournament readiness |
 | `styles.css` (107KB) | All styles for the entire site |
 | `access-gate.js` | Password gate with 7-day localStorage TTL, bilingual (JA/EN) |
 | `category-colors.js` | Color mapping for player categories (小学生/中学生/高校生/一般) |
@@ -204,6 +205,17 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 ---
 
 ## Session Context
+
+### Training Insights and Data Foundations (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commits `f71c898`, `db42bcb`, and `c162962` are deployed at `/uat/`; GitHub Actions run `37024661105` passed the syntax gate and Pages deployment. Production code remains unchanged.
+- New bilingual `insights.html` / `insights.js` provides three task-led views: Session Insights, Player Growth, and Tournament Readiness. Navigation now exposes Training Insights across Home, Player, Tournament, and supplement pages, including working mobile menus and live language updates.
+- Session Insights separates recorded workload from completed statistics, uses the existing three-set completion rule, shows participation (never calls it attendance), close-match rate, scoreline distribution, player workload/record/set differential, sample-aware change versus the previous five, attention signals, stale match activity, recurring pairings, and expandable underlying match records.
+- Player Growth uses transparent rolling indicators rather than a composite score or official rating: last-10 W-L and set differential, current five versus previous five (`3+3` minimum and `±0.5` signal threshold), scoreline distribution, opponent diversity, match-day-normalized results, recorded-match activity across the latest six club dates, and opponent-category mix. Lists initially render 12 players and expand progressively.
+- Player Performance now includes the same compact Growth Summary with evidence strength, rolling comparison, match-day normalization, recent recorded-match activity, category mix, and direct access to underlying matches and the full workspace.
+- Tournament Readiness keeps training and tournament records distinct while showing field size, known head-to-head coverage, missing scouting data, recent training form, known-opponent W-L with training/event source counts, and representative/recommended priority opponents. Six cards render initially and expand on demand.
+- Historical records are not rewritten and the UI labels missing `sessionId` / `matchFormat` as unrecorded. New training matches default to Tokyo's current date, deterministic `LKS-YYYYMMDD` session ID, and `Best of 5`; Admin also accepts optional `source`, `verifiedAt`, `coachGoal`, and `coachNote` fields.
+- Worker validation for session ID, match format, verified date, and metadata lengths was deployed as Worker version `a654d34c-ce13-4394-b61b-b56997f8dda3`. Invalid session IDs, unsupported formats, non-ISO verification dates, and overlong metadata are rejected.
+- Live UAT verification passed in Japanese and English at 320, 390, 768, 1024, and 1440 px with zero settled horizontal overflow or console errors. Latest-session KPIs are 60 recorded, 57 completed, 3 incomplete, 28 match participants, 57 unique pairings, and 12 close matches (21%). UAT Player Growth shows 86 active players through progressive rendering.
 
 ### Phase 1 Product Experience Upgrade (2026-10-02) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commit `8af1c5b` is deployed at `/uat/`; GitHub Actions run `36991109529` passed the syntax gate and Pages deployment. Nothing from this package has been promoted to `main`.
