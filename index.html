@@ -22,7 +22,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20261002-audit2" />
+    <link rel="stylesheet" href="styles.css?v=20261002-phase1" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
   </head>
   <body>
@@ -52,15 +52,14 @@
               <div id="hero-player-results"></div>
             </div>
         </div>
+        <aside class="hero-club-pulse" id="club-insights">
+          <div class="hero-pulse-title"><p>CLUB PULSE</p><h2>Activity &amp; Competition</h2></div>
+          <div id="club-insights-content"></div>
+        </aside>
       </section>
 
       <section class="latest-session" id="latest-session">
         <div class="loading" data-i18n="loading">Loading live data...</div>
-      </section>
-
-      <section class="content-section club-insights" id="club-insights">
-        <div class="section-title"><div><p>CLUB INSIGHTS</p><h2>Activity &amp; Competition</h2></div></div>
-        <div id="club-insights-content"></div>
       </section>
 
       <section class="content-section leaderboard-dashboard" id="leaderboards">
@@ -87,10 +86,13 @@
       </section>
 
       <section class="content-section session-section" id="sessions">
-        <div class="section-title session-replay-title"><p data-i18n="sessionKicker">TRAINING LOG</p><h2 data-i18n="sessionTitle">Session Replay</h2><button class="how-to-read" data-help="sessions" aria-label="How to read session replay">?</button></div><div id="session-calendar" class="session-calendar" aria-label="Training session calendar"></div><div id="session-summary" class="session-summary"></div><div id="session-matches" class="match-list"></div>
-        <details class="session-chart-toggle" open>
-          <summary id="session-timeline-title">Match-Day Volume</summary>
-          <article class="chart-card session-timeline"><button class="how-to-read chart-help" data-help="volume" aria-label="How to read match-day volume">?</button><canvas id="session-timeline-chart" role="img" aria-label="Training-day participant and match volume chart">Training-day participant and match volume chart</canvas></article>
+        <details id="session-explorer" class="session-explorer">
+          <summary class="section-title session-replay-title"><span><small data-i18n="sessionKicker">TRAINING LOG</small><b data-i18n="sessionTitle">Session Replay</b></span><em class="session-explorer-action">EXPLORE +</em></summary>
+          <div class="session-explorer-body"><div class="session-help-row"><button class="how-to-read" data-help="sessions" aria-label="How to read session replay">?</button></div><div id="session-calendar" class="session-calendar" aria-label="Training session calendar"></div><div id="session-summary" class="session-summary"></div><div id="session-matches" class="match-list"></div>
+          <details class="session-chart-toggle">
+            <summary id="session-timeline-title">Match-Day Volume</summary>
+            <article class="chart-card session-timeline"><button class="how-to-read chart-help" data-help="volume" aria-label="How to read match-day volume">?</button><canvas id="session-timeline-chart" role="img" aria-label="Training-day participant and match volume chart">Training-day participant and match volume chart</canvas></article>
+          </details></div>
         </details>
       </section>
 
@@ -124,6 +126,6 @@
       </div>
       <a href="https://ritokin.gosyuugi.com" target="_blank" rel="noreferrer" data-i18n="officialSite">Official club website</a>
     </footer>
-    <script src="api-config.js"></script><script src="access-gate.js?v=20261002-audit2"></script><script src="static-data.js"></script><script src="data-client.js?v=20261002-audit3"></script><script src="category-colors.js"></script><script src="profile-images.js?v=20261002-audit2"></script><script src="app.js?v=20261002-audit2"></script><script src="build-info.js"></script>
+    <script src="api-config.js"></script><script src="access-gate.js?v=20261002-audit2"></script><script src="static-data.js"></script><script src="data-client.js?v=20261002-audit3"></script><script src="category-colors.js"></script><script src="profile-images.js?v=20261002-audit2"></script><script src="app.js?v=20261002-phase1"></script><script src="build-info.js"></script>
   </body>
 </html>
