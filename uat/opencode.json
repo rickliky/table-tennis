@@ -3,6 +3,25 @@
 
   "instructions": ["AGENTS.md"],
 
+  "mcp": {
+    "servers": {
+      "playwright": {
+        "type": "local",
+        "command": ["npx", "-y", "@playwright/mcp@latest", "--browser", "msedge", "--headless", "--isolated"],
+        "timeout": { "startup": 90000 }
+      },
+      "upstash-redis": {
+        "type": "local",
+        "command": ["npx", "-y", "@upstash/redis-mcp"],
+        "environment": {
+          "UPSTASH_REDIS_REST_URL": "{env:UPSTASH_REDIS_REST_URL}",
+          "UPSTASH_REDIS_REST_TOKEN": "{env:UPSTASH_REDIS_REST_TOKEN}"
+        },
+        "disabled": true
+      }
+    }
+  },
+
   "model": "opencode/mimo-v2.6-flash-free",
 
   "compaction": {
