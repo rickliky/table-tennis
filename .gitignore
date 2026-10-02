@@ -4,3 +4,9 @@
 data/*
 !data/.gitkeep
 !build-info.json
+
+# Local tooling / build artifacts — never served, never committed.
+.playwright-mcp/
+node_modules/
+worker/.wrangler/
+worker/migration.json
