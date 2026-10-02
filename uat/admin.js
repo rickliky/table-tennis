@@ -174,6 +174,7 @@
   const empty = node => { node.replaceChildren(); return node; };
   const canEditMatches = () => currentRole === 'admin' || currentRole === 'approver';
   const matchIsComplete = match => Number(match.player1Sets) >= 3 || Number(match.player2Sets) >= 3;
+  const todayInTokyo = () => { const parts = Object.fromEntries(new Intl.DateTimeFormat('en', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date()).map(part => [part.type, part.value])); return `${parts.year}-${parts.month}-${parts.day}`; };
   const sessionIdForDate = date => date ? `LKS-${String(date).replace(/-/g, '')}` : '';
   const profileFields = ['gender', 'schoolLevel', 'playingHand', 'grip', 'playingStyle', 'forehandRubber', 'backhandRubber'];
   const profileCompleteness = player => Math.round(profileFields.filter(field => player[field]).length / profileFields.length * 100);
@@ -834,7 +835,7 @@
     Object.defineProperty(wrapper, 'disabled', { set(v) { input.disabled = v; }, get() { return input.disabled; } });
     return wrapper;
   }
-  function newMatch() { const matchDate = new Date().toISOString().slice(0, 10); return { matchDate, sessionId: sessionIdForDate(matchDate), matchFormat: 'Best of 5', event: 'Club Training', division: '', format: 'Singles', player1Id: '', player1Name: '', player1Sets: 0, player2Id: '', player2Name: '', player2Sets: 0, winnerId: '', winnerName: '', score: '0-0', resultStatus: completedStatusId, source: '', verifiedAt: '', coachGoal: '', coachNote: '' }; }
+  function newMatch() { const matchDate = todayInTokyo(); return { matchDate, sessionId: sessionIdForDate(matchDate), matchFormat: 'Best of 5', event: 'Club Training', division: '', format: 'Singles', player1Id: '', player1Name: '', player1Sets: 0, player2Id: '', player2Name: '', player2Sets: 0, winnerId: '', winnerName: '', score: '0-0', resultStatus: completedStatusId, source: '', verifiedAt: '', coachGoal: '', coachNote: '' }; }
   function newMatchId() { const stamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14); let sequence = 1; let id; do { id = `LK-T-${stamp}-${String(sequence++).padStart(3, '0')}`; } while (trainingMatches.some(match => match.matchId === id)); return id; }
   function newEntityId(type) {
     const existing = entityData[entityStorageKey[type]] || [];
