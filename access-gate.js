@@ -110,5 +110,17 @@
   const environment = /\/uat(?:\/|$)/i.test(location.pathname) ? 'UAT' : 'PROD';
   document.body.insertAdjacentHTML('beforeend', `<aside class="environment-badge ${environment.toLowerCase()}" aria-label="Environment: ${environment}">${environment}</aside>`);
   const nav = document.querySelector('nav');
-  if (nav) nav.insertAdjacentHTML('beforeend', `<a href="tournament.html" id="nav-tournaments">${language === 'en' ? 'Tournaments' : '大会'}</a><a href="admin.html" id="nav-maintenance" style="color:#8c423a;border-bottom:2px solid #8c423a;padding-bottom:0">${language === 'en' ? 'Data Maintenance' : 'データメンテナンス'}</a>`);
+  if (nav) nav.insertAdjacentHTML('beforeend', `<a href="tournament.html" id="nav-tournaments">${language === 'en' ? 'Tournaments' : '大会'}</a><a href="insights.html" id="nav-insights">${language === 'en' ? 'Training Insights' : '練習分析'}</a><a href="admin.html" id="nav-maintenance" style="color:#8c423a;border-bottom:2px solid #8c423a;padding-bottom:0">${language === 'en' ? 'Data Maintenance' : 'データメンテナンス'}</a>`);
+  window.lkUpdateInjectedNavigation = nextLanguage => {
+    const english = nextLanguage === 'en';
+    const labels = [['#nav-home', english ? 'Home' : 'ホーム'], ['#nav-players', english ? 'Players' : '選手'], ['#nav-sessions', english ? 'Sessions' : 'セッション'], ['#nav-tournaments', english ? 'Tournaments' : '大会'], ['#nav-insights', english ? 'Training Insights' : '練習分析'], ['#nav-maintenance', english ? 'Data Maintenance' : 'データメンテナンス']];
+    labels.forEach(([selector, label]) => { const link = document.querySelector(selector); if (link) link.textContent = label; });
+  };
+  document.addEventListener('click', event => {
+    if (!event.target.closest('#language-toggle')) return;
+    setTimeout(() => window.lkUpdateInjectedNavigation(localStorage.getItem('lk-language') || 'ja'));
+  });
+  const menuToggle = document.querySelector('#menu-toggle');
+  if (menuToggle && nav) menuToggle.onclick = () => { const open = nav.classList.toggle('open'); menuToggle.setAttribute('aria-expanded', String(open)); };
+  if (nav && menuToggle) nav.addEventListener('click', event => { if (event.target.matches('a')) { nav.classList.remove('open'); menuToggle.setAttribute('aria-expanded', 'false'); } });
 })();

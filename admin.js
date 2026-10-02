@@ -174,6 +174,7 @@
   const empty = node => { node.replaceChildren(); return node; };
   const canEditMatches = () => currentRole === 'admin' || currentRole === 'approver';
   const matchIsComplete = match => Number(match.player1Sets) >= 3 || Number(match.player2Sets) >= 3;
+  const sessionIdForDate = date => date ? `LKS-${String(date).replace(/-/g, '')}` : '';
   const profileFields = ['gender', 'schoolLevel', 'playingHand', 'grip', 'playingStyle', 'forehandRubber', 'backhandRubber'];
   const profileCompleteness = player => Math.round(profileFields.filter(field => player[field]).length / profileFields.length * 100);
   const profileIsComplete = player => profileFields.every(field => player[field]);
@@ -468,8 +469,10 @@
     const event = el('input', { name: 'event', type: 'text', required: true, value: record.event || 'Club Training' });
     const division = el('input', { name: 'division', type: 'text', value: record.division || '' });
     const format = select('format', ['Singles'], record.format || 'Singles');
+    const sessionId = el('input', { name: 'sessionId', type: 'text', value: record.sessionId || '', placeholder: sessionIdForDate(record.matchDate), pattern: '[A-Za-z0-9_-]{4,64}', maxLength: 64 });
+    const matchFormat = select('matchFormat', ['', 'Best of 5', 'Best of 3', 'Short practice'], record.matchFormat || '');
     const addMetaField = (label, input) => { const l = el('label'); l.append(text('span', label), input); sectionMeta.append(l); };
-    addMetaField('日付 / Date', date); addMetaField('イベント / Event', event); addMetaField('部門 / Division', division); addMetaField('形式 / Format', format);
+    addMetaField('日付 / Date', date); addMetaField('セッションID / Session ID', sessionId); addMetaField('イベント / Event', event); addMetaField('部門 / Division', division); addMetaField('競技形式 / Event format', format); addMetaField('試合形式 / Match format', matchFormat);
     form.append(sectionMeta);
     // --- Players & Score section ---
     const sectionMatch = el('div', { className: 'admin-match-section' }); sectionMatch.append(text('p', 'PLAYERS & SCORE / 選手＆スコア', 'admin-match-section-title'));
@@ -491,8 +494,16 @@
     addMatchField('選手1 セット / P1 Sets', sets1); addMatchField('選手2 セット / P2 Sets', sets2);
     addMatchField('結果ステータス / Result Status', resultStatus);
     form.append(sectionMatch);
+    const sectionContext = el('div', { className: 'admin-match-section admin-match-context' }); sectionContext.append(text('p', 'CONTEXT & SOURCE / 目的・出典', 'admin-match-section-title'));
+    const source = el('input', { name: 'source', type: 'text', value: record.source || '', placeholder: 'Notebook / Admin entry / Import batch', maxLength: 500 });
+    const verifiedAt = el('input', { name: 'verifiedAt', type: 'date', value: record.verifiedAt ? String(record.verifiedAt).slice(0,10) : '' });
+    const coachGoal = el('input', { name: 'coachGoal', type: 'text', value: record.coachGoal || '', placeholder: 'Optional coach goal / 任意の指導目標', maxLength: 500 });
+    const coachNote = el('input', { name: 'coachNote', type: 'text', value: record.coachNote || '', placeholder: 'Optional coach note / 任意の指導メモ', maxLength: 500 });
+    const addContextField = (label, input) => { const l = el('label'); l.append(text('span', label), input); sectionContext.append(l); };
+    addContextField('出典 / Source', source); addContextField('確認日 / Verified date', verifiedAt); addContextField('指導目標 / Coach goal', coachGoal); addContextField('指導メモ / Coach note', coachNote); form.append(sectionContext);
     form.append(p1sl, p1gr, p2sl, p2gr);
-    [date, event, division, format, player1, player2, sets1, sets2, resultStatus].forEach(input => { input.disabled = readOnly; });
+    [date, sessionId, event, division, format, matchFormat, player1, player2, sets1, sets2, resultStatus, source, verifiedAt, coachGoal, coachNote].forEach(input => { input.disabled = readOnly; });
+    if (!match) date.addEventListener('change', () => { if (!sessionId.value || /^LKS-\d{8}$/.test(sessionId.value)) sessionId.value = sessionIdForDate(date.value); });
     const derived = text('p', '', 'admin-derived'); form.append(derived);
     const updateDerived = () => {
       const one = Number(sets1.value); const two = Number(sets2.value); const incomplete = isIncompleteStatus(resultStatus.value);
@@ -508,6 +519,8 @@
         event.preventDefault(); const next = match ? { ...record, ...Object.fromEntries(new FormData(form)) } : Object.fromEntries(new FormData(form));
         if (!next.player1Id || !next.player2Id || next.player1Id === next.player2Id) { derived.textContent = 'Choose two different players. / 異なる2名の選手を選択してください。'; return; }
         next.player1Sets = Number(next.player1Sets); next.player2Sets = Number(next.player2Sets); next.player1Name = playerName(next.player1Id); next.player2Name = playerName(next.player2Id); next.score = `${next.player1Sets}-${next.player2Sets}`;
+        if (!match) { next.sessionId ||= sessionIdForDate(next.matchDate); next.matchFormat ||= 'Best of 5'; }
+        ['sessionId','matchFormat','source','verifiedAt','coachGoal','coachNote'].forEach(field => { if (!next[field] && match && !(field in record)) delete next[field]; });
         if (isIncompleteStatus(next.resultStatus) || next.player1Sets === next.player2Sets) { next.winnerId = ''; next.winnerName = ''; } else { next.winnerId = next.player1Sets > next.player2Sets ? next.player1Id : next.player2Id; next.winnerName = playerName(next.winnerId); }
         next.matchId = match?.matchId || newMatchId();
         submitChange('match', next.matchId, next, match ? 'update' : 'create').then(() => refreshWorkspace(next.matchId)).catch(error => { derived.textContent = `${error.message} / 保存できませんでした`; });
@@ -821,7 +834,7 @@
     Object.defineProperty(wrapper, 'disabled', { set(v) { input.disabled = v; }, get() { return input.disabled; } });
     return wrapper;
   }
-  function newMatch() { return { matchDate: new Date().toISOString().slice(0, 10), event: 'Club Training', division: '', format: 'Singles', player1Id: '', player1Name: '', player1Sets: 0, player2Id: '', player2Name: '', player2Sets: 0, winnerId: '', winnerName: '', score: '0-0', resultStatus: completedStatusId }; }
+  function newMatch() { const matchDate = new Date().toISOString().slice(0, 10); return { matchDate, sessionId: sessionIdForDate(matchDate), matchFormat: 'Best of 5', event: 'Club Training', division: '', format: 'Singles', player1Id: '', player1Name: '', player1Sets: 0, player2Id: '', player2Name: '', player2Sets: 0, winnerId: '', winnerName: '', score: '0-0', resultStatus: completedStatusId, source: '', verifiedAt: '', coachGoal: '', coachNote: '' }; }
   function newMatchId() { const stamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14); let sequence = 1; let id; do { id = `LK-T-${stamp}-${String(sequence++).padStart(3, '0')}`; } while (trainingMatches.some(match => match.matchId === id)); return id; }
   function newEntityId(type) {
     const existing = entityData[entityStorageKey[type]] || [];
