@@ -315,11 +315,13 @@
           return true;
         });
         if (!results.length) { list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty')); return; }
-        const groups = {}; results.slice(0, visibleLimit).forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
+        const orderedResults = [...results].sort((a, b) => `${b.matchDate || ''}${b.matchId || ''}`.localeCompare(`${a.matchDate || ''}${a.matchId || ''}`));
+        const totalsByDate = results.reduce((totals, match) => { const date = match.matchDate || 'No date'; totals[date] = (totals[date] || 0) + 1; return totals; }, {});
+        const groups = {}; orderedResults.slice(0, visibleLimit).forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
         Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(date => {
           const dateHeader = el('div', { className: 'admin-match-date-header' });
           dateHeader.append(text('span', date === 'No date' ? 'No date / 日付なし' : date, 'admin-match-date'));
-          dateHeader.append(text('span', `${groups[date].length} matches / 試合`, 'admin-match-date-count'));
+          dateHeader.append(text('span', `${totalsByDate[date]} matches / 試合`, 'admin-match-date-count'));
           list.append(dateHeader);
           groups[date].sort((a, b) => b.matchId.localeCompare(a.matchId)).forEach(match => {
             const row = el('button', { type: 'button', className: `admin-player-row admin-match-row${match.matchId === selectedId ? ' selected' : ''}` });
@@ -348,11 +350,13 @@
           return true;
         });
         if (!results.length) { list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty')); return; }
-        const groups = {}; results.slice(0, visibleLimit).forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
+        const orderedResults = [...results].sort((a, b) => `${b.matchDate || ''}${b.tournamentMatchId || ''}`.localeCompare(`${a.matchDate || ''}${a.tournamentMatchId || ''}`));
+        const totalsByDate = results.reduce((totals, match) => { const date = match.matchDate || 'No date'; totals[date] = (totals[date] || 0) + 1; return totals; }, {});
+        const groups = {}; orderedResults.slice(0, visibleLimit).forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
         Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(date => {
           const dateHeader = el('div', { className: 'admin-match-date-header' });
           dateHeader.append(text('span', date === 'No date' ? 'No date / 日付なし' : date, 'admin-match-date'));
-          dateHeader.append(text('span', `${groups[date].length} matches / 試合`, 'admin-match-date-count'));
+          dateHeader.append(text('span', `${totalsByDate[date]} matches / 試合`, 'admin-match-date-count'));
           list.append(dateHeader);
           groups[date].forEach(m => {
             const row = el('button', { type: 'button', className: `admin-player-row admin-match-row${m.tournamentMatchId === selectedId ? ' selected' : ''}` });
@@ -375,8 +379,8 @@
     const tournFilterEl = detailRow.querySelector('.player-combobox');
     if (tournFilterEl) { tournFilterEl.addEventListener('change', resetAndUpdate); }
     updateList();
-    if (isTraining) { showMatchEditor(launchNewMatch ? null : trainingMatches.find(match => match.matchId === selectedId) || trainingMatches[0] || null); }
-    else { const tm = entityData.tournamentMatches || []; showTournamentMatchEditor(tm.find(m => m.tournamentMatchId === selectedId) || tm[0] || null); }
+    if (isTraining) { const newest = [...trainingMatches].sort((a, b) => `${b.matchDate || ''}${b.matchId || ''}`.localeCompare(`${a.matchDate || ''}${a.matchId || ''}`))[0]; showMatchEditor(launchNewMatch ? null : trainingMatches.find(match => match.matchId === selectedId) || newest || null); }
+    else { const tm = entityData.tournamentMatches || [], newest = [...tm].sort((a, b) => `${b.matchDate || ''}${b.tournamentMatchId || ''}`.localeCompare(`${a.matchDate || ''}${a.tournamentMatchId || ''}`))[0]; showTournamentMatchEditor(tm.find(m => m.tournamentMatchId === selectedId) || newest || null); }
   }
 
   function showMatchEditor(match) {
