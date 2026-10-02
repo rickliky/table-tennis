@@ -16,6 +16,10 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
+      # Blocks the deploy below if any tracked JS/JSON file is broken.
+      - name: Syntax gate
+        run: node scripts/check-syntax.js
+
       - name: Generate build info
         run: |
           BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
