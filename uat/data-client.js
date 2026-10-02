@@ -3,6 +3,7 @@
 
   const configuredBase = window.LK_API_BASE || '';
   const environment = /\/uat(?:\/|$)/i.test(location.pathname) ? 'uat' : 'prod';
+  const isMaintenancePage = /(?:^|\/)admin\.html$/i.test(location.pathname);
   const endpoint = `${configuredBase.replace(/\/$/, '')}/api/public-data?environment=${environment}`;
 
   async function loadPublicData() {
@@ -11,6 +12,11 @@
     if (!response.ok) throw new Error(`Public API returned ${response.status}`);
     const result = await response.json();
     if (!result.ok) throw new Error('Public API returned an invalid response');
+    // Maintenance needs inactive records for editing, but public pages must
+    // only expose players whose canonical or legacy status is active.
+    if (!isMaintenancePage && Array.isArray(result.players)) {
+      result.players = result.players.filter(player => ['ST-001', 'Active', '有効'].includes(player.status));
+    }
     // Populate rubber globals from Upstash (golden source) so pages
     // no longer need the static rubbers.js script tag.
     if (result.rubbers) {
