@@ -205,6 +205,15 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Phase 1 Product Experience Upgrade (2026-10-02) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commit `8af1c5b` is deployed at `/uat/`; GitHub Actions run `36991109529` passed the syntax gate and Pages deployment. Nothing from this package has been promoted to `main`.
+- Match records remain exactly as entered. A training match contributes to completed statistics only when `player1Sets >= 3 || player2Sets >= 3`; Admin Overview currently identifies 69 below-three-set records as retained but excluded, not as records to bulk-correct.
+- Data Maintenance now opens on a responsive Overview with active-player, training-match, approval, and latest-session KPIs; a Data Health queue links to score/status and player-completeness filters; quick-create actions and recent approvals are visible at a glance.
+- Player maintenance adds active/inactive and profile-completeness filters plus completion percentages. Completed player statistics now use the same three-set rule. Editors have sticky save actions, an unsaved-change indicator, navigation warnings, and a browser unload warning.
+- Home now combines player search with a compact Club Pulse showing latest-month completed matches, completion rate, close-match rate, unique pairings, and a per-session comparison. Session Replay is collapsed by default and opens from the latest-session link; detailed insights and the volume chart use progressive disclosure.
+- Player profiles now use Overview, Performance, Opponents, and Matches views. Overview is substantially shorter, direct hash links work, chart resizing is safe when Performance opens, and all existing analytics/archive content is retained.
+- Live UAT Playwright verification passed at 320, 390, 768, 1024, and 1440 px with zero horizontal overflow or console errors. UAT shows 86 active/1 inactive players, 1,793 matches over 39 dates, and 57 completed + 3 incomplete matches on 2026-10-01.
+
 ### UAT Audit Remediation (2026-10-02) — LIVE, AWAITING PROD APPROVAL
 - UAT behavior commits `b03995c`, `e8422a6`, `ee61ee8`, and `f599174` are deployed. Nothing from this remediation has been promoted to `main`.
 - The password gate now blocks public-data requests until site login succeeds. Direct supplement-page login uses the Worker URL, the password controls appear in the first mobile viewport, and the long club introduction is collapsed by default.
