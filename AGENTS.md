@@ -215,6 +215,11 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Follow-up UAT fix `3967edc` removed a legacy CSS rule that hid the new Opponents view. The tab now displays monthly/yearly most-played, most-beaten, and most-lost-to lists with W/L history dots and opponent profile links; live mobile verification found 2 period panels, 30 links, zero overflow, and zero console errors.
 - Live UAT Playwright verification passed at 320, 390, 768, 1024, and 1440 px with zero horizontal overflow or console errors. UAT shows 86 active/1 inactive players, 1,793 matches over 39 dates, and 57 completed + 3 incomplete matches on 2026-10-01.
 
+### Opponent Improvement Trends (2026-10-02) — PROPOSED
+- Recommended primary view: select one opponent, then show a monthly timeline combining match volume, W-L/win rate, average set differential, and close-match conversion. Set differential should be the main improvement signal because progress from 0-3 to 2-3 appears before win rate changes.
+- Add a recent-versus-previous comparison (last 5 completed matches against that opponent versus the prior 5), milestones such as first win and first decisive win, and an all-opponents month matrix for scanning recurring matchups.
+- Use only matches complete under the three-set rule. Always display sample size and confidence (`1-2` low, `3-5` medium, `6+` stronger); do not label improvement or decline when the sample is too small.
+
 ### UAT Audit Remediation (2026-10-02) — LIVE, AWAITING PROD APPROVAL
 - UAT behavior commits `b03995c`, `e8422a6`, `ee61ee8`, and `f599174` are deployed. Nothing from this remediation has been promoted to `main`.
 - The password gate now blocks public-data requests until site login succeeds. Direct supplement-page login uses the Worker URL, the password controls appear in the first mobile viewport, and the long club introduction is collapsed by default.
