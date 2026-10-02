@@ -212,6 +212,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Player maintenance adds active/inactive and profile-completeness filters plus completion percentages. Completed player statistics now use the same three-set rule. Editors have sticky save actions, an unsaved-change indicator, navigation warnings, and a browser unload warning.
 - Home now combines player search with a compact Club Pulse showing latest-month completed matches, completion rate, close-match rate, unique pairings, and a per-session comparison. Session Replay is collapsed by default and opens from the latest-session link; detailed insights and the volume chart use progressive disclosure.
 - Player profiles now use Overview, Performance, Opponents, and Matches views. Overview is substantially shorter, direct hash links work, chart resizing is safe when Performance opens, and all existing analytics/archive content is retained.
+- Follow-up UAT fix `3967edc` removed a legacy CSS rule that hid the new Opponents view. The tab now displays monthly/yearly most-played, most-beaten, and most-lost-to lists with W/L history dots and opponent profile links; live mobile verification found 2 period panels, 30 links, zero overflow, and zero console errors.
 - Live UAT Playwright verification passed at 320, 390, 768, 1024, and 1440 px with zero horizontal overflow or console errors. UAT shows 86 active/1 inactive players, 1,793 matches over 39 dates, and 57 completed + 3 incomplete matches on 2026-10-01.
 
 ### UAT Audit Remediation (2026-10-02) — LIVE, AWAITING PROD APPROVAL
