@@ -12,7 +12,7 @@
 At the end of every conversation (or at natural stopping points), the agent MUST:
 1. Update the "Session Context" section of this file with key decisions, new rules, and current status
 2. Commit this file so the other PC can pick up the context
-3. Remind the user to `git push` if SSH is not configured
+3. Commit the updated `AGENTS.md` and `git push` it (SSH is configured on PC 1)
 
 ---
 
@@ -156,8 +156,8 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - `git status`, `git diff`, `git log`, `git branch`, `git show`, `git pull`
 
 ### Requires confirmation
-- `git commit` — ask before committing
-- `git push` — ask before pushing
+- Nothing routine — SSH is configured and the user has authorized the agent to commit and push without asking (2026-10-02)
+- `git rebase`, `git revert`, force-writing history, or committing files not touched as part of the task — ask first
 
 ### Never auto-run
 - `git push --force`
@@ -197,7 +197,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Local `backup/` files are **offline-only reference** — never used at runtime, never used as fallback
 - Always push data changes to Upstash via Worker API (`/api/change`) after modifying data
 - Always commit and push code changes to git so the other PC can pick them up
-- When the agent modifies data, it should push to Upstash AND commit to git, then tell the user to push
+- When the agent modifies data, it should push to Upstash AND commit + push to git (no manual user push needed)
 
 ### Rubber System (Implemented)
 - 203 unique rubbers with IDs (`RB-0001` etc.), bilingual canonical names, type, brand
@@ -239,10 +239,21 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
   2. OR set `GOOGLE_API_KEY` environment variable for Google Gemini free tier
   3. OpenCode config (`opencode.json`) is in the repo — will be picked up automatically
 
-### SSH Not Configured
-- `git push` hangs on credential prompt — user must set up SSH keys
-- Run: `git remote set-url origin git@github.com:rickliky/table-tennis.git`
-- Until then, user must push manually after agent commits
+### SSH Configured on PC 1 (2026-10-02)
+- SSH key `~/.ssh/id_ed25519` (ed25519, no passphrase) registered with GitHub as `rick-pc1-2026-10-02` (key ID 165123503)
+- Remote is `git@github.com:rickliky/table-tennis.git` (SSH) — `git pull` / `git push` work non-interactively
+- `~/.ssh/config` points github.com at the key with `UserKnownHostsFile ~/.ssh/known_hosts_github` (the old `known_hosts` file is ACL-locked and unusable — do not delete it)
+- GitHub CLI (`gh`) is installed and authenticated as `rickliky` (scopes: repo, admin:public_key)
+- **Agent MAY commit and push directly without asking** (user instruction, 2026-10-02) — still pull before working, and never force-push or use destructive git operations
+- PC 2 still needs its own key: generate one, then add it via `gh api user/keys` after `gh auth login`
+
+### SSH Auto-Commit/Push Enabled (2026-10-02)
+- PC 1 now has full SSH access: `~/.ssh/id_ed25519` (ed25519, no passphrase) registered with GitHub as `rick-pc1-2026-10-02` (key ID 165123503)
+- Remote switched from HTTPS to `git@github.com:rickliky/table-tennis.git` — `git pull`/`git push` run non-interactively with no credential prompt
+- The legacy `~/.ssh/known_hosts` file is ACL-locked (cannot be read, rewritten, or deleted) — `~/.ssh/config` bypasses it with `UserKnownHostsFile ~/.ssh/known_hosts_github`. Leave that locked file alone.
+- GitHub CLI installed (`winget install GitHub.cli`, v2.102.0) and authenticated as `rickliky` with `repo` + `admin:public_key`; used to register the SSH key via `gh api user/keys`
+- **New rule**: the agent commits and pushes directly on its own — no more asking the user to push. `git pull` first, and destructive git commands remain forbidden.
+- PC 2 still needs setup: `ssh-keygen -t ed25519`, then `gh auth login` + `gh api user/keys` to register its key, then `git remote set-url origin git@github.com:rickliky/table-tennis.git`
 
 ### Recent Changes (This Session)
 - **Admin combo boxes now use IDs** with bilingual labels
@@ -404,6 +415,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Training Match Import (2026-10-01)
 - The 60 2026-10-01 training matches (`LKM-20261001-001`–`060`) were accepted in UAT and promoted through the safe PROD overlay. `scripts/import-training-matches-2026-10-01.js` / `scripts/training-matches-2026-10-01.txt` are repeat-safe.
+- A subsequent approved UAT correction updated `LKM-20261001-007`, `LKM-20261001-041`, and `LKM-20261001-058` in PROD on 2026-10-02. The corrected opponent is 長島(向); UAT and PROD were verified identical after the safe overlay.
 - 諏訪光 is confirmed as `LK-0090` (current display name 諏訪免). The duplicate `土屋 3-2 石塚` source row is intentionally imported once. Three short scores (`坪内父 2-0 金子`, `向井 1-1 吉川`, `岡崎 2-0 下田`) are `RS-002` Incomplete; the remaining 57 are `RS-001` Completed.
 
 ### UAT/PROD Data Alignment (2026-09-27)
@@ -438,3 +450,38 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Player ID Display (2026-10-01)
 - UAT player profiles now include the canonical player ID in the dossier (`Player ID` / `選手ID`) so it can be copied and used in admin/data references.
+
+### Player-to-Admin Shortcuts (2026-10-02)
+- The player-profile Edit Player Profile shortcut uses `editPlayer=<LK-ID>`. Admin recognizes this explicit launch parameter (while retaining legacy `playerId` links), selects the exact player editor, and scrolls it into view on narrow layouts.
+
+### OpenCode 2 CLI + VS Code Setup (2026-10-02, PC 1)
+- Installed `@opencode/cli` **v2.0.21** globally with npm → `C:\Users\rick\AppData\Roaming\npm\opencode.ps1`.
+- **npm 11 blocks postinstall scripts**, so a plain `npm install -g @opencode/cli` does NOT select the native binary. Use:
+  `npm install -g --allow-scripts=@opencode/cli @opencode/cli`
+- Windows package managers (winget/scoop/choco) are **not supported** by OpenCode — use npm, the curl installer, or the standalone binary zip.
+- Visual Studio Code **1.140.0** (User setup) installed via `winget install --id Microsoft.VisualStudioCode -e --source winget`.
+- Extension `sst-dev.opencode-v2` **v0.1.1** ("OpenCode Beta", the V2 extension) installed via `code --install-extension sst-dev.opencode-v2`.
+- No `opencode auth login` needed — credentials (Google Gemini API key, OpenAI OAuth) are already in the shared SQLite DB used by the Desktop app (`opencode auth list` confirms).
+- **The VS Code extension `sst-dev.opencode-v2` is NOT usable with CLI 2.0.21** — do not debug it again. Verified four faults: (1) its sidebar view never registers a provider (`registerWebviewViewProvider` = 0 hits → "There is no data provider registered"); (2) `spawn("opencode", ...)` without `shell:true` fails with ENOENT on Windows because npm only creates `.cmd`/`.ps1` shims; (3) it waits for a stdout line starting with `opencode server listening` while v2 prints `server listening on ...`; (4) it calls the **V1** server API (`/config`, `/session`, `/agent`, `/project/current`) while V2 serves `/api/*` behind `OPENCODE_PASSWORD` auth. Two local patches were applied to `dist\extension.js` (backup `dist\extension.js.bak`) for faults 2–3, but fault 4 is architectural — extension updates overwrite patches anyway.
+- **Working path in VS Code: run `opencode` in the integrated terminal** (full TUI).
+- Other editors (Zed/JetBrains/Neovim) connect through ACP: configure them to run `opencode acp`. Docs: https://opencode.ai/v2/docs/cli/acp
+- V2 docs are the source of truth: https://opencode.ai/v2/docs/ (`/docs/` paths without `/v2/` are V1).
+
+### Agents Shared Between Desktop GUI and CLI (2026-10-02)
+- **Agents are config files, not GUI state.** The Desktop GUI and the CLI/TUI read identical files, so GUI agents need **no setup** to be reused in VS Code — just launch `opencode` from the project root.
+- Verified by running `opencode serve` with `cwd` = project and querying `/api/agent`: **all 12 agents load**.
+  - From `opencode.json` legacy `agent` map: `gemini-flash`, `gemini-lite`, plus `build`/`plan` overrides
+  - From `.opencode/agents/*.md`: `debugger`, `pro-specialist`, `reviewer`
+  - Builtins: `build`, `plan`, `general`, `explore` (+ hidden `compaction`, `title`, `summary`)
+  - From `.opencode/commands/*.md`: `draft-plan`, `final-plan`, `free-build`
+- **Folder matters.** Launching from `C:\Users\rick` returns only the 7 builtins and drops every custom agent — discovery walks from cwd up to the project root.
+- Global `~/.config/opencode/opencode.jsonc` currently holds only a plugin; `~/.config/opencode/agents/` does not exist. Create that directory to make an agent available in every project.
+- V1 syntax still works: `agent`/`provider`/`permission` (singular) are normalized in memory, and V1 agent frontmatter `permission:` auto-translates to `permissions`. No rewrite required.
+- **`compaction.tail_turns` is ignored in V2** (accepted-but-unsupported field) — the project's `opencode.json` sets `tail_turns: 15`; use `compaction.keep.tokens` if a token budget is wanted.
+- Verification recipe: `opencode serve --port <N>` with cwd = project, then `opencode api get /api/agent --server <url>` with env `OPENCODE_PASSWORD=<password printed by serve>`. Auth is `OPENCODE_PASSWORD`, **not** `Authorization: Bearer`. Agents load asynchronously — poll for a few seconds before concluding they are missing.
+
+### TUI Model Default and Keybinds (2026-10-02)
+- `opencode.json` now sets top-level `"model": "opencode/mimo-v2.6-flash-free"` (matches the Desktop GUI's selected model). Verified: a plain `opencode run` with no `--model` flag prints `build · mimo-v2.6-flash-free`, so the top-level `model` **overrides** `agent.build.model` (`google/gemini-3.8-flash`).
+- The CLI shares the GUI's model catalog — **65 models**: 9 free OpenCode Zen (incl. `mimo-v2.6-flash-free`, `longcat-2.5-preview-free`), 18 OpenAI (incl. `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-6-luna`, `gpt-6.1-sol`), 38 Google. No extra authentication required — credentials live in the shared SQLite DB.
+- Agents still pin their own models and those are independent of the session model: `build`/`gemini-flash` → `gemini-3.8-flash`, `plan`/`gemini-lite` → `gemini-3.5-flash-lite`, `debugger`/`reviewer` → `openai/gpt-5.6-luna`, `pro-specialist` → `openai/gpt-5.5-pro`.
+- Keybinds (leader = `ctrl+x`): `ctrl+x m` or `/models` → model list; `ctrl+x a` → agent list; `shift+tab` → next agent; `ctrl+p` → command palette; `f2` → cycle recent models; `ctrl+f` → favorite (inside model dialog); `ctrl+a` → provider list (inside model dialog).

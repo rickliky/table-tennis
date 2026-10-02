@@ -117,7 +117,7 @@
   let pendingChanges = [];
   let allPlayersList = [];
   let currentRole = '';
-  const launchParams = new URLSearchParams(location.search), launchPlayerId = launchParams.get('playerId') || '', launchNewMatch = launchParams.get('newMatch') === '1';
+  const launchParams = new URLSearchParams(location.search), launchPlayerId = launchParams.get('editPlayer') || launchParams.get('playerId') || '', launchEditPlayer = Boolean(launchParams.get('editPlayer')), launchNewMatch = launchParams.get('newMatch') === '1';
   let activeTab = launchParams.get('tab') === 'players' ? 'players' : 'matches';
   let activePlayerSubTab = 'ourPlayers';
   let activeManageSubTab = 'pending';
@@ -796,7 +796,8 @@
       }
     });
     const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); const catVal = catFilter.value; allPlayers.filter(player => { if (catVal && catVal === 'unassigned' && player.schoolLevel) return false; if (catVal && catVal !== 'unassigned' && player.schoolLevel !== catVal) return false; return `${player.playerId || player.externalOpponentId || ''} ${player.displayName} ${player.englishName || ''} ${player.notebookName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query); }).sort((a, b) => { const idA = a.playerId || a.externalOpponentId; const idB = b.playerId || b.externalOpponentId; return (stats[idB]?.played || 0) - (stats[idA]?.played || 0) || idA.localeCompare(idB); }).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${(player.playerId || player.externalOpponentId) === selectedId ? ' selected' : ''}` }); const names = el('span'); const id = player.playerId || player.externalOpponentId; const gradeTag = player.grade ? ` · ${lookupName('grades', player.grade)}` : ''; const s = stats[id] || { played: 0, wins: 0, losses: 0 }; const statsTag = s.played > 0 ? ` · ${s.played}G ${s.wins}W ${s.losses}L` : ''; names.append(text('b', player.displayName || 'No display name'), text('small', `${id} · ${player.englishName || '-'}${player.notebookName ? ' · 📝' + player.notebookName : ''}${gradeTag}${statsTag}`)); row.append(names, text('i', playerStatusLabel(player.status) || 'Active')); row.onclick = () => { selectedId = id; updateList(); showPlayerEditor(player); }; list.append(row); }); };
-    search.oninput = updateList; catFilter.onchange = updateList; window.adminPlayerListUpdate = updateList; updateList(); showPlayerEditor(allPlayers.find(player => (player.playerId || player.externalOpponentId) === selectedId) || allPlayers[0] || null);
+    search.oninput = updateList; catFilter.onchange = updateList; window.adminPlayerListUpdate = updateList; updateList(); const selectedPlayer = allPlayers.find(player => (player.playerId || player.externalOpponentId) === selectedId) || allPlayers[0] || null; showPlayerEditor(selectedPlayer);
+    if (launchEditPlayer && selectedPlayer && (selectedPlayer.playerId || selectedPlayer.externalOpponentId) === launchPlayerId) requestAnimationFrame(() => document.querySelector('.admin-editor-panel')?.scrollIntoView({ block: 'start', behavior: 'instant' }));
   }
   function showPlayerEditor(player) {
     const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
