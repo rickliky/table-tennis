@@ -262,6 +262,18 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - **Agent MAY commit and push directly without asking** (user instruction, 2026-10-02) — still pull before working, and never force-push or use destructive git operations
 - PC 2 still needs its own key: generate one, then add it via `gh api user/keys` after `gh auth login`
 
+### Dev Tooling: Playwright + Syntax Gate + Upstash MCP (2026-10-02)
+- **Playwright MCP** configured in `opencode.json` (msedge, headless, isolated). Lets the agent load the live UAT/prod site, read console errors, and snapshot the DOM before asking for approval — this is what makes the UAT-first rule testable rather than trust-based.
+- **Upstash MCP** (`upstash-redis`) also in `opencode.json`, credentials via `{env:UPSTASH_REDIS_REST_URL}` / `{env:UPSTASH_REDIS_REST_TOKEN}`.
+  - Credentials are stored in **`upstash.env` (gitignored, never committed)** and as Windows User-scope env vars.
+  - `opencode.json` is **publicly served** at `rickliky.github.io/table-tennis/opencode.json` — NEVER inline a secret there; always use `{env:...}` substitution.
+  - The OpenCode service must be restarted (`opencode service restart`) after setting the env vars, or MCP servers inherit a stale environment and fail with "No database configured".
+- **CI syntax gate**: `scripts/check-syntax.js` validates every tracked `.js` (`node --check`) and `.json` (`JSON.parse`). `pages.yml` runs it **before** both deploy steps, so a broken file cannot deploy. Skip list: `node_modules`, `.wrangler`, `.playwright-mcp`, `package-lock.json`, and `.gs` (GAS-only globals).
+  - Run locally: `node scripts/check-syntax.js` (exit 0 = clean, exit 1 = broken file listed).
+- **Repo/publish cleanup**: `worker/node_modules` (1655 files, 166.9 MB), `worker/.wrangler` (21 files), and the 0-byte `worker/migration.json` were tracked AND publicly served. All untracked + gitignored, then purged from `gh-pages` (published site went 3660 → 307 files).
+  - `keep_files: true` in `pages.yml` means untracking alone does NOT remove already-published files — a `gh-pages` deletion commit is required, and only after `main` has the fix (otherwise the next prod deploy re-adds them).
+  - Root `migration.json` (776 KB, valid) is intentional and must be kept.
+
 ### Branch Workflow Rule (2026-10-02) — MANDATORY
 - **All code/data changes go to `uat` first, get tested on the UAT site, then require the user's explicit per-change confirmation before pushing to `main`.**
 - The agent may commit and push to `uat` freely, but **any push to `main` must be asked about each time** — prior approval is not standing approval.

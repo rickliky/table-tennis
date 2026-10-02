@@ -10,3 +10,8 @@ data/*
 node_modules/
 worker/.wrangler/
 worker/migration.json
+
+# Local secrets — one-time entry, never committed, publicly-served repo.
+# Consumed by the upstash-redis MCP server via {env:...} substitution.
+upstash.env
+.upstash*
