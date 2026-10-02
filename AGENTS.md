@@ -206,6 +206,15 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Session Trends, Pairing Heatmap, and Rapid Entry (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commit `e8ea9c3` adds the approved Session Trend + Pairing Heatmap + Rapid Session Entry package. GitHub Actions run `37076813150` passed the syntax gate and deployment; production remains unchanged.
+- Session Insights now compares the latest 12 training dates with recorded-match volume, match participants, completion rate, and close-match rate. Selecting a chart date opens that session. The selected session also shows a four-band recorded-workload distribution (1, 2–3, 4–5, and 6+ matches per participant).
+- The pairing heatmap compares the selected session's participants across the latest six training dates. Cell intensity represents recorded meeting count, zero-count cells are not links, and evidence cells open the relevant player/opponent view. The matrix scrolls internally on narrow screens.
+- Admin Rapid Session Entry defaults to Tokyo's date, deterministic `LKS-YYYYMMDD`, and `Best of 5`; locks shared session metadata while reviewed matches exist; offers recent/session player quick picks, Swap Players, Clone Match, Save & Add Next, and a compact batch review.
+- Rapid-entry review flags possible exact duplicates, repeated pairings, scores above three sets, and records excluded as incomplete under the existing three-set rule. Historical records and completion logic are unchanged. Batch submissions create separate pending changes with collision-safe IDs and stop safely if a request fails.
+- Local mocked-data validation passed in English and Japanese at 320, 390, 768, 1024, and 1440 px with zero page overflow or console errors. It verified chart date navigation, internal heatmap scrolling, metadata locking/unlocking, quick picks, clone flow, duplicate/repeat/unusual/incomplete warnings, and batch submission cleanup.
+- Live UAT validation passed at 320, 390, 768, 1024, and 1440 px with zero page overflow or console errors. The latest session shows 60 recorded matches, 28 match participants, 57 pairings, 21% close matches, workload bands of 2 / 3 / 20 / 3 players, a 28×28 heatmap with a highest repeat count of 4, and 18 recent-player quick picks in Rapid Session Entry.
+
 ### Training Insights and Data Foundations (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commits `f71c898`, `db42bcb`, and `c162962` are deployed at `/uat/`; GitHub Actions run `37024661105` passed the syntax gate and Pages deployment. Production code remains unchanged.
 - New bilingual `insights.html` / `insights.js` provides three task-led views: Session Insights, Player Growth, and Tournament Readiness. Navigation now exposes Training Insights across Home, Player, Tournament, and supplement pages, including working mobile menus and live language updates.
