@@ -221,6 +221,13 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Only matches complete under the three-set rule are included. Confidence is visible (`1-2` low, `3-5` medium, `6+` stronger); improvement/decline requires at least 3 matches in both comparison windows and an average-set-differential change of at least `±0.5`. Empty calendar months are gaps, not zero performance.
 - Live UAT verification passed in Japanese and English at 320, 390, 768, 1024, and 1440 px with zero page overflow or console errors. Low-sample opponents show `More matches needed` rather than a trend claim, the matrix scrolls internally on mobile, and Head to Head opens for the selected opponent.
 
+### Next Product Analysis Recommendations (2026-10-02) — PROPOSED
+- Highest-value next package: a separate Coach Session Review rather than more charts on Home. It should summarize session participation, match workload, close matches, recurring rematches, notable set-differential movement, and players with low or stale activity; every signal must link back to the underlying matches.
+- Add a Player Growth Summary using rolling 10-match set differential, current versus previous five, session-normalized results, scoreline distribution, activity consistency, opponent diversity, and category/opponent mix. Keep these transparent and sample-aware; do not collapse them into a single development score or official rating.
+- Add a Tournament Readiness workspace for entered Little Kings players: field coverage, known head-to-heads, priority opponents, recent form, and missing scouting data. Keep training and tournament results separate.
+- Information architecture should remain task-led: concise Home for members/parents, current four-view Player page, dedicated Coach workspace for analysis/triage, Tournament hub for preparation, and Admin for data quality. Avoid turning Home into a dense analytics dashboard.
+- Data foundation before deeper analytics: explicit match format (`Best of 3`, `Best of 5`, `Short practice`), stable session ID, optional coach goal/note, and source/verification metadata. Current data cannot support point-by-point, serve/receive, rally-length, deuce, or true attendance analysis; do not imply those insights without collecting the required data.
+
 ### UAT Audit Remediation (2026-10-02) — LIVE, AWAITING PROD APPROVAL
 - UAT behavior commits `b03995c`, `e8422a6`, `ee61ee8`, and `f599174` are deployed. Nothing from this remediation has been promoted to `main`.
 - The password gate now blocks public-data requests until site login succeeds. Direct supplement-page login uses the Worker URL, the password controls appear in the first mobile viewport, and the long club introduction is collapsed by default.
