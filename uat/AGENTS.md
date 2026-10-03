@@ -206,6 +206,15 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Accumulated UAT Release Promoted to Production (2026-10-03) — LIVE
+- With the user's explicit approval, the complete tested UAT package was promoted to production in merge commit `47d2b12`. The branches had diverged only through duplicate documentation history, so the merge preserved both histories and used the tested UAT tree as the release content.
+- This release includes the UAT audit remediation and Phase 1 experience work, Training Insights, opponent-context analysis, session operations and comparisons, rapid entry and recovery, player/session/match reflections, persistent seven-day login, the repeat-safe Training Match Import Center, global Back to Top control, and the plain-language interpretation guides documented below.
+- GitHub Actions run `37120838252` passed the syntax gate and production deployment. The production build stamp reports branch `main` and commit `47d2b126be4086bfb753fa878dfc043c54eab10c`.
+- Production smoke checks passed at 390 px for Home, Player, Training Insights, Tournament, Player Reflection, Data Maintenance, and the supplement redirect: core routes returned HTTP 200, settled horizontal overflow was zero, the member password control remained in the first viewport, and no console errors occurred. The authenticated content had already passed the broader bilingual/multi-viewport UAT validation recorded below.
+- Because the Pages workflow intentionally uses `keep_files: true`, obsolete production-root artifacts were removed directly from `gh-pages` in cleanup commit `057a123`: `player-profile-supplement.js`, `player-profile-supplements.json`, and `public-data.json`. All three now return HTTP 404; the valid `player-profile-supplement.html` redirect remains HTTP 200.
+- This was a code/site promotion only. No Upstash records, matches, sessions, reflections, import batches, or pending changes were created or modified.
+- The next major product priority remains Admin/API security hardening, followed by automated smoke/schema/backup and record-count safeguards. The older `LIVE IN UAT, AWAITING PROD APPROVAL` headings below are historical package records and are superseded by this production-release entry.
+
 ### Plain-Language Data Interpretation Guides (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commit `b7161df` audits the major member-facing statistics and analysis areas and adds bilingual, task-focused guidance. GitHub Actions run `37117561762` passed the syntax gate and UAT deployment; production remains unchanged.
 - Home now explains Club Pulse and Club Statistics in addition to the existing ranking, session, volume, player-profile, and Head-to-Head guides. The guidance defines completion, match participation versus attendance, close-match rate, unique pairings, profile reporting coverage, intended uses, and conclusions the data cannot support.
