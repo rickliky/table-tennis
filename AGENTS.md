@@ -206,6 +206,16 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Session Operations, Comparison, and Reporting (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commit `d2aa638` adds a first-class `sessions` collection, Session Manager, grouped rapid-entry approval, arbitrary two-date comparison, new charts, and print/PDF reporting. GitHub Actions run `37097524985` passed the syntax gate and UAT deployment; production site code remains unchanged.
+- Session records store `sessionId`, date, venue, session type, match format, source, verification date, coach goal, and coach note. Historical matches were not rewritten or inferred: all 39 current training dates correctly show `Metadata unrecorded` until a session record is explicitly submitted and approved.
+- Data Maintenance now has a Sessions tab. Each date shows recorded/completed match counts, match participants, records linked by session ID, date-only/unlinked records, incomplete records, possible exact duplicates, and unusual scores. A session opens its date-filtered match list or a shareable Training Insights report. Shared source/verification/coach metadata is no longer copied into newly entered match records; legacy match values remain untouched.
+- Rapid Session Entry now submits one session change plus all match changes under a common `BATCH-<sessionId>-<timestamp>` ID. Approvers see grouped session batches and can approve/reject a complete batch through `/api/approve-batch`; individual review remains available. Processed history can create a new corrective/restore request without deleting the original audit record.
+- Training Insights accepts `?session=YYYY-MM-DD&compare=YYYY-MM-DD#session`. It compares recorded/completed volume, participants, participant overlap, unique/repeated pairings, close-match rate, workload bands, scoreline distribution, and common-player average set differential. Comparisons are explicitly contextual rather than improvement claims because participant/opponent mixes may differ.
+- New visualizations are a stacked scoreline comparison, common-player dumbbell chart, selected/comparison workload bars, category recorded/completed matrix, and 39-date activity heatmap. The bilingual print/PDF view keeps session metadata, KPIs, workload, data-quality warnings, and the two comparison charts while suppressing navigation and long evidence sections.
+- Worker version `387e457d-71d5-4487-ad9e-49909ed7273f` adds session validation, `sessions` public data, batch IDs, correction references, and authenticated atomic-style batch review. Invalid session payloads return HTTP 400; unauthenticated batch approval returns HTTP 401. UAT and PROD currently have zero approved session records, and UAT has zero pending changes; no test data was created.
+- Local mocked validation covered session create payloads, rapid session+match batch submission, grouped approver rendering/request payloads, correction design, URL persistence, chart rendering, print media, and session-to-match navigation. Live UAT passed at 320, 390, 768, 900, 1024, and 1440 px with zero horizontal overflow or console errors. Latest 2026-10-01 session health remains 60 recorded, 57 completed, 28 match participants, 60 date-only/unlinked, 3 incomplete, 0 duplicate candidates, and 0 unusual scores.
+
 ### Per-Match Player Reflections (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commit `6753bba` keeps the existing session reflection and adds an optional Match Reflection mode for both training and tournament matches. GitHub Actions run `37094723958` passed the syntax gate and UAT deployment; production site code remains unchanged.
 - Match reflections are one approved record per player/match with deterministic IDs (`MRF-T-<trainingMatchId>-<playerId>` or `MRF-O-<tournamentMatchId>-<playerId>`). They capture what worked, the main difficulty, an optional adjustment attempted, and the next-match plan; training and tournament sources remain explicit and separate.
@@ -297,7 +307,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Data Rules (CRITICAL)
 - **Upstash Redis is the SOLE golden source of truth** for ALL data — never load from local files at runtime
-- **ALL golden source data is in Upstash**: clubs, players, matches, externalOpponents, tournaments, tournamentMatches, tournamentProgress, **rubbers**, sessionFeedback, matchFeedback
+- **ALL golden source data is in Upstash**: clubs, players, matches, externalOpponents, tournaments, tournamentMatches, tournamentProgress, **rubbers**, sessions, sessionFeedback, matchFeedback
 - `data-client.js` populates rubber globals (`window.RUBBERS`, `window.RUBBER_DB`, `window.RUBBER_NAME_TO_ID`) from the Upstash API response — no static `rubbers.js` script tag needed
 - Local `backup/` files are **offline-only reference** — never used at runtime, never used as fallback
 - Always push data changes to Upstash via Worker API (`/api/change`) after modifying data
@@ -322,7 +332,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Admin Data Loading
 - Admin page loads ALL data from Upstash via `loadPublicData()` → Worker `/api/public-data`
-- Worker supports entity types: `clubs`, `players`, `matches`, `externalOpponents`, `tournaments`, `tournamentMatches`, `tournamentProgress`, `rubbers`, `sessionFeedback`, `matchFeedback`
+- Worker supports entity types: `clubs`, `players`, `matches`, `externalOpponents`, `tournaments`, `tournamentMatches`, `tournamentProgress`, `rubbers`, `sessions`, `sessionFeedback`, `matchFeedback`
 - Training matches entity type (`trainingMatch`) is NOT supported by the Worker — cannot push via migration script
 - Pending changes require approver login to accept; reject is public
 
