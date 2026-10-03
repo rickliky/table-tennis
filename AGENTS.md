@@ -206,6 +206,15 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Rapid Draft Recovery and Player Self-Feedback (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commits `2992f3e` and `626a0aa` add environment-scoped rapid-entry recovery and bilingual player self-feedback. GitHub Actions runs `37089969435` and `37090161307` passed the syntax gate and UAT deployment; production site code remains unchanged.
+- Rapid Session Entry autosaves shared metadata, the in-progress match, and reviewed matches in localStorage for up to seven days. Reloading restores the batch, locks shared metadata while reviewed matches exist, recalculates warnings in the current language, and offers an explicit discard action. Successful batch submission clears the saved draft.
+- New `feedback.html` lets an active Little Kings player select a recorded training date and submit effort (1–5), confidence (1–5), what went well, next focus, and an optional note. Individual identity is not verified, so the form explicitly tells members to select only their own name.
+- Reflections use deterministic IDs (`FB-YYYYMMDD-LK-NNNN`), one approved reflection per player/date, and the normal pending-change approval flow. Approved reflections are visible to all password-authorized club members on the reflection page, selected-session Training Insights, and player-profile Overview; they are clearly labeled as player-written rather than coach evaluation, official score, or attendance.
+- Worker version `e6d7e69d-cbd8-4bf8-8f3b-1482a2c33998` adds the `session-feedback` Upstash collection, requires a valid site/admin/approver session for submissions, validates canonical player/date/session IDs and recorded training dates, and keeps Admin/Approver sessions at eight hours while site sessions match the existing seven-day access window.
+- UAT currently has zero approved reflections, 86 active player choices, and 39 recorded training dates. No test feedback or pending change was created. Unauthenticated submission was verified to return HTTP 401.
+- Local and live validation passed at 320, 390, 768, 900, 1024, and 1440 px with zero settled page overflow or console errors. It covered create/update request payloads, site-token authorization headers, pending-review rendering, bilingual switching, 44 px rating controls, profile/Insights links, draft restore/discard, current-entry restore, and metadata locking. The follow-up commit fixes the browser's newer `pattern` regex handling for session IDs.
+
 ### Global Back to Top Control (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commit `15d403c` adds one shared bilingual Back to Top control through `access-gate.js` on Home, Player, Tournament, Training Insights, supplement directory, and Data Maintenance pages. GitHub Actions run `37086482698` passed the syntax gate and deployment; production remains unchanged.
 - The control stays hidden near the top or on short pages, appears after meaningful scrolling, uses a 44 px minimum touch target, avoids the fixed environment badge, and updates between `TOP` / `上へ` with an accessible label.
