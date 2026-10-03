@@ -206,6 +206,14 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Coach-Arranged Opponent Context (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commit `37198b7` updates the Player page so falling win rate or set differential is not presented as automatic player regression. GitHub Actions run `37115917901` passed the syntax gate and UAT deployment; production site code remains unchanged.
+- Performance win-rate charts and the Opponents dashboard now show a bilingual `Coach-arranged challenge context` notice: coaches select training opponents for development, so lower results may reflect a planned move to stronger opposition rather than reduced ability.
+- The page does not claim that stronger opposition caused a particular result because current records do not contain a coach-assigned difficulty rating. Readers are directed to opponent identities, scorelines, set differential, and category mix before interpreting change.
+- Evaluative labels such as `Improving signal`, `Downward signal`, and `Stable signal` were replaced with neutral descriptions of higher, lower, or similar recent results/set differential. Selected-opponent comparisons explicitly describe repeated meetings with the same opponent and are not treated as an overall growth rating.
+- Growth Summary methodology and Win Rate / Opponent Progress help text now carry the same interpretation rule. No statistics, thresholds, historical matches, or opponent assignments were changed.
+- Local and live UAT validation passed in Japanese and English at 320, 390, 768, 1024, and 1440 px with zero settled page overflow or console errors. In-page language switching keeps one correctly translated context notice without duplication.
+
 ### Training Match Import & Data Quality Center (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commits `a5d96f3`, `7548824`, and `ae00b50` add a bilingual Training Match Import workspace for UTF-8 CSV/TSV file upload or direct paste. GitHub Actions run `37115197681` passed the syntax gate and UAT deployment; production site code remains unchanged.
 - Import preview resolves canonical IDs, display names, English names, notebook aliases, and explicit manual mappings across active Little Kings players and external opponents. Ambiguous/unresolved names stay blocked and expose ranked suggestions rather than being guessed.
