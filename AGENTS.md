@@ -206,6 +206,15 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Per-Match Player Reflections (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commit `6753bba` keeps the existing session reflection and adds an optional Match Reflection mode for both training and tournament matches. GitHub Actions run `37094723958` passed the syntax gate and UAT deployment; production site code remains unchanged.
+- Match reflections are one approved record per player/match with deterministic IDs (`MRF-T-<trainingMatchId>-<playerId>` or `MRF-O-<tournamentMatchId>-<playerId>`). They capture what worked, the main difficulty, an optional adjustment attempted, and the next-match plan; training and tournament sources remain explicit and separate.
+- The bilingual reflection page filters the match selector to records in which the chosen active Little Kings player actually participated. Each option and context card shows date, opponent, player-perspective score, result, and training event or tournament/round. Players with no records see a disabled empty state rather than an invalid form.
+- Training match cards link to the exact reflection through the Head-to-Head dialog. Tournament result cards expose a direct reflection link for each Little Kings participant. Approved match reflections also appear in player-profile Overview, selected-date Training Insights, the reflection history, and collapsible tournament-match evidence.
+- Worker version `a3e27f64-8174-46ca-bfe8-cc771ba75af7` adds the `match-feedback` Upstash collection and approval support. It requires site/admin/approver authentication and validates the source match, player participation, deterministic ID, opponent/name snapshots, date, player-perspective score/result, member visibility, required text, and field lengths.
+- UAT currently has 1,793 training matches, 11 tournament matches, and zero approved session or match reflections; no test data or pending change was created. LK-0093 live selection showed 148 training matches and 2 tournament matches. Unauthenticated match-reflection submission returns HTTP 401.
+- Local mocked validation covered create/update payloads, approved rendering, pending-review rendering, direct training/tournament links, empty states, session-mode regression, and bilingual switching. Live UAT passed at 320, 390, 768, 900, 1024, and 1440 px with zero settled page overflow or console errors and 44 px mode controls.
+
 ### Rapid Draft Recovery and Player Self-Feedback (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commits `2992f3e` and `626a0aa` add environment-scoped rapid-entry recovery and bilingual player self-feedback. GitHub Actions runs `37089969435` and `37090161307` passed the syntax gate and UAT deployment; production site code remains unchanged.
 - Rapid Session Entry autosaves shared metadata, the in-progress match, and reviewed matches in localStorage for up to seven days. Reloading restores the batch, locks shared metadata while reviewed matches exist, recalculates warnings in the current language, and offers an explicit discard action. Successful batch submission clears the saved draft.
@@ -288,7 +297,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Data Rules (CRITICAL)
 - **Upstash Redis is the SOLE golden source of truth** for ALL data — never load from local files at runtime
-- **ALL golden source data is in Upstash**: clubs, players, matches, externalOpponents, tournaments, tournamentMatches, tournamentProgress, **rubbers**
+- **ALL golden source data is in Upstash**: clubs, players, matches, externalOpponents, tournaments, tournamentMatches, tournamentProgress, **rubbers**, sessionFeedback, matchFeedback
 - `data-client.js` populates rubber globals (`window.RUBBERS`, `window.RUBBER_DB`, `window.RUBBER_NAME_TO_ID`) from the Upstash API response — no static `rubbers.js` script tag needed
 - Local `backup/` files are **offline-only reference** — never used at runtime, never used as fallback
 - Always push data changes to Upstash via Worker API (`/api/change`) after modifying data
@@ -313,7 +322,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ### Admin Data Loading
 - Admin page loads ALL data from Upstash via `loadPublicData()` → Worker `/api/public-data`
-- Worker supports entity types: `clubs`, `players`, `matches`, `externalOpponents`, `tournaments`, `tournamentMatches`, `tournamentProgress`, `rubbers`
+- Worker supports entity types: `clubs`, `players`, `matches`, `externalOpponents`, `tournaments`, `tournamentMatches`, `tournamentProgress`, `rubbers`, `sessionFeedback`, `matchFeedback`
 - Training matches entity type (`trainingMatch`) is NOT supported by the Worker — cannot push via migration script
 - Pending changes require approver login to accept; reject is public
 
