@@ -113,6 +113,7 @@
   const entityTypeKey = { clubs: 'club', externalOpponents: 'externalOpponent', tournaments: 'tournament', tournamentMatches: 'tournamentMatch', tournamentProgress: 'tournamentProgress' };
   let players = [];
   let trainingMatches = [];
+  let sessions = [];
   let entityData = {};
   let pendingChanges = [];
   let allChanges = [];
@@ -120,10 +121,11 @@
   let currentRole = '';
   const launchParams = new URLSearchParams(location.search), launchPlayerId = launchParams.get('editPlayer') || launchParams.get('playerId') || '', launchEditPlayer = Boolean(launchParams.get('editPlayer')), launchNewMatch = launchParams.get('newMatch') === '1';
   const requestedTab = launchParams.get('tab');
-  let activeTab = ['overview', 'matches', 'players', 'tournaments', 'clubs', 'manage'].includes(requestedTab) ? requestedTab : 'overview';
+  let activeTab = ['overview', 'sessions', 'matches', 'players', 'tournaments', 'clubs', 'manage'].includes(requestedTab) ? requestedTab : 'overview';
   let activePlayerSubTab = 'ourPlayers';
   let activeManageSubTab = 'pending';
   let activeMatchHealthFilter = '';
+  let activeMatchDateFilter = '';
   let activePlayerHealthFilter = '';
   let selectedId = launchPlayerId;
   let activeFormDirty = false;
@@ -232,7 +234,7 @@
   async function loadWorkspace() {
     try {
       const data = await window.LKData.loadPublicData();
-      players = data.players || []; trainingMatches = data.matches || [];
+      players = data.players || []; trainingMatches = data.matches || []; sessions = data.sessions || [];
       players.forEach(p => { if (!p.gradeHistory) p.gradeHistory = []; });
       entityData = { clubs: data.clubs || [], externalOpponents: data.externalOpponents || [], tournaments: data.tournaments || [], tournamentMatches: data.tournamentMatches || [], tournamentProgress: data.tournamentProgress || [] };
       await loadPendingChanges();
@@ -269,6 +271,7 @@
     if (currentRole === 'approver') tabs.append(tab('manage', 'REVIEW / 承認'));
     else {
       tabs.append(tab('overview', 'OVERVIEW / 概要'));
+      tabs.append(tab('sessions', 'SESSIONS / セッション'));
       tabs.append(tab('matches', 'MATCHES / 試合'));
       tabs.append(tab('players', 'PLAYERS / 選手'));
       tabs.append(tab('tournaments', 'TOURNAMENTS / 大会'));
@@ -276,7 +279,7 @@
       tabs.append(tab('manage', 'MANAGE / 管理'));
     }
     app.append(header, tabs);
-    if (activeTab === 'overview') renderOverview(); else if (activeTab === 'matches') renderAllMatches(); else if (activeTab === 'players') renderPlayers(activePlayerSubTab); else if (activeTab === 'tournaments') renderTournaments(); else if (activeTab === 'clubs') renderEntity('clubs'); else if (activeTab === 'manage') renderManage(); else renderOverview();
+    if (activeTab === 'overview') renderOverview(); else if (activeTab === 'sessions') renderSessions(); else if (activeTab === 'matches') renderAllMatches(); else if (activeTab === 'players') renderPlayers(activePlayerSubTab); else if (activeTab === 'tournaments') renderTournaments(); else if (activeTab === 'clubs') renderEntity('clubs'); else if (activeTab === 'manage') renderManage(); else renderOverview();
   }
   function button(label, onclick, className = '') { const node = el('button', { className: `admin-button ${className}`.trim(), type: 'button', textContent: label }); node.onclick = onclick; return node; }
   function tab(id, label) { const node = button(label, () => { activeTab = id; selectedId = ''; renderWorkspace(); }, `admin-tab${activeTab === id ? ' active' : ''}`); return node; }
@@ -316,6 +319,45 @@
     app.append(section);
   }
 
+  function renderSessions() {
+    const labels = language === 'en' ? {
+      kicker:'SESSION MANAGER', title:'Training Sessions', intro:'Manage shared session metadata without rewriting historical match records.', add:'Add session record', date:'Date', venue:'Venue', type:'Session type', format:'Match format', source:'Source', verified:'Verified date', goal:'Coach goal', note:'Coach note', save:'Submit for approval', reset:'Reset', create:'Create session record', edit:'Edit session record', open:'Open session matches', insights:'Open in Training Insights', metadata:'Metadata', unrecorded:'Metadata unrecorded', matches:'matches', completed:'completed', participants:'match participants', linked:'linked by session ID', unlinked:'date records not linked', incomplete:'incomplete', duplicate:'possible duplicates', unusual:'unusual scores', none:'No training sessions recorded.'
+    } : {
+      kicker:'セッション管理', title:'練習セッション', intro:'過去の試合記録を書き換えずに、共有セッション情報を一か所で管理します。', add:'セッション記録を追加', date:'日付', venue:'会場', type:'セッション種別', format:'試合形式', source:'出典', verified:'確認日', goal:'指導目標', note:'指導メモ', save:'承認申請する', reset:'リセット', create:'セッション記録を作成', edit:'セッション記録を編集', open:'この日の試合を開く', insights:'練習分析で開く', metadata:'メタデータ', unrecorded:'メタデータ未登録', matches:'試合', completed:'完了', participants:'試合参加選手', linked:'セッションID連携', unlinked:'日付のみ・未連携', incomplete:'未完了', duplicate:'重複候補', unusual:'通常外スコア', none:'登録済み練習セッションはありません。'
+    };
+    const workspace = el('section', { className:'admin-workspace admin-session-workspace' }), listPanel = el('section', { className:'admin-panel admin-list-panel' }), editor = el('section', { className:'admin-panel admin-editor-panel' });
+    const dates = [...new Set([...trainingMatches.map(match => match.matchDate), ...sessions.map(item => item.sessionDate)].filter(Boolean))].sort().reverse();
+    const records = dates.map(date => {
+      const matches = trainingMatches.filter(match => match.matchDate === date), record = sessions.find(item => item.sessionDate === date) || null, expectedId = record?.sessionId || sessionIdForDate(date), linked = matches.filter(match => match.sessionId === expectedId), unlinked = matches.filter(match => match.sessionId !== expectedId), participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id]).filter(Boolean));
+      const seen = new Set(); let duplicates = 0;
+      matches.forEach(match => { const ordered = match.player1Id <= match.player2Id ? `${match.player1Id}:${match.player1Sets}|${match.player2Id}:${match.player2Sets}` : `${match.player2Id}:${match.player2Sets}|${match.player1Id}:${match.player1Sets}`, key = `${date}|${ordered}`; if (seen.has(key)) duplicates++; else seen.add(key); });
+      return { date, record, sessionId:expectedId, matches, linked, unlinked, participants:participants.size, completed:matches.filter(matchIsComplete).length, incomplete:matches.filter(match => !matchIsComplete(match)).length, duplicates, unusual:matches.filter(match => Number(match.player1Sets) > 3 || Number(match.player2Sets) > 3).length };
+    });
+    const head = el('div', { className:'admin-list-header' }), title = el('div'); title.append(text('p',labels.kicker,'eyebrow'),text('h2',`${records.length} ${labels.title}`)); head.append(title); listPanel.append(head,text('p',labels.intro,'admin-session-intro'));
+    if (canEditMatches()) listPanel.append(button(`＋ ${labels.add}`,()=>showSessionEditor(null),'primary'));
+    const list = el('div',{className:'admin-player-list admin-session-list'}); listPanel.append(list); workspace.append(listPanel,editor); app.append(workspace);
+    const selected = records.find(item=>item.sessionId===selectedId) || records[0] || null;if(selected)selectedId=selected.sessionId;
+    if (!records.length) list.append(text('p',labels.none,'admin-empty'));
+    records.forEach(item => {
+      const row = el('button',{type:'button',className:`admin-player-row admin-session-row${selectedId===item.sessionId?' selected':''}`});
+      row.innerHTML = `<span><b>${escapeHtml(item.date)}</b><small>${escapeHtml(item.record?.venue || labels.unrecorded)} · ${escapeHtml(item.sessionId)}</small></span><span class="admin-session-row-metrics"><b>${item.matches.length}</b><small>${labels.matches}</small></span><span class="admin-session-record-state ${item.record?'recorded':'missing'}">${item.record?labels.metadata:labels.unrecorded}</span>`;
+      row.onclick=()=>{selectedId=item.sessionId;renderWorkspace();}; list.append(row);
+    });
+    if (selected) showSessionEditor(selected); else showSessionEditor(null);
+
+    function showSessionEditor(item) {
+      empty(editor); const existing = item?.record || null, dateValue = item?.date || todayInTokyo(), record = existing ? {...existing} : {sessionId:item?.sessionId || sessionIdForDate(dateValue),sessionDate:dateValue,venue:'',sessionType:'Club Training',matchFormat:'Best of 5',source:'',verifiedAt:'',coachGoal:'',coachNote:''}, metrics = item || {matches:[],linked:[],unlinked:[],participants:0,completed:0,incomplete:0,duplicates:0,unusual:0};
+      editor.append(text('p',existing?labels.edit:labels.create,'eyebrow'),text('h2',record.sessionDate || labels.create));
+      const health = el('div',{className:'admin-session-health'}); health.innerHTML=`<span><b>${metrics.matches.length}</b>${labels.matches}</span><span><b>${metrics.completed}</b>${labels.completed}</span><span><b>${metrics.participants}</b>${labels.participants}</span><span><b>${metrics.linked.length}</b>${labels.linked}</span><span class="${metrics.unlinked.length?'warning':''}"><b>${metrics.unlinked.length}</b>${labels.unlinked}</span><span class="${metrics.incomplete?'warning':''}"><b>${metrics.incomplete}</b>${labels.incomplete}</span><span class="${metrics.duplicates?'error':''}"><b>${metrics.duplicates}</b>${labels.duplicate}</span><span class="${metrics.unusual?'warning':''}"><b>${metrics.unusual}</b>${labels.unusual}</span>`; editor.append(health);
+      const links=el('div',{className:'admin-session-links'}); links.append(button(labels.open,()=>{activeMatchSubTab='training';activeMatchDateFilter=record.sessionDate;activeTab='matches';selectedId='';renderWorkspace();},'secondary'),el('a',{href:`insights.html?session=${encodeURIComponent(record.sessionDate)}#session`,textContent:`${labels.insights} →`}));editor.append(links);
+      const form=el('form',{className:'admin-player-form admin-session-form'}), date=el('input',{name:'sessionDate',type:'date',required:true,value:record.sessionDate}), id=el('input',{name:'sessionId',type:'text',required:true,value:record.sessionId,pattern:'[A-Za-z0-9_\\-]{4,64}',maxLength:64}), venue=el('input',{name:'venue',type:'text',value:record.venue||'',maxLength:500}), type=select('sessionType',['Club Training','Open Practice','Private Lesson','Other'],record.sessionType||'Club Training'), format=select('matchFormat',['','Best of 5','Best of 3','Short practice','Mixed'],record.matchFormat||''), source=el('input',{name:'source',type:'text',value:record.source||'',maxLength:500}), verified=el('input',{name:'verifiedAt',type:'date',value:record.verifiedAt||''}), goal=el('textarea',{name:'coachGoal',value:record.coachGoal||'',maxLength:500}), note=el('textarea',{name:'coachNote',value:record.coachNote||'',maxLength:1500});
+      const field=(label,input)=>{const node=el('label');node.append(text('span',label),input);form.append(node);}; field('Session ID / セッションID',id);field(labels.date,date);field(labels.venue,venue);field(labels.type,type);field(labels.format,format);field(labels.source,source);field(labels.verified,verified);field(labels.goal,goal);field(labels.note,note);
+      if (!existing) date.onchange=()=>{if(!id.value||/^LKS-\d{8}$/.test(id.value))id.value=sessionIdForDate(date.value);};
+      if (canEditMatches()) { const actions=el('div',{className:'admin-editor-actions'}), status=text('p','','admin-status'); actions.append(button(labels.save,()=>form.requestSubmit(),'primary'),button(labels.reset,()=>{form.reset();},'secondary'));form.append(actions,status);form.onsubmit=event=>{event.preventDefault();const next={...(existing||{}),...Object.fromEntries(new FormData(form)),createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};submitChange('session',next.sessionId,next,existing?'update':'create').then(()=>refreshWorkspace(next.sessionId)).catch(error=>{status.textContent=`${error.message} / 保存できませんでした`;});}; }
+      trackDirtyForm(form); editor.append(form); const pending=findPendingChange('session',record.sessionId);if(pending)editor.append(renderPendingInfo(pending));if(existing)renderRecordHistory('session',record.sessionId).then(history=>{if(history.childNodes.length)editor.append(history);});
+    }
+  }
+
   let activeMatchSubTab = 'training';
 
   function renderAllMatches() {
@@ -327,7 +369,7 @@
     listHeader.append(heading); listPanel.append(listHeader);
     // Sub-tabs: Training / Tournament
     const subTabs = el('div', { className: 'admin-sub-tabs' });
-    const subTab = (id, label) => { const node = button(label, () => { activeMatchSubTab = id; selectedId = ''; renderWorkspace(); }, `admin-sub-tab${activeMatchSubTab === id ? ' active' : ''}`); return node; };
+    const subTab = (id, label) => { const node = button(label, () => { activeMatchSubTab = id; activeMatchDateFilter = ''; selectedId = ''; renderWorkspace(); }, `admin-sub-tab${activeMatchSubTab === id ? ' active' : ''}`); return node; };
     subTabs.append(subTab('training', 'TRAINING / 練習'), subTab('tournament', 'TOURNAMENT / 大会'));
     listPanel.append(subTabs);
     // Filters
@@ -345,6 +387,7 @@
     const allDates = [...new Set((isTraining ? trainingMatches : (entityData.tournamentMatches || [])).map(m => m.matchDate).filter(Boolean))].sort().reverse();
     dateSelect.append(el('option', { value: '', textContent: language === 'en' ? 'ALL DATES' : 'すべての日付' }));
     allDates.forEach(d => { dateSelect.append(el('option', { value: d, textContent: d })); });
+    if (isTraining && allDates.includes(activeMatchDateFilter)) dateSelect.value = activeMatchDateFilter;
     const statusFilter = el('select', { ariaLabel: 'Filter by match status' });
     ['', completedStatusId, incompleteStatusId].forEach(s => { statusFilter.append(el('option', { value: s, textContent: s ? statusLabel(s) : (language === 'en' ? 'ALL STATUS' : 'すべてのステータス') })); });
     detailRow.append(text('span', 'DATE:', 'admin-filter-label'), dateSelect, text('span', 'STATUS:', 'admin-filter-label'), statusFilter);
@@ -455,7 +498,7 @@
       }
     };
     const resetAndUpdate = () => { visibleLimit = 100; updateList(); };
-    dateSelect.onchange = resetAndUpdate; statusFilter.onchange = resetAndUpdate;
+    dateSelect.onchange = () => { if (isTraining) activeMatchDateFilter = dateSelect.value; resetAndUpdate(); }; statusFilter.onchange = resetAndUpdate;
     playerSearch.oninput = resetAndUpdate;
     const tournFilterEl = detailRow.querySelector('.player-combobox');
     if (tournFilterEl) { tournFilterEl.addEventListener('change', resetAndUpdate); }
@@ -477,6 +520,7 @@
     const division = el('input', { name: 'division', type: 'text', value: record.division || '' });
     const format = select('format', ['Singles'], record.format || 'Singles');
     const sessionId = el('input', { name: 'sessionId', type: 'text', value: record.sessionId || '', placeholder: sessionIdForDate(record.matchDate), pattern: '[A-Za-z0-9_\\-]{4,64}', maxLength: 64 });
+    const sessionChoices = el('datalist', { id:'admin-session-id-options' }); sessions.forEach(item=>sessionChoices.append(el('option',{value:item.sessionId,label:`${item.sessionDate} · ${item.venue||item.sessionType||''}`}))); sessionId.setAttribute('list',sessionChoices.id);
     const matchFormat = select('matchFormat', ['', 'Best of 5', 'Best of 3', 'Short practice'], record.matchFormat || '');
     const addMetaField = (label, input) => { const l = el('label'); l.append(text('span', label), input); sectionMeta.append(l); };
     addMetaField('日付 / Date', date); addMetaField('セッションID / Session ID', sessionId); addMetaField('イベント / Event', event); addMetaField('部門 / Division', division); addMetaField('競技形式 / Event format', format); addMetaField('試合形式 / Match format', matchFormat);
@@ -501,16 +545,12 @@
     addMatchField('選手1 セット / P1 Sets', sets1); addMatchField('選手2 セット / P2 Sets', sets2);
     addMatchField('結果ステータス / Result Status', resultStatus);
     form.append(sectionMatch);
-    const sectionContext = el('div', { className: 'admin-match-section admin-match-context' }); sectionContext.append(text('p', 'CONTEXT & SOURCE / 目的・出典', 'admin-match-section-title'));
-    const source = el('input', { name: 'source', type: 'text', value: record.source || '', placeholder: 'Notebook / Admin entry / Import batch', maxLength: 500 });
-    const verifiedAt = el('input', { name: 'verifiedAt', type: 'date', value: record.verifiedAt ? String(record.verifiedAt).slice(0,10) : '' });
-    const coachGoal = el('input', { name: 'coachGoal', type: 'text', value: record.coachGoal || '', placeholder: 'Optional coach goal / 任意の指導目標', maxLength: 500 });
-    const coachNote = el('input', { name: 'coachNote', type: 'text', value: record.coachNote || '', placeholder: 'Optional coach note / 任意の指導メモ', maxLength: 500 });
-    const addContextField = (label, input) => { const l = el('label'); l.append(text('span', label), input); sectionContext.append(l); };
-    addContextField('出典 / Source', source); addContextField('確認日 / Verified date', verifiedAt); addContextField('指導目標 / Coach goal', coachGoal); addContextField('指導メモ / Coach note', coachNote); form.append(sectionContext);
+    form.append(sessionChoices);
+    const sectionContext = el('div', { className: 'admin-match-session-reference' }); sectionContext.innerHTML=`<b>${language==='en'?'Shared session metadata':'共有セッション情報'}</b><span>${language==='en'?'Venue, source, verification, and coach notes are managed once in Sessions. Legacy values on old matches are preserved.':'会場・出典・確認日・指導メモは「セッション」で一括管理します。過去の試合に保存済みの値は保持されます。'}</span><a href="admin.html?tab=sessions">${language==='en'?'Open Session Manager':'セッション管理を開く'} →</a>`; form.append(sectionContext);
     form.append(p1sl, p1gr, p2sl, p2gr);
-    [date, sessionId, event, division, format, matchFormat, player1, player2, sets1, sets2, resultStatus, source, verifiedAt, coachGoal, coachNote].forEach(input => { input.disabled = readOnly; });
+    [date, sessionId, event, division, format, matchFormat, player1, player2, sets1, sets2, resultStatus].forEach(input => { input.disabled = readOnly; });
     if (!match) date.addEventListener('change', () => { if (!sessionId.value || /^LKS-\d{8}$/.test(sessionId.value)) sessionId.value = sessionIdForDate(date.value); });
+    sessionId.addEventListener('change',()=>{const linked=sessions.find(item=>item.sessionId===sessionId.value);if(!linked)return;date.value=linked.sessionDate||date.value;if(linked.matchFormat&&linked.matchFormat!=='Mixed')matchFormat.value=linked.matchFormat;});
     const derived = text('p', '', 'admin-derived'); form.append(derived);
     const updateDerived = () => {
       const one = Number(sets1.value); const two = Number(sets2.value); const incomplete = isIncompleteStatus(resultStatus.value);
@@ -558,14 +598,16 @@
     const date = el('input', { name:'matchDate', type:'date', required:true, value:savedMeta.matchDate||defaults.matchDate });
     const sessionId = el('input', { name:'sessionId', type:'text', required:true, value:savedMeta.sessionId||defaults.sessionId, pattern:'[A-Za-z0-9_\\-]{4,64}', maxLength:64 });
     const matchFormat = select('matchFormat', ['Best of 5','Best of 3','Short practice'], savedMeta.matchFormat||defaults.matchFormat);
+    const venue = el('input', { name:'venue', type:'text', value:savedMeta.venue||'', placeholder:'Venue / 会場', maxLength:500 });
+    const sessionType = select('sessionType',['Club Training','Open Practice','Private Lesson','Other'],savedMeta.sessionType||'Club Training');
     const division = el('input', { name:'division', type:'text', value:savedMeta.division||'', placeholder:'Optional group / 任意のグループ' });
     const source = el('input', { name:'source', type:'text', value:savedMeta.source||'', placeholder:'Notebook / Admin entry / Import batch', maxLength:500 });
     const verifiedAt = el('input', { name:'verifiedAt', type:'date', value:savedMeta.verifiedAt||'' });
     const coachGoal = el('input', { name:'coachGoal', type:'text', value:savedMeta.coachGoal||'', placeholder:'Optional coach goal / 任意の指導目標', maxLength:500 });
     const coachNote = el('input', { name:'coachNote', type:'text', value:savedMeta.coachNote||'', placeholder:'Optional coach note / 任意の指導メモ', maxLength:500 });
-    const settingsInputs=[date,sessionId,matchFormat,division,source,verifiedAt,coachGoal,coachNote], settingsLock=text('p','', 'rapid-settings-lock');
+    const settingsInputs=[date,sessionId,matchFormat,venue,sessionType,division,source,verifiedAt,coachGoal,coachNote], settingsLock=text('p','', 'rapid-settings-lock');
     const field = (label,input) => { const node=el('label'); node.append(text('span',label),input); settings.append(node); };
-    field('日付 / Date',date); field('セッションID / Session ID',sessionId); field('試合形式 / Match format',matchFormat); field('部門 / Division',division); field('出典 / Source',source); field('確認日 / Verified date',verifiedAt); field('指導目標 / Coach goal',coachGoal); field('指導メモ / Coach note',coachNote);
+    field('日付 / Date',date); field('セッションID / Session ID',sessionId); field('試合形式 / Match format',matchFormat); field('会場 / Venue',venue); field('セッション種別 / Session type',sessionType); field('部門 / Division',division); field('出典 / Source',source); field('確認日 / Verified date',verifiedAt); field('指導目標 / Coach goal',coachGoal); field('指導メモ / Coach note',coachNote);
     settings.append(settingsLock);
     const entry = el('section', { className:'rapid-match-entry' }); entry.append(text('h3',labels.entry));
     const player1 = playerSelect('rapidPlayer1Id',savedCurrent.player1Id||''), player2 = playerSelect('rapidPlayer2Id',savedCurrent.player2Id||'');
@@ -587,15 +629,15 @@
     const quickIds=()=>{const ids=[];const add=id=>{if(id&&!ids.includes(id)&&personById(id))ids.push(id);};drafts.forEach(match=>[match.player1Id,match.player2Id].forEach(add));trainingMatches.filter(match=>match.matchDate===date.value).forEach(match=>[match.player1Id,match.player2Id].forEach(add));[...trainingMatches].sort((a,b)=>`${b.matchDate||''}${b.matchId||''}`.localeCompare(`${a.matchDate||''}${a.matchId||''}`)).forEach(match=>[match.player1Id,match.player2Id].forEach(add));return ids.slice(0,18);};
     const renderQuickPicks=()=>{const target=quick.querySelector('div');empty(target);const ids=quickIds();if(!ids.length){target.append(text('p',language==='en'?'Players appear here after matches are added.':'試合を追加すると選手がここに表示されます。','admin-empty'));return;}ids.forEach(id=>{const person=personById(id);target.append(button(preferredName(person)||playerName(id),()=>{if(!player1.value)player1.value=id;else if(!player2.value&&player1.value!==id)player2.value=id;else player2.value=id;persistRapidDraft();},'rapid-player-chip'));});};
     const clearEntry=(keepStatus=false)=>{player1.value='';player2.value='';sets1.value='0';sets2.value='0';if(!keepStatus)entryStatus.textContent='';persistRapidDraft();player1.querySelector('.player-combobox-input')?.focus();};
-    const metadata=()=>({matchDate:date.value,sessionId:sessionId.value||sessionIdForDate(date.value),matchFormat:matchFormat.value||'Best of 5',event:'Club Training',division:division.value,format:'Singles',source:source.value,verifiedAt:verifiedAt.value,coachGoal:coachGoal.value,coachNote:coachNote.value});
-    const persistRapidDraft=()=>{if(!rapidReady)return;localStorage.setItem(rapidStorageKey,JSON.stringify({savedAt:Date.now(),metadata:metadata(),current:{player1Id:player1.value,player2Id:player2.value,player1Sets:Number(sets1.value)||0,player2Sets:Number(sets2.value)||0},drafts}));discardButton.hidden=false;};
-    const discardSavedBatch=()=>{if(!confirm(labels.discardConfirm))return;rapidReady=false;drafts=[];recoveredDraft=null;date.value=defaults.matchDate;sessionId.value=defaults.sessionId;matchFormat.value=defaults.matchFormat;division.value='';source.value='';verifiedAt.value='';coachGoal.value='';coachNote.value='';clearEntry();localStorage.removeItem(rapidStorageKey);recoveryNotice.hidden=true;renderDrafts();renderQuickPicks();rapidReady=true;activeFormDirty=false;form.querySelector('.admin-unsaved-indicator').hidden=true;};
-    const buildDraft=()=>{const one=Number(sets1.value),two=Number(sets2.value),p1=player1.value,p2=player2.value;if(!p1||!p2||p1===p2)return {error:labels.players};if(!Number.isInteger(one)||!Number.isInteger(two)||one<0||two<0)return {error:labels.invalidScore};if(one===two&&one>=3)return {error:labels.tiedComplete};const complete=(one>=3||two>=3)&&one!==two,p1Record=players.find(person=>person.playerId===p1),p2Record=players.find(person=>person.playerId===p2),record={...metadata(),player1Id:p1,player1Name:playerName(p1),player1Sets:one,player2Id:p2,player2Name:playerName(p2),player2Sets:two,player1SchoolLevel:p1Record?.schoolLevel||'',player1Grade:p1Record?.grade||'',player2SchoolLevel:p2Record?.schoolLevel||'',player2Grade:p2Record?.grade||'',score:`${one}-${two}`,resultStatus:complete?completedStatusId:incompleteStatusId,winnerId:complete?(one>two?p1:p2):'',winnerName:complete?playerName(one>two?p1:p2):'',draftId:`draft-${Date.now()}-${drafts.length}`};record.warnings=warningsFor(record);return {record};};
+    const sessionMetadata=()=>({sessionId:sessionId.value||sessionIdForDate(date.value),sessionDate:date.value,venue:venue.value,sessionType:sessionType.value||'Club Training',matchFormat:matchFormat.value||'Best of 5',source:source.value,verifiedAt:verifiedAt.value,coachGoal:coachGoal.value,coachNote:coachNote.value}),matchMetadata=()=>({matchDate:date.value,sessionId:sessionId.value||sessionIdForDate(date.value),matchFormat:matchFormat.value||'Best of 5',event:'Club Training',division:division.value,format:'Singles'});
+    const persistRapidDraft=()=>{if(!rapidReady)return;localStorage.setItem(rapidStorageKey,JSON.stringify({savedAt:Date.now(),metadata:{...sessionMetadata(),division:division.value},current:{player1Id:player1.value,player2Id:player2.value,player1Sets:Number(sets1.value)||0,player2Sets:Number(sets2.value)||0},drafts}));discardButton.hidden=false;};
+    const discardSavedBatch=()=>{if(!confirm(labels.discardConfirm))return;rapidReady=false;drafts=[];recoveredDraft=null;date.value=defaults.matchDate;sessionId.value=defaults.sessionId;matchFormat.value=defaults.matchFormat;venue.value='';sessionType.value='Club Training';division.value='';source.value='';verifiedAt.value='';coachGoal.value='';coachNote.value='';clearEntry();localStorage.removeItem(rapidStorageKey);recoveryNotice.hidden=true;renderDrafts();renderQuickPicks();rapidReady=true;activeFormDirty=false;form.querySelector('.admin-unsaved-indicator').hidden=true;};
+    const buildDraft=()=>{const one=Number(sets1.value),two=Number(sets2.value),p1=player1.value,p2=player2.value;if(!p1||!p2||p1===p2)return {error:labels.players};if(!Number.isInteger(one)||!Number.isInteger(two)||one<0||two<0)return {error:labels.invalidScore};if(one===two&&one>=3)return {error:labels.tiedComplete};const complete=(one>=3||two>=3)&&one!==two,p1Record=players.find(person=>person.playerId===p1),p2Record=players.find(person=>person.playerId===p2),record={...matchMetadata(),player1Id:p1,player1Name:playerName(p1),player1Sets:one,player2Id:p2,player2Name:playerName(p2),player2Sets:two,player1SchoolLevel:p1Record?.schoolLevel||'',player1Grade:p1Record?.grade||'',player2SchoolLevel:p2Record?.schoolLevel||'',player2Grade:p2Record?.grade||'',score:`${one}-${two}`,resultStatus:complete?completedStatusId:incompleteStatusId,winnerId:complete?(one>two?p1:p2):'',winnerName:complete?playerName(one>two?p1:p2):'',draftId:`draft-${Date.now()}-${drafts.length}`};record.warnings=warningsFor(record);return {record};};
     const addDraft=()=>{const built=buildDraft();if(built.error){entryStatus.textContent=built.error;entryStatus.className='rapid-entry-status error';return;}drafts.push(built.record);entryStatus.textContent=`${built.record.player1Name} ${built.record.score} ${built.record.player2Name} · ${built.record.resultStatus===completedStatusId?labels.complete:labels.incomplete}`;entryStatus.className='rapid-entry-status ok';clearEntry(true);renderDrafts();renderQuickPicks();};
     const cloneDraft=match=>{player1.value=match.player1Id;player2.value=match.player2Id;sets1.value=String(match.player1Sets);sets2.value=String(match.player2Sets);entryStatus.textContent=language==='en'?'Cloned into the next-match form.':'次の試合フォームに複製しました。';entryStatus.className='rapid-entry-status warning';persistRapidDraft();player1.querySelector('.player-combobox-input')?.focus();};
     const renderDrafts=()=>{empty(reviewList);drafts.forEach(match=>{match.warnings=warningsFor(match,match.draftId);});const complete=drafts.filter(match=>match.resultStatus===completedStatusId).length,warningCount=drafts.reduce((sum,match)=>sum+(match.warnings?.length||0),0),locked=Boolean(drafts.length);settingsInputs.forEach(input=>{input.disabled=locked;});settingsLock.textContent=locked?labels.locked:'';settingsLock.hidden=!locked;reviewSummary.innerHTML=`<span><b>${drafts.length}</b>${language==='en'?'matches':'試合'}</span><span><b>${complete}</b>${labels.complete}</span><span><b>${drafts.length-complete}</b>${labels.incomplete}</span><span><b>${warningCount}</b>${language==='en'?'warnings':'注意'}</span>`;if(!drafts.length)reviewList.append(text('p',labels.empty,'admin-empty'));drafts.forEach((match,index)=>{const row=el('article',{className:`rapid-draft-row${match.warnings?.length?' warning':''}`}),main=el('div'),actions=el('span',{className:'rapid-draft-actions'});main.innerHTML=`<small>#${index+1} · ${escapeHtml(match.resultStatus===completedStatusId?labels.complete:labels.incomplete)}</small><b>${escapeHtml(match.player1Name)} <strong>${escapeHtml(match.score)}</strong> ${escapeHtml(match.player2Name)}</b>${match.warnings?.map(warning=>`<em>${escapeHtml(warning)}</em>`).join('')||''}`;actions.append(button(labels.clone,()=>cloneDraft(match),'secondary'),button(labels.remove,()=>{drafts=drafts.filter(item=>item.draftId!==match.draftId);renderDrafts();renderQuickPicks();},'danger'));row.append(main,actions);reviewList.append(row);});draftCount.value=String(drafts.length);draftCount.dispatchEvent(new Event('input',{bubbles:true}));submitButton.disabled=!drafts.length;submitButton.textContent=`${labels.submit} · ${drafts.length}`;discardButton.hidden=!drafts.length&&!recoveredDraft;persistRapidDraft();};
     const batchReservedIds=[];
-    async function submitBatch(){if(!drafts.length||!confirm(`${labels.confirm}\n\n${drafts.length} ${language==='en'?'matches':'試合'}`))return;submitButton.disabled=true;const submitted=[];batchStatus.textContent=`${labels.pending} 0 / ${drafts.length}`;for(let index=0;index<drafts.length;index++){const sourceDraft=drafts[index],matchId=newMatchId(batchReservedIds);batchReservedIds.push(matchId);const record={...sourceDraft,matchId};delete record.draftId;delete record.warnings;try{await submitChange('match',matchId,record,'create');submitted.push(sourceDraft.draftId);batchStatus.textContent=`${labels.pending} ${index+1} / ${drafts.length}`;}catch(error){drafts=drafts.filter(item=>!submitted.includes(item.draftId));renderDrafts();batchStatus.textContent=`${labels.failed} ${error.message}`;return;}}rapidReady=false;drafts=[];recoveredDraft=null;renderDrafts();localStorage.removeItem(rapidStorageKey);rapidReady=true;recoveryNotice.hidden=true;await loadPendingChanges();activeFormDirty=false;form.querySelector('.admin-unsaved-indicator').hidden=true;batchStatus.textContent=labels.success;}
+    async function submitBatch(){if(!drafts.length||!confirm(`${labels.confirm}\n\n${drafts.length} ${language==='en'?'matches':'試合'}`))return;submitButton.disabled=true;const submitted=[],batchId=`BATCH-${(sessionId.value||sessionIdForDate(date.value)).replace(/[^A-Za-z0-9_-]/g,'')}-${Date.now()}`,existingSession=sessions.find(item=>item.sessionId===(sessionId.value||sessionIdForDate(date.value))),now=new Date().toISOString(),sessionRecord={...(existingSession||{}),...sessionMetadata(),createdAt:existingSession?.createdAt||now,updatedAt:now};batchStatus.textContent=`${labels.pending} 0 / ${drafts.length}`;try{await submitChange('session',sessionRecord.sessionId,sessionRecord,existingSession?'update':'create',{batchId});}catch(error){batchStatus.textContent=`${labels.failed} ${error.message}`;submitButton.disabled=false;return;}for(let index=0;index<drafts.length;index++){const sourceDraft=drafts[index],matchId=newMatchId(batchReservedIds);batchReservedIds.push(matchId);const record={...sourceDraft,matchId};delete record.draftId;delete record.warnings;try{await submitChange('match',matchId,record,'create',{batchId});submitted.push(sourceDraft.draftId);batchStatus.textContent=`${labels.pending} ${index+1} / ${drafts.length}`;}catch(error){drafts=drafts.filter(item=>!submitted.includes(item.draftId));renderDrafts();batchStatus.textContent=`${labels.failed} ${error.message}`;return;}}rapidReady=false;drafts=[];recoveredDraft=null;renderDrafts();localStorage.removeItem(rapidStorageKey);rapidReady=true;recoveryNotice.hidden=true;await loadPendingChanges();activeFormDirty=false;form.querySelector('.admin-unsaved-indicator').hidden=true;batchStatus.textContent=labels.success;}
     date.addEventListener('change',()=>{if(!sessionId.value||/^LKS-\d{8}$/.test(sessionId.value))sessionId.value=sessionIdForDate(date.value);renderQuickPicks();});
     matchFormat.addEventListener('change',()=>{entryStatus.textContent=matchFormat.value==='Best of 5'?'':labels.shortRule;entryStatus.className='rapid-entry-status warning';});
     [sets1,sets2].forEach(input=>input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();addDraft();}}));
@@ -1273,7 +1315,7 @@
     }
   }
 
-  async function submitChange(entityType, targetId, after, action) { return window.LKData.request('/api/change', { method: 'POST', body: JSON.stringify({ entityType, targetId, after, action }) }); }
+  async function submitChange(entityType, targetId, after, action, options = {}) { return window.LKData.request('/api/change', { method: 'POST', body: JSON.stringify({ entityType, targetId, after, action, ...options }) }); }
 
   async function renderRecordHistory(entityType, targetId) {
     const container = el('div', { className: 'admin-record-history' });
@@ -1332,6 +1374,7 @@
       const result = await window.LKData.request('/api/pending'); const changes = (result.changes || []).filter(change => change.status === 'pending');
       if (!changes.length) { panel.append(text('p', 'No pending changes. / 承認待ちの変更はありません。', 'admin-empty')); return; }
       const summary = text('p', `${changes.length} change${changes.length > 1 ? 's' : ''} awaiting review / 承認待ち`, 'admin-pending-summary'); panel.append(summary);
+      const batchGroups = [...changes.reduce((groups,change)=>{if(!change.batchId)return groups;if(!groups.has(change.batchId))groups.set(change.batchId,[]);groups.get(change.batchId).push(change);return groups;},new Map()).entries()].filter(([,items])=>items.length>1);
       if (currentRole === 'approver') {
         const bulkActions = el('div', { className: 'admin-pending-bulk-actions' });
         const bulkStatus = text('span', '', 'admin-pending-action-status');
@@ -1352,6 +1395,10 @@
         };
         bulkActions.append(button('APPROVE ALL / すべて承認', () => handleBulk('accept'), 'primary'), button('REJECT ALL / すべて却下', () => handleBulk('reject'), 'danger'), bulkStatus);
         panel.append(bulkActions);
+        if (batchGroups.length) {
+          const batchSection=el('section',{className:'admin-batch-review'});batchSection.append(text('h3',language==='en'?'Grouped session batches':'セッション一括申請'));
+          batchGroups.forEach(([batchId,items])=>{const card=el('article'),main=el('div'),actions=el('div'),status=text('span','','admin-pending-action-status'),sessionChange=items.find(item=>item.entityType==='session'),date=sessionChange?.after?.sessionDate||items.find(item=>item.after?.matchDate)?.after?.matchDate||'';main.innerHTML=`<b>${escapeHtml(date||batchId)}</b><span>${items.length} ${language==='en'?'changes':'件'} · ${items.filter(item=>item.entityType==='match').length} ${language==='en'?'matches':'試合'}</span><small>${escapeHtml(batchId)}</small>`;const decide=async decision=>{if(!confirm(`${decision==='accept'?(language==='en'?'Approve':'承認'):(language==='en'?'Reject':'却下')} ${items.length} ${language==='en'?'changes as one reviewed batch?':'件を一括処理しますか？'}`))return;actions.querySelectorAll('button').forEach(node=>node.disabled=true);status.textContent=language==='en'?'Processing...':'処理中…';try{await window.LKData.request('/api/approve-batch',{method:'POST',body:JSON.stringify({batchId,decision})});await loadWorkspace();}catch(error){status.textContent=error.message;actions.querySelectorAll('button').forEach(node=>node.disabled=false);}};actions.append(button(language==='en'?'APPROVE BATCH':'一括承認',()=>decide('accept'),'primary'),button(language==='en'?'REJECT BATCH':'一括却下',()=>decide('reject'),'danger'),status);card.append(main,actions);batchSection.append(card);});panel.append(batchSection);
+        }
       }
       if (currentRole !== 'approver') {
         const loginHint = el('div', { className: 'admin-pending-login-hint' });
@@ -1359,14 +1406,14 @@
         loginHint.append(button('APPROVER LOGIN / 承認者ログイン', () => showApproverLogin(), 'primary'));
         panel.append(loginHint);
       }
-      changes.forEach(change => {
+      [...changes].sort((a,b)=>(a.batchId||a.changeId).localeCompare(b.batchId||b.changeId)||(a.entityType==='session'?-1:b.entityType==='session'?1:0)).forEach(change => {
         const card = el('article', { className: 'admin-pending-card' });
         const actionLabels = { create: 'NEW / 新規', update: 'MODIFIED / 変更', delete: 'DELETE / 削除' };
         const actionClass = { create: 'create', update: 'update', delete: 'delete' };
         const header = el('div', { className: 'admin-pending-card-header' });
         header.append(text('span', actionLabels[change.action] || change.action, `admin-pending-badge ${actionClass[change.action] || ''}`), text('h3', change.summary || `${change.entityType} · ${change.targetId}`), text('span', formatPendingDate(change.createdAt), 'admin-pending-date'));
         const meta = el('div', { className: 'admin-pending-meta' });
-        meta.append(text('span', `${change.entityType} · ${change.targetId} · Submitted by: / 申請者: ${change.createdBy}`, 'admin-pending-by'));
+        meta.append(text('span', `${change.entityType} · ${change.targetId} · Submitted by: / 申請者: ${change.createdBy}${change.batchId?` · Batch: ${change.batchId}`:''}`, 'admin-pending-by'));
         card.append(header, meta);
         if (change.action === 'delete' && change.before) {
           const deleted = el('div', { className: 'admin-pending-deleted' }); deleted.append(text('p', 'Record to be deleted / 削除対象レコード', 'admin-pending-section-title'));
@@ -1489,6 +1536,12 @@
               const tbody = el('tbody'); table.append(tbody);
             diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : displayValue(d.field, d.before)), text('td', d.after === '' || d.after == null ? '—' : displayValue(d.field, d.after))); tbody.append(row); });
               diffSection.append(table); card.append(diffSection);
+            }
+            if (currentRole === 'admin' && (c.before || c.after)) {
+              const corrective=el('div',{className:'admin-history-corrective'}),status=text('span','','admin-pending-action-status');
+              const label=c.status==='rejected'?(language==='en'?'RESUBMIT AS NEW REQUEST':'再申請する'):(language==='en'?'PROPOSE CORRECTION / RESTORE':'修正・復元を申請');
+              const propose=async()=>{let action,after;if(c.status==='rejected'){action=c.action;after=c.after;}else if(c.action==='create'){action='delete';after=null;}else if(c.action==='delete'){action='create';after=c.before;}else{action='update';after=c.before;}if(!confirm(language==='en'?'Create a new pending correction while preserving this history record?':'この履歴を保持したまま、新しい修正申請を作成しますか？'))return;status.textContent=language==='en'?'Submitting...':'申請中…';try{await submitChange(c.entityType,c.targetId,after,action,{correctionOf:c.changeId});await loadWorkspace();}catch(error){status.textContent=error.message;}};
+              corrective.append(button(label,propose,'secondary'),status);card.append(corrective);
             }
             group.append(card);
           });

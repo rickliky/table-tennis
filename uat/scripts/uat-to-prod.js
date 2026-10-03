@@ -22,6 +22,7 @@ const ENTITIES = [
   { entityType: 'rubber', collection: 'rubbers', idField: 'rubberId' },
   { entityType: 'sessionFeedback', collection: 'sessionFeedback', idField: 'feedbackId' },
   { entityType: 'matchFeedback', collection: 'matchFeedback', idField: 'matchFeedbackId' },
+  { entityType: 'session', collection: 'sessions', idField: 'sessionId' },
 ];
 const stableJson = value => JSON.stringify(value, (_, item) => item && typeof item === 'object' && !Array.isArray(item)
   ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item);

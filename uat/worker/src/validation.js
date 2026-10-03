@@ -1,8 +1,8 @@
 const lookupTables = new Set(['gender', 'category', 'playingHand', 'grip', 'playingStyle', 'rubberType', 'playerStatus', 'matchFormat', 'matchStatus', 'tournamentWinner']);
 
-export function validateEntity(entityType, record, data, targetId = record?.[({ club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId', sessionFeedback: 'feedbackId', matchFeedback: 'matchFeedbackId' }[entityType])]) {
+export function validateEntity(entityType, record, data, targetId = record?.[({ club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId', sessionFeedback: 'feedbackId', matchFeedback: 'matchFeedbackId', session: 'sessionId' }[entityType])]) {
   if (!record || typeof record !== 'object') throw new Error('Record is required');
-  const idField = { club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId', sessionFeedback: 'feedbackId', matchFeedback: 'matchFeedbackId' }[entityType];
+  const idField = { club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId', sessionFeedback: 'feedbackId', matchFeedback: 'matchFeedbackId', session: 'sessionId' }[entityType];
   if (!idField || !record[idField]) throw new Error('A valid record ID is required');
   if (record[idField] !== targetId) throw new Error('Target ID does not match record ID');
   const participantExists = id => data.players.some(item => item.playerId === id) || data.externalOpponents.some(item => item.externalOpponentId === id);
@@ -12,9 +12,20 @@ export function validateEntity(entityType, record, data, targetId = record?.[({ 
     if (!validSetCounts([record.player1Sets, record.player2Sets])) throw new Error('Set counts must be non-negative integers');
     if (!participantExists(record.player1Id) || !participantExists(record.player2Id)) throw new Error('Match players must exist');
     if (record.sessionId && !/^[A-Za-z0-9_-]{4,64}$/.test(record.sessionId)) throw new Error('Session ID may contain only letters, numbers, underscores, and hyphens');
+    const linkedSession = (data.sessions || []).find(item => item.sessionId === record.sessionId);
+    if (linkedSession && linkedSession.sessionDate !== record.matchDate) throw new Error('Match date must match the linked session date');
     if (record.matchFormat && !['Best of 5', 'Best of 3', 'Short practice'].includes(record.matchFormat)) throw new Error('Unsupported match format');
     if (record.verifiedAt && !/^\d{4}-\d{2}-\d{2}$/.test(record.verifiedAt)) throw new Error('Verified date must use YYYY-MM-DD');
     for (const field of ['source', 'coachGoal', 'coachNote']) if (record[field] && String(record[field]).length > 500) throw new Error(`${field} must be 500 characters or fewer`);
+  }
+  if (entityType === 'session') {
+    if (!/^[A-Za-z0-9_-]{4,64}$/.test(record.sessionId)) throw new Error('Session ID may contain only letters, numbers, underscores, and hyphens');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(record.sessionDate || '')) throw new Error('Session date must use YYYY-MM-DD');
+    if (!['Club Training', 'Open Practice', 'Private Lesson', 'Other'].includes(record.sessionType)) throw new Error('Unsupported session type');
+    if (record.matchFormat && !['Best of 5', 'Best of 3', 'Short practice', 'Mixed'].includes(record.matchFormat)) throw new Error('Unsupported session match format');
+    if (record.verifiedAt && !/^\d{4}-\d{2}-\d{2}$/.test(record.verifiedAt)) throw new Error('Verified date must use YYYY-MM-DD');
+    for (const field of ['venue', 'source', 'coachGoal']) if (record[field] && String(record[field]).length > 500) throw new Error(`${field} must be 500 characters or fewer`);
+    if (record.coachNote && String(record.coachNote).length > 1500) throw new Error('coachNote must be 1500 characters or fewer');
   }
   if (entityType === 'tournamentMatch') {
     if (!record.tournamentId || !data.tournaments.some(item => item.tournamentId === record.tournamentId)) throw new Error('Tournament match must reference an existing tournament');
