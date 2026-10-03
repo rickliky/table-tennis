@@ -206,6 +206,14 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Administrator Publishing for Player Reflections (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commit `c642a7d` changes the user-facing workflow for both session and match reflections from approval to administrator publishing. A submitted reflection waits to be published for member visibility; publication explicitly does not approve, endorse, or evaluate what the player wrote.
+- The reflection page now uses `Submit for publishing` / `公開を依頼する`, explains that an administrator publishes the reflection, and labels visible records as `Published` / `公開済み`. The same published terminology is used on Player profiles and Training Insights.
+- Data Maintenance separates the concepts: reflection cards use `Publish / 公開`, `Do Not Publish / 公開しない`, `Awaiting publication`, and `Published`; ordinary matches, players, sessions, imports, and other data changes retain `Approve / 承認`. Bulk data approval excludes reflections so it cannot publish them accidentally.
+- The underlying validated pending-change mechanism and stored `accepted` status remain unchanged for compatibility and audit history; this package requires no Worker change. Only the reflection-facing meaning and controls changed.
+- Local mocked validation covered Japanese and English member wording, mixed reflection/data queues, publication confirmation, the existing `POST /api/approve` payload, data-only bulk approval, 390 px layout, and zero console errors. Live UAT build `c642a7d` passed on Reflection, Player, Training Insights, and Data Maintenance; Reflection also passed at 320 and 1440 px with zero horizontal overflow or console errors.
+- No real reflection or pending record was created. UAT remains at zero pending changes and zero pending reflections. Production remains unchanged.
+
 ### Accumulated UAT Release Promoted to Production (2026-10-03) — LIVE
 - With the user's explicit approval, the complete tested UAT package was promoted to production in merge commit `47d2b12`. The branches had diverged only through duplicate documentation history, so the merge preserved both histories and used the tested UAT tree as the release content.
 - This release includes the UAT audit remediation and Phase 1 experience work, Training Insights, opponent-context analysis, session operations and comparisons, rapid entry and recovery, player/session/match reflections, persistent seven-day login, the repeat-safe Training Match Import Center, global Back to Top control, and the plain-language interpretation guides documented below.
