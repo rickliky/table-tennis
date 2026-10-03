@@ -137,6 +137,11 @@
   function computeDiff(change) { if (change.diff && change.diff.length) return change.diff; if (change.changedFields && change.before && change.after) { return change.changedFields.filter(f => f !== 'gradeHistory').map(f => ({ field: f, before: change.before[f] ?? '', after: change.after[f] ?? '' })).filter(d => JSON.stringify(d.before) !== JSON.stringify(d.after)); } if (change.before && change.after) return createDiff(change.before, change.after); return []; }
   async function loadPendingChanges() { try { const result = await window.LKData.request('/api/pending'); allChanges = result.changes || []; pendingChanges = allChanges.filter(c => c.status === 'pending'); } catch { allChanges = []; pendingChanges = []; } }
   function findPendingChange(entityType, targetId) { return pendingChanges.find(c => c.entityType === entityType && c.targetId === targetId); }
+  const reflectionEntityTypes = new Set(['sessionFeedback', 'matchFeedback']);
+  const isReflectionChange = change => reflectionEntityTypes.has(change?.entityType);
+  const processedStatusLabel = change => change.status === 'accepted'
+    ? (isReflectionChange(change) ? '✓ PUBLISHED / 公開済み' : '✓ ACCEPTED / 承認済み')
+    : (isReflectionChange(change) ? '✗ NOT PUBLISHED / 非公開' : '✗ REJECTED / 却下済み');
   function renderPendingInfo(change) {
     const box = el('div', { className: 'admin-pending-info' });
     const header = el('div', { className: 'admin-pending-info-header' });
@@ -1385,7 +1390,7 @@
           const card = el('article', { className: `admin-history-card ${c.status}` });
           const cardHeader = el('div', { className: 'admin-history-card-header' });
           const actionLabels = { create: 'NEW / 新規', update: 'MODIFIED / 変更', delete: 'DELETE / 削除' };
-          cardHeader.append(text('span', actionLabels[c.action] || c.action, `admin-pending-badge ${c.action}`), text('span', c.status === 'accepted' ? '✓ ACCEPTED / 承認済み' : '✗ REJECTED / 却下済み', `admin-history-status ${c.status}`), text('span', formatPendingDate(c.reviewedAt), 'admin-pending-date'));
+          cardHeader.append(text('span', actionLabels[c.action] || c.action, `admin-pending-badge ${c.action}`), text('span', processedStatusLabel(c), `admin-history-status ${c.status}`), text('span', formatPendingDate(c.reviewedAt), 'admin-pending-date'));
           card.append(cardHeader);
           const diff = computeDiff(c);
           if (diff.length) {
@@ -1418,28 +1423,33 @@
   async function renderPendingContent(panel) {
     try {
       const result = await window.LKData.request('/api/pending'); const changes = (result.changes || []).filter(change => change.status === 'pending');
-      if (!changes.length) { panel.append(text('p', 'No pending changes. / 承認待ちの変更はありません。', 'admin-empty')); return; }
-      const summary = text('p', `${changes.length} change${changes.length > 1 ? 's' : ''} awaiting review / 承認待ち`, 'admin-pending-summary'); panel.append(summary);
+      if (!changes.length) { panel.append(text('p', 'No pending changes or reflections awaiting publication. / 承認待ちの変更・公開待ちの振り返りはありません。', 'admin-empty')); return; }
+      const reflectionCount = changes.filter(isReflectionChange).length, dataCount = changes.length - reflectionCount;
+      const summaryParts = [];
+      if (dataCount) summaryParts.push(language === 'en' ? `${dataCount} data change${dataCount > 1 ? 's' : ''} awaiting approval` : `承認待ちのデータ変更 ${dataCount}件`);
+      if (reflectionCount) summaryParts.push(language === 'en' ? `${reflectionCount} reflection${reflectionCount > 1 ? 's' : ''} awaiting publication` : `公開待ちの振り返り ${reflectionCount}件`);
+      panel.append(text('p', summaryParts.join(' · '), 'admin-pending-summary'));
       const batchGroups = [...changes.reduce((groups,change)=>{if(!change.batchId)return groups;if(!groups.has(change.batchId))groups.set(change.batchId,[]);groups.get(change.batchId).push(change);return groups;},new Map()).entries()].filter(([,items])=>items.length>1);
-      if (currentRole === 'approver') {
+      const bulkChanges = changes.filter(change => !isReflectionChange(change));
+      if (currentRole === 'approver' && bulkChanges.length) {
         const bulkActions = el('div', { className: 'admin-pending-bulk-actions' });
         const bulkStatus = text('span', '', 'admin-pending-action-status');
         const handleBulk = async (decision) => {
           const label = decision === 'accept' ? 'approve' : 'reject';
-          if (!confirm(`Are you sure you want to ${label} ALL ${changes.length} pending changes? / 保留中の変更をすべて${label === 'accept' ? '承認' : '却下'}しますか？\n\nThis cannot be undone. / 元に戻せません。`)) return;
-          bulkStatus.textContent = `Processing ${changes.length} changes... / ${changes.length}件の変更を処理中...`;
+          if (!confirm(`Are you sure you want to ${label} ALL ${bulkChanges.length} pending data changes? / 保留中のデータ変更${bulkChanges.length}件をすべて${label === 'accept' ? '承認' : '却下'}しますか？\n\nReflections are published individually. / 振り返りは個別に公開します。`)) return;
+          bulkStatus.textContent = `Processing ${bulkChanges.length} data changes... / ${bulkChanges.length}件のデータ変更を処理中...`;
           let done = 0, failed = 0;
-          for (const change of changes) {
+          for (const change of bulkChanges) {
             try {
               await window.LKData.request('/api/approve', { method: 'POST', body: JSON.stringify({ changeId: change.changeId, decision }) });
               done++;
-              bulkStatus.textContent = `${done + failed}/${changes.length} processed... / 処理中...`;
+              bulkStatus.textContent = `${done + failed}/${bulkChanges.length} processed... / 処理中...`;
             } catch { failed++; }
           }
           bulkStatus.textContent = `Done: ${done} ${label}d, ${failed} failed. / 完了: ${done}件${label === 'accept' ? '承認' : '却下'}、${failed}件失敗。`;
           await loadWorkspace();
         };
-        bulkActions.append(button('APPROVE ALL / すべて承認', () => handleBulk('accept'), 'primary'), button('REJECT ALL / すべて却下', () => handleBulk('reject'), 'danger'), bulkStatus);
+        bulkActions.append(button('APPROVE ALL DATA CHANGES / データ変更をすべて承認', () => handleBulk('accept'), 'primary'), button('REJECT ALL DATA CHANGES / データ変更をすべて却下', () => handleBulk('reject'), 'danger'), bulkStatus);
         panel.append(bulkActions);
         if (batchGroups.length) {
           const batchSection=el('section',{className:'admin-batch-review'});batchSection.append(text('h3',language==='en'?'Grouped session batches':'セッション一括申請'));
@@ -1508,12 +1518,13 @@
               btnA.disabled = false; btnB.disabled = false;
             }
           };
-          const acceptBtn = button('ACCEPT / 承認', () => { if (!confirm(`Accept this ${change.entityType} change? / この${change.entityType}の変更を承認しますか？\n\nThe change will be applied immediately. / 変更は即座に反映されます。`)) return; handleDecision('accept', acceptBtn, rejectBtn); }, 'primary');
-          const rejectBtn = button('REJECT / 却下', () => { if (!confirm(`Reject this ${change.entityType} change? / この${change.entityType}の変更を却下しますか？\n\nThe change will be discarded. / 変更は破棄されます。`)) return; handleDecision('reject', acceptBtn, rejectBtn); }, 'danger');
+          const reflection = isReflectionChange(change);
+          const acceptBtn = button(reflection ? 'PUBLISH / 公開' : 'ACCEPT / 承認', () => { if (!confirm(reflection ? 'Publish this reflection for club members? / この振り返りをクラブメンバー向けに公開しますか？\n\nPublishing makes it visible; it does not approve or evaluate its content. / 公開は表示を許可するもので、内容の承認・評価ではありません。' : `Accept this ${change.entityType} change? / この${change.entityType}の変更を承認しますか？\n\nThe change will be applied immediately. / 変更は即座に反映されます。`)) return; handleDecision('accept', acceptBtn, rejectBtn); }, 'primary');
+          const rejectBtn = button(reflection ? 'DO NOT PUBLISH / 公開しない' : 'REJECT / 却下', () => { if (!confirm(reflection ? 'Do not publish this reflection? / この振り返りを公開しませんか？\n\nIt will not become visible to club members. / クラブメンバーには表示されません。' : `Reject this ${change.entityType} change? / この${change.entityType}の変更を却下しますか？\n\nThe change will be discarded. / 変更は破棄されます。`)) return; handleDecision('reject', acceptBtn, rejectBtn); }, 'danger');
           actions.append(acceptBtn, rejectBtn, status);
           card.append(actions);
         } else {
-          card.append(text('p', 'Awaiting approval / 承認待ち', 'admin-pending-read-only'));
+          card.append(text('p', isReflectionChange(change) ? 'Awaiting publication by an administrator / 管理者による公開待ち' : 'Awaiting approval / 承認待ち', 'admin-pending-read-only'));
         }
         panel.append(card);
       });
@@ -1529,7 +1540,7 @@
       const controls = el('div', { className: 'admin-history-controls' });
       const search = el('input', { type: 'search', placeholder: 'ID・種類で検索 / Search by ID or type', ariaLabel: 'Search history' });
       const statusFilter = el('select', { ariaLabel: 'Filter by status' });
-      ['all', 'accepted', 'rejected'].forEach(v => statusFilter.append(el('option', { value: v, textContent: v === 'all' ? 'ALL / すべて' : v === 'accepted' ? 'ACCEPTED / 承認' : 'REJECTED / 却下' })));
+      ['all', 'accepted', 'rejected'].forEach(v => statusFilter.append(el('option', { value: v, textContent: v === 'all' ? 'ALL / すべて' : v === 'accepted' ? 'ACCEPTED OR PUBLISHED / 承認・公開済み' : 'REJECTED OR NOT PUBLISHED / 却下・非公開' })));
       const typeFilter = el('select', { ariaLabel: 'Filter by entity type' });
       const entityTypes = [...new Set(processed.map(c => c.entityType))];
       typeFilter.append(el('option', { value: 'all', textContent: 'ALL TYPES / すべての種類' }));
@@ -1570,9 +1581,9 @@
             const card = el('article', { className: `admin-history-card ${c.status}` });
             const cardHeader = el('div', { className: 'admin-history-card-header' });
             const actionLabels = { create: 'NEW / 新規', update: 'MODIFIED / 変更', delete: 'DELETE / 削除' };
-            cardHeader.append(text('span', actionLabels[c.action] || c.action, `admin-pending-badge ${c.action}`), text('h4', c.summary || `${c.entityType} · ${c.targetId}`), text('span', c.status === 'accepted' ? '✓ ACCEPTED / 承認済み' : '✗ REJECTED / 却下済み', `admin-history-status ${c.status}`), text('span', formatPendingDate(c.reviewedAt), 'admin-pending-date'));
+            cardHeader.append(text('span', actionLabels[c.action] || c.action, `admin-pending-badge ${c.action}`), text('h4', c.summary || `${c.entityType} · ${c.targetId}`), text('span', processedStatusLabel(c), `admin-history-status ${c.status}`), text('span', formatPendingDate(c.reviewedAt), 'admin-pending-date'));
             const meta = el('div', { className: 'admin-pending-meta' });
-            meta.append(text('span', `${c.entityType} · ${c.targetId} · Submitted: / 申請者: ${c.createdBy} · Reviewed: / 確認者: ${c.reviewedBy || '-'}`, 'admin-pending-by'));
+            meta.append(text('span', `${c.entityType} · ${c.targetId} · Submitted: / 申請者: ${c.createdBy} · ${isReflectionChange(c) ? 'Published by: / 公開者:' : 'Reviewed: / 確認者:'} ${c.reviewedBy || '-'}`, 'admin-pending-by'));
             card.append(cardHeader, meta);
             const diff = computeDiff(c);
             if (diff.length) {
