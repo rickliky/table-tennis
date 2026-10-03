@@ -20,7 +20,7 @@ if (!['uat', 'prod'].includes(environment)) {
 const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 const backupDir = path.resolve(__dirname, '..', 'backup', environment);
 
-const TYPES = ['clubs', 'players', 'matches', 'externalOpponents', 'tournaments', 'tournamentMatches', 'tournamentProgress', 'rubbers', 'sessionFeedback'];
+const TYPES = ['clubs', 'players', 'matches', 'externalOpponents', 'tournaments', 'tournamentMatches', 'tournamentProgress', 'rubbers', 'sessionFeedback', 'matchFeedback'];
 
 (async () => {
   console.log(`Exporting ${environment} data from Upstash...`);

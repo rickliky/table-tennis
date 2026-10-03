@@ -803,7 +803,7 @@ body.access-locked,body.modal-open { overflow:hidden; }
 .workload-distribution strong { color:var(--cream); font:800 20px "Barlow Condensed",sans-serif; }
 .session-reflections { margin-bottom:16px; }
 .session-reflections > header > a { border-bottom:1px solid var(--gold); color:var(--gold); font:800 10px "Noto Sans JP",sans-serif; text-decoration:none; }
-.reflection-kpis { display:grid; gap:8px; grid-template-columns:repeat(3,minmax(0,1fr)); margin-bottom:12px; }
+.reflection-kpis { display:grid; gap:8px; grid-template-columns:repeat(4,minmax(0,1fr)); margin-bottom:12px; }
 .reflection-kpis > span { background:#17191c; display:grid; padding:11px; text-align:center; }
 .reflection-kpis small { color:var(--muted); font:700 9px "Noto Sans JP",sans-serif; }
 .reflection-kpis b { color:var(--gold); font:800 28px/1 "Barlow Condensed",sans-serif; }
@@ -816,6 +816,7 @@ body.access-locked,body.modal-open { overflow:hidden; }
 .session-reflection-list article > div { border-top:1px solid var(--line); margin-top:8px; padding-top:8px; }
 .session-reflection-list article > div small { color:var(--gold); font:800 8px "Noto Sans JP",sans-serif; }
 .session-reflection-list article > div p { color:#ded4c0; font:500 10px/1.55 "Noto Sans JP",sans-serif; margin:2px 0 7px; white-space:pre-wrap; }
+.reflection-group-title { color:var(--gold); font:800 13px "Barlow Condensed","Noto Sans JP",sans-serif; letter-spacing:.06em; margin:18px 0 9px; }
 .insights-table-wrap { max-height:760px; max-width:100%; overflow:auto; }
 .insights-table { border-collapse:collapse; min-width:780px; width:100%; }
 .insights-table th,.insights-table td { border-bottom:1px solid var(--line); padding:11px 9px; text-align:center; }
@@ -891,6 +892,10 @@ body.access-locked,body.modal-open { overflow:hidden; }
 .feedback-hero h1 { color:var(--cream); font-size:clamp(50px,8vw,96px); line-height:.82; margin:4px 0 16px; }
 .feedback-hero > div > span { color:var(--muted); font:600 13px/1.7 "Noto Sans JP",sans-serif; }
 .feedback-hero aside { background:rgba(9,10,11,.58); border-left:3px solid var(--gold); color:var(--cream); font:600 12px/1.8 "Noto Sans JP",sans-serif; padding:16px; }
+.feedback-mode-tabs { background:#101214; border:1px solid var(--line); display:grid; grid-template-columns:1fr 1fr; margin-bottom:18px; padding:5px; }
+.feedback-mode-tabs button { background:transparent; border:0; color:var(--muted); cursor:pointer; font:800 13px "Barlow Condensed","Noto Sans JP",sans-serif; min-height:46px; padding:10px 14px; }
+.feedback-mode-tabs button.active { background:var(--gold); color:var(--black); }
+.feedback-mode-tabs button:focus-visible { outline:3px solid var(--cream); outline-offset:2px; }
 .feedback-layout { align-items:start; display:grid; gap:18px; grid-template-columns:minmax(0,1fr) minmax(340px,.85fr); }
 .feedback-form,.feedback-history { background:#101214; border:1px solid var(--line); padding:clamp(18px,3vw,32px); }
 .feedback-form { display:grid; gap:18px; }
@@ -902,7 +907,15 @@ body.access-locked,body.modal-open { overflow:hidden; }
 .feedback-selectors label > span,.feedback-text > span { color:var(--gold); font:800 10px "Barlow Condensed","Noto Sans JP",sans-serif; letter-spacing:.08em; text-transform:uppercase; }
 .feedback-selectors select,.feedback-text textarea { background:#090a0b; border:1px solid var(--line); color:var(--cream); font:600 14px "Noto Sans JP",sans-serif; width:100%; }
 .feedback-selectors select { min-height:46px; padding:9px 11px; }
+.feedback-selectors select:disabled { color:#6f6c66; cursor:not-allowed; }
 .feedback-selectors label > small { color:var(--muted); font:600 10px "Noto Sans JP",sans-serif; min-height:15px; }
+.match-feedback-selectors .feedback-match-selector { grid-column:1/-1; }
+.feedback-match-context { background:linear-gradient(120deg,rgba(214,165,22,.13),rgba(84,184,209,.06)); border:1px solid rgba(214,165,22,.35); padding:15px; }
+.feedback-match-context > div { align-items:center; display:flex; gap:9px; }
+.feedback-match-context > div small { color:var(--muted); font:700 10px "Noto Sans JP",sans-serif; }
+.feedback-match-context h3 { color:var(--cream); font:700 18px "Noto Sans JP",sans-serif; margin:11px 0 5px; text-transform:none; }
+.feedback-match-context h3 b { color:var(--gold); font:800 27px "Barlow Condensed",sans-serif; margin:0 8px; }
+.feedback-match-context p { color:var(--muted); font:600 10px/1.55 "Noto Sans JP",sans-serif; margin:0; }
 .feedback-rating-grid { display:grid; gap:12px; grid-template-columns:1fr 1fr; }
 .feedback-rating { border:1px solid var(--line); margin:0; min-width:0; padding:14px; }
 .feedback-rating legend { color:var(--gold); font:800 13px "Barlow Condensed","Noto Sans JP",sans-serif; padding:0 7px; }
@@ -918,6 +931,7 @@ body.access-locked,body.modal-open { overflow:hidden; }
 .feedback-edit-hint { color:var(--muted); font:600 10px/1.6 "Noto Sans JP",sans-serif; margin:0; }
 .feedback-submit { align-items:center; display:flex; flex-wrap:wrap; gap:10px; }
 .feedback-submit button { border:1px solid var(--gold); cursor:pointer; margin-top:0; min-height:46px; }
+.feedback-submit button:disabled { cursor:not-allowed; opacity:.45; }
 .feedback-submit .ghost-button { background:transparent; color:var(--cream); font:800 12px "Barlow Condensed","Noto Sans JP",sans-serif; letter-spacing:.06em; padding:11px 16px; text-transform:uppercase; }
 .feedback-submit .ghost-button:hover { border-color:var(--cream); }
 .feedback-submit p { color:var(--gold); flex:1 1 100%; font:600 11px/1.6 "Noto Sans JP",sans-serif; margin:0; min-height:18px; }
@@ -932,11 +946,16 @@ body.access-locked,body.modal-open { overflow:hidden; }
 .feedback-card header > span { display:grid; min-width:48px; text-align:center; }
 .feedback-card header > span b { color:var(--gold); font:800 25px/1 "Barlow Condensed",sans-serif; }
 .feedback-card header > span small { font-size:8px; }
+.feedback-card.match-feedback-card header { grid-template-columns:minmax(0,1fr) auto; }
+.feedback-match-score { min-width:70px !important; }
+.feedback-opponent { color:var(--cream); font:700 12px "Noto Sans JP",sans-serif; margin:10px 0 0; }
 .feedback-card section { border-top:1px solid var(--line); display:grid; gap:9px; margin-top:11px; padding-top:11px; }
 .feedback-card section div > small { color:var(--gold); font:800 9px "Barlow Condensed","Noto Sans JP",sans-serif; letter-spacing:.05em; }
 .feedback-card section p { color:#ded4c0; font:500 11px/1.65 "Noto Sans JP",sans-serif; margin:2px 0 0; overflow-wrap:anywhere; white-space:pre-wrap; }
 .player-reflection-method { color:var(--muted); font:600 11px/1.6 "Noto Sans JP",sans-serif; margin:-12px 0 16px; }
-.player-reflection-kpis { display:grid; gap:8px; grid-template-columns:repeat(3,minmax(0,1fr)); margin-bottom:12px; }
+.player-reflection-actions { display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-end; }
+.player-reflection-actions a { border-bottom:1px solid var(--gold); color:var(--gold); font:800 10px "Noto Sans JP",sans-serif; text-decoration:none; }
+.player-reflection-kpis { display:grid; gap:8px; grid-template-columns:repeat(4,minmax(0,1fr)); margin-bottom:12px; }
 .player-reflection-kpis span { background:#17191c; display:grid; padding:11px; text-align:center; }
 .player-reflection-kpis small { color:var(--muted); font:700 9px "Noto Sans JP",sans-serif; }
 .player-reflection-kpis b { color:var(--gold); font:800 28px/1 "Barlow Condensed",sans-serif; }
@@ -947,8 +966,24 @@ body.access-locked,body.modal-open { overflow:hidden; }
 .player-reflection-list article header span { color:var(--muted); font:600 9px "Noto Sans JP",sans-serif; }
 .player-reflection-list article > small { color:var(--gold); display:block; font:800 8px "Noto Sans JP",sans-serif; margin-top:9px; }
 .player-reflection-list article p { color:#ded4c0; font:500 10px/1.55 "Noto Sans JP",sans-serif; margin:2px 0 0; white-space:pre-wrap; }
+.player-reflection-subsection { border-top:1px solid var(--line); margin-top:16px; padding-top:14px; }
+.player-reflection-subsection > h3 { color:var(--gold); font:800 13px "Barlow Condensed","Noto Sans JP",sans-serif; letter-spacing:.06em; margin-bottom:10px; }
+.player-match-reflection-list article > strong { color:var(--cream); display:block; font:700 11px "Noto Sans JP",sans-serif; margin-top:8px; }
+.h2h-match-reflection { background:rgba(214,165,22,.07); border-left:3px solid var(--gold); margin-top:14px; padding:12px; }
+.h2h-match-reflection > a { color:var(--gold); font:800 11px "Noto Sans JP",sans-serif; text-decoration:none; }
+.h2h-match-reflection details { border-top:1px solid var(--line); margin-top:10px; padding-top:9px; }
+.h2h-match-reflection summary { color:var(--cream); cursor:pointer; font:700 10px "Noto Sans JP",sans-serif; }
+.h2h-match-reflection small { color:var(--gold); display:block; font:800 8px "Noto Sans JP",sans-serif; margin-top:8px; }
+.h2h-match-reflection p { color:#ded4c0; font:500 10px/1.55 "Noto Sans JP",sans-serif; margin:2px 0 0; white-space:pre-wrap; }
+.tournament-reflection-actions { border-top:1px solid var(--line); display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; padding-top:9px; }
+.tournament-reflection-link { color:var(--gold); font:800 9px "Noto Sans JP",sans-serif; text-decoration:none; }
+.tournament-match-reflections { display:grid; gap:6px; margin-top:9px; text-align:left; }
+.tournament-match-reflections details { background:rgba(214,165,22,.07); border-left:2px solid var(--gold); padding:8px; }
+.tournament-match-reflections summary { color:var(--cream); cursor:pointer; font:700 9px "Noto Sans JP",sans-serif; }
+.tournament-match-reflections small { color:var(--gold); display:block; font:800 8px "Noto Sans JP",sans-serif; margin-top:7px; }
+.tournament-match-reflections p { color:#ded4c0; font:500 9px/1.5 "Noto Sans JP",sans-serif; margin:2px 0 0; white-space:pre-wrap; }
 @media (max-width:900px) { .feedback-layout,.feedback-hero { grid-template-columns:1fr; } }
-@media (max-width:760px) { .player-reflection-list { grid-template-columns:1fr; } }
+@media (max-width:760px) { .reflection-kpis,.player-reflection-kpis { grid-template-columns:1fr 1fr; } .player-reflection-list { grid-template-columns:1fr; } }
 @media (max-width:560px) { .feedback-page { padding-left:12px; padding-right:12px; } .feedback-selectors,.feedback-rating-grid { grid-template-columns:1fr; } .feedback-card header { grid-template-columns:minmax(0,1fr) auto auto; } }
 .insights-chip-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
 .insights-chip-list a,.insights-chip-list > span { background:rgba(246,240,226,.05); border:1px solid var(--line); color:var(--cream); display:grid; font:700 10px "Noto Sans JP",sans-serif; padding:7px 9px; text-decoration:none; }
