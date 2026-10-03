@@ -206,6 +206,14 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Next Whole-Product Priority (2026-10-03) — PROPOSED
+- Stop adding reflection features and avoid more isolated charts until the administration/security/data-quality foundation is strengthened.
+- Highest priority: Admin/API security hardening. Require a valid Admin session for normal CRUD submissions, Admin/Approver authentication for pending/history access and review, authenticated cancellation/rejection, and an authenticated all-records maintenance endpoint separate from the member-facing active-data endpoint. Keep the new seven-day same-browser login so stronger security does not add repeated login friction.
+- Pair security work with an Import & Data Quality Center: CSV/paste preview, source templates, player/opponent resolution, unresolved-name queue, exact and near-duplicate detection, score/format/session validation, grouped batch approval, downloadable error output, and repeat-safe import history. Never silently rewrite approved records.
+- Add reliability after import: automated UAT browser smoke tests for login/data load/core routes, Worker schema-contract checks, pre-change Upstash backup/export, health indicators, and deploy-time regression checks for key record counts.
+- Analytics should then focus on trustworthy filters and evidence exports rather than new composite ratings: arbitrary date ranges, session/category/opponent filters, method notes, sample-size indicators, and CSV/print evidence links. Existing comparison, growth, readiness, and session charts are already broad enough.
+- Before starting another large package, review the accumulated UAT behavior changes and promote them to production only with explicit user approval.
+
 ### Persistent Approver Login (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commit `acf347d` removes the repeated approver-login requirement on page reload and return visits. GitHub Actions run `37098731428` passed the syntax gate and UAT deployment; production site code remains unchanged.
 - Admin now detects a saved `lk-admin-session`, checks its decoded role/expiry locally, validates its signature and status through authenticated `GET /api/session`, and automatically restores Approver Review mode. Invalid, malformed, or expired tokens are removed and the normal Data Maintenance workspace opens without a failed-login loop.
