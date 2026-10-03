@@ -20,6 +20,32 @@
     }
   };
 
+  Object.assign(words.en, {
+    notice:'Self-reflection is written by the player. An administrator publishes it for member visibility; publishing is not approval, a coach evaluation, an official score, or an attendance record.',
+    submit:'Submit for publishing',
+    update:'Submit update for publishing',
+    success:'Your reflection was sent to an administrator for publishing. It will appear after it is published.',
+    recentSession:'Published session reflections',
+    recentMatch:'Published match reflections',
+    noFeedback:'No published reflections yet.',
+    members:'Published reflections are visible to all club members.',
+    sessionEditHint:'Selecting a published player/date reflection lets you submit an update for publishing.',
+    matchEditHint:'One published reflection is stored per player and match. Selecting it again lets you submit an update for publishing.',
+    approved:'Published'
+  });
+  Object.assign(words.ja, {
+    notice:'自己振り返りは選手本人が書く内容です。管理者がメンバー向けに公開しますが、公開は内容の承認、コーチ評価、公式スコア、出席記録を意味しません。',
+    submit:'公開を依頼する',
+    update:'更新内容の公開を依頼する',
+    success:'管理者へ公開依頼を送信しました。公開後に表示されます。',
+    recentSession:'公開済みセッション振り返り',
+    recentMatch:'公開済み試合振り返り',
+    noFeedback:'公開済みの振り返りはまだありません。',
+    members:'公開済みの振り返りはクラブメンバー全員に表示されます。',
+    sessionEditHint:'公開済みの選手・日付を選ぶと、更新内容の公開を依頼できます。',
+    matchEditHint:'選手・試合ごとに公開済み振り返りを1件保存します。再選択すると更新内容の公開を依頼できます。',
+    approved:'公開済み'
+  });
   const t = key => words[language][key];
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[character]);
   const players = () => [...(data.players || [])].sort((a,b)=>(a.displayName||'').localeCompare(b.displayName||'','ja'));

@@ -55,6 +55,8 @@
       openProfile: 'プロフィールを見る', openTournament: '大会ハブを開く', lastUpdated: '最終更新', unknown: '未設定', noData: 'データがありません。', printReport:'印刷・PDF保存', sessionReport:'セッション概要', metadataUnrecorded:'セッション情報未登録', participantOverlap:'共通の試合参加選手', scoreComparison:'スコア内訳比較', playerMovement:'共通選手のセット差比較', comparisonCaution:'比較情報です。参加選手や対戦相手の構成が異なる場合があります。', categoryMatrix:'カテゴリ対戦マトリクス', calendarActivity:'練習活動カレンダー', venue:'会場', sessionType:'セッション種別', coachGoal:'指導目標', coachNote:'指導メモ', source:'出典・確認'
     }
   };
+  words.en.noReflections = 'No published reflections for this date.';
+  words.ja.noReflections = 'この日の公開済み振り返りはありません。';
   const t = key => words[language][key];
   const analysisGuides = {
     session: {
