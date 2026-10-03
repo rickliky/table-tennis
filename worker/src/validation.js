@@ -1,8 +1,8 @@
 const lookupTables = new Set(['gender', 'category', 'playingHand', 'grip', 'playingStyle', 'rubberType', 'playerStatus', 'matchFormat', 'matchStatus', 'tournamentWinner']);
 
-export function validateEntity(entityType, record, data, targetId = record?.[({ club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId' }[entityType])]) {
+export function validateEntity(entityType, record, data, targetId = record?.[({ club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId', sessionFeedback: 'feedbackId' }[entityType])]) {
   if (!record || typeof record !== 'object') throw new Error('Record is required');
-  const idField = { club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId' }[entityType];
+  const idField = { club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId', sessionFeedback: 'feedbackId' }[entityType];
   if (!idField || !record[idField]) throw new Error('A valid record ID is required');
   if (record[idField] !== targetId) throw new Error('Target ID does not match record ID');
   const participantExists = id => data.players.some(item => item.playerId === id) || data.externalOpponents.some(item => item.externalOpponentId === id);
@@ -24,6 +24,19 @@ export function validateEntity(entityType, record, data, targetId = record?.[({ 
   if (entityType === 'tournamentProgress') {
     if (!record.tournamentId || !data.tournaments.some(item => item.tournamentId === record.tournamentId)) throw new Error('Tournament progress must reference an existing tournament');
     if (!record.playerId || !participantExists(record.playerId)) throw new Error('Tournament progress must reference an existing player');
+  }
+  if (entityType === 'sessionFeedback') {
+    const player = data.players.find(item => item.playerId === record.playerId);
+    if (!player) throw new Error('Feedback must reference an existing Little Kings player');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(record.sessionDate || '')) throw new Error('Feedback date must use YYYY-MM-DD');
+    if (record.feedbackId !== `FB-${record.sessionDate.replace(/-/g, '')}-${record.playerId}`) throw new Error('Invalid feedback ID');
+    if (record.sessionId !== `LKS-${record.sessionDate.replace(/-/g, '')}`) throw new Error('Feedback session ID must match its date');
+    if (!(data.matches || []).some(match => match.matchDate === record.sessionDate && /club|training|練習/i.test(`${match.event || ''} ${match.division || ''}`))) throw new Error('Feedback must reference a recorded training date');
+    if (record.playerName !== player.displayName) throw new Error('Feedback player name must match the selected player');
+    if (record.visibility !== 'members') throw new Error('Feedback visibility must be members');
+    for (const field of ['effort', 'confidence']) if (!Number.isInteger(Number(record[field])) || Number(record[field]) < 1 || Number(record[field]) > 5) throw new Error(`${field} must be an integer from 1 to 5`);
+    for (const field of ['wentWell', 'nextFocus']) if (!String(record[field] || '').trim() || String(record[field]).length > 500) throw new Error(`${field} is required and must be 500 characters or fewer`);
+    if (record.note && String(record.note).length > 1000) throw new Error('note must be 1000 characters or fewer');
   }
   return record;
 }

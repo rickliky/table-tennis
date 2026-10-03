@@ -9,7 +9,8 @@ async function signature(value, secret) {
 export async function login(role, password, env) {
   const expected = role === 'admin' ? env.ADMIN_PASSWORD : role === 'approver' ? env.APPROVER_PASSWORD : role === 'site' ? env.SITE_PASSWORD : '';
   if (!expected || password !== expected) throw new Error('Invalid credentials');
-  const payload = btoa(JSON.stringify({ role, expires: Date.now() + 8 * 60 * 60 * 1000 }));
+  const duration = role === 'site' ? 7 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
+  const payload = btoa(JSON.stringify({ role, expires: Date.now() + duration }));
   return `${payload}.${await signature(payload, env.SESSION_SECRET)}`;
 }
 

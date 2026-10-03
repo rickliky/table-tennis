@@ -34,7 +34,9 @@
 
   async function request(path, options = {}) {
     const headers = { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) };
-    const token = localStorage.getItem('lk-admin-session');
+    const token = isMaintenancePage
+      ? localStorage.getItem('lk-admin-session')
+      : localStorage.getItem('lk-site-session') || localStorage.getItem('lk-admin-session');
     if (token) headers.Authorization = `Bearer ${token}`;
     const response = await fetch(`${configuredBase.replace(/\/$/, '')}${path}?environment=${environment}`, { ...options, headers });
     const result = await response.json();

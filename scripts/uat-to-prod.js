@@ -20,6 +20,7 @@ const ENTITIES = [
   { entityType: 'tournamentMatch', collection: 'tournamentMatches', idField: 'tournamentMatchId' },
   { entityType: 'tournamentProgress', collection: 'tournamentProgress', idField: 'tournamentProgressId' },
   { entityType: 'rubber', collection: 'rubbers', idField: 'rubberId' },
+  { entityType: 'sessionFeedback', collection: 'sessionFeedback', idField: 'feedbackId' },
 ];
 const stableJson = value => JSON.stringify(value, (_, item) => item && typeof item === 'object' && !Array.isArray(item)
   ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item);
