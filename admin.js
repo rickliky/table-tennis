@@ -476,7 +476,7 @@
     const event = el('input', { name: 'event', type: 'text', required: true, value: record.event || 'Club Training' });
     const division = el('input', { name: 'division', type: 'text', value: record.division || '' });
     const format = select('format', ['Singles'], record.format || 'Singles');
-    const sessionId = el('input', { name: 'sessionId', type: 'text', value: record.sessionId || '', placeholder: sessionIdForDate(record.matchDate), pattern: '[A-Za-z0-9_-]{4,64}', maxLength: 64 });
+    const sessionId = el('input', { name: 'sessionId', type: 'text', value: record.sessionId || '', placeholder: sessionIdForDate(record.matchDate), pattern: '[A-Za-z0-9_\\-]{4,64}', maxLength: 64 });
     const matchFormat = select('matchFormat', ['', 'Best of 5', 'Best of 3', 'Short practice'], record.matchFormat || '');
     const addMetaField = (label, input) => { const l = el('label'); l.append(text('span', label), input); sectionMeta.append(l); };
     addMetaField('日付 / Date', date); addMetaField('セッションID / Session ID', sessionId); addMetaField('イベント / Event', event); addMetaField('部門 / Division', division); addMetaField('競技形式 / Event format', format); addMetaField('試合形式 / Match format', matchFormat);
@@ -556,7 +556,7 @@
     let recoveredDraft=null; try { const saved=JSON.parse(localStorage.getItem(rapidStorageKey)||'null'); if(saved&&Date.now()-Number(saved.savedAt)<7*24*60*60*1000)recoveredDraft=saved; else if(saved)localStorage.removeItem(rapidStorageKey); } catch { localStorage.removeItem(rapidStorageKey); }
     const savedMeta=recoveredDraft?.metadata||{},savedCurrent=recoveredDraft?.current||{};
     const date = el('input', { name:'matchDate', type:'date', required:true, value:savedMeta.matchDate||defaults.matchDate });
-    const sessionId = el('input', { name:'sessionId', type:'text', required:true, value:savedMeta.sessionId||defaults.sessionId, pattern:'[A-Za-z0-9_-]{4,64}', maxLength:64 });
+    const sessionId = el('input', { name:'sessionId', type:'text', required:true, value:savedMeta.sessionId||defaults.sessionId, pattern:'[A-Za-z0-9_\\-]{4,64}', maxLength:64 });
     const matchFormat = select('matchFormat', ['Best of 5','Best of 3','Short practice'], savedMeta.matchFormat||defaults.matchFormat);
     const division = el('input', { name:'division', type:'text', value:savedMeta.division||'', placeholder:'Optional group / 任意のグループ' });
     const source = el('input', { name:'source', type:'text', value:savedMeta.source||'', placeholder:'Notebook / Admin entry / Import batch', maxLength:500 });
