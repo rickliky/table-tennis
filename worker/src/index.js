@@ -4,11 +4,11 @@ import { repository } from './repository.js';
 import { validateEntity, validateEnvironment } from './validation.js';
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
-const types = ['clubs', 'players', 'matches', 'external-opponents', 'tournaments', 'tournament-matches', 'tournament-progress', 'rubbers', 'session-feedback', 'match-feedback', 'pending-changes'];
+const types = ['clubs', 'players', 'matches', 'external-opponents', 'tournaments', 'tournament-matches', 'tournament-progress', 'rubbers', 'session-feedback', 'match-feedback', 'sessions', 'pending-changes'];
 const publicTypes = types.filter(type => type !== 'pending-changes');
-const singular = type => ({ clubs: 'club', players: 'player', matches: 'match', 'external-opponents': 'externalOpponent', tournaments: 'tournament', 'tournament-matches': 'tournamentMatch', 'tournament-progress': 'tournamentProgress', rubbers: 'rubber', 'session-feedback': 'sessionFeedback', 'match-feedback': 'matchFeedback' }[type]);
-const collectionFor = entityType => ({ club: 'clubs', player: 'players', match: 'matches', externalOpponent: 'external-opponents', tournament: 'tournaments', tournamentMatch: 'tournament-matches', tournamentProgress: 'tournament-progress', rubber: 'rubbers', sessionFeedback: 'session-feedback', matchFeedback: 'match-feedback' }[entityType]);
-const idFieldFor = entityType => ({ club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId', sessionFeedback: 'feedbackId', matchFeedback: 'matchFeedbackId' }[entityType]);
+const singular = type => ({ clubs: 'club', players: 'player', matches: 'match', 'external-opponents': 'externalOpponent', tournaments: 'tournament', 'tournament-matches': 'tournamentMatch', 'tournament-progress': 'tournamentProgress', rubbers: 'rubber', 'session-feedback': 'sessionFeedback', 'match-feedback': 'matchFeedback', sessions: 'session' }[type]);
+const collectionFor = entityType => ({ club: 'clubs', player: 'players', match: 'matches', externalOpponent: 'external-opponents', tournament: 'tournaments', tournamentMatch: 'tournament-matches', tournamentProgress: 'tournament-progress', rubber: 'rubbers', sessionFeedback: 'session-feedback', matchFeedback: 'match-feedback', session: 'sessions' }[entityType]);
+const idFieldFor = entityType => ({ club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId', sessionFeedback: 'feedbackId', matchFeedback: 'matchFeedbackId', session: 'sessionId' }[entityType]);
 
 const CORS_HEADERS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' };
 const JSON_HEADERS = { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' };
@@ -24,6 +24,7 @@ function buildSummary(entityType, record) {
     case 'tournamentMatch': return [record.player1Name, 'vs', record.player2Name, record.matchDate].filter(Boolean).join(' · ');
     case 'sessionFeedback': return [record.playerName, record.sessionDate, `Effort ${record.effort}/5`, `Confidence ${record.confidence}/5`].filter(Boolean).join(' · ');
     case 'matchFeedback': return [record.playerName, 'vs', record.opponentName, record.matchDate, record.score].filter(Boolean).join(' · ');
+    case 'session': return [record.sessionDate, record.venue, record.sessionType, record.matchFormat].filter(Boolean).join(' · ');
     default: return record.displayName || record.name || record.matchDate || '';
   }
 }
@@ -35,7 +36,7 @@ export default { async fetch(request, env) {
     if (url.pathname === '/api/login' && request.method === 'POST') { const body = await request.json(); const role = body.role || 'site'; return json({ ok: true, token: await login(role, body.password, env), role }); }
     if (url.pathname === '/api/public-data' && request.method === 'GET') {
       const values = await Promise.all(publicTypes.map(type => repo.read(environment, type)));
-      return json({ ok: true, club: values[0][0] || null, clubs: values[0], players: values[1], matches: values[2], externalOpponents: values[3], tournaments: values[4], tournamentMatches: values[5], tournamentProgress: values[6], rubbers: values[7], sessionFeedback: values[8], matchFeedback: values[9], lastUpdated: new Date().toISOString() });
+      return json({ ok: true, club: values[0][0] || null, clubs: values[0], players: values[1], matches: values[2], externalOpponents: values[3], tournaments: values[4], tournamentMatches: values[5], tournamentProgress: values[6], rubbers: values[7], sessionFeedback: values[8], matchFeedback: values[9], sessions: values[10], lastUpdated: new Date().toISOString() });
     }
     if (url.pathname === '/api/pending' && request.method === 'GET') return json({ ok: true, changes: await repo.read(environment, 'pending-changes') });
     if (url.pathname === '/api/clear-history' && request.method === 'POST') {
@@ -59,7 +60,7 @@ export default { async fetch(request, env) {
       const actor = ['sessionFeedback', 'matchFeedback'].includes(body.entityType) ? await session(request, env) : null;
       const records = {}; for (const type of publicTypes) records[type] = await repo.read(environment, type);
       const collection = collectionFor(body.entityType); if (!collection) throw new Error('Unsupported entity type');
-      if (body.action !== 'delete') validateEntity(body.entityType, body.after, { players: records.players, matches: records.matches, tournamentMatches: records['tournament-matches'], tournaments: records.tournaments, externalOpponents: records['external-opponents'] }, body.targetId);
+      if (body.action !== 'delete') validateEntity(body.entityType, body.after, { players: records.players, matches: records.matches, tournamentMatches: records['tournament-matches'], tournaments: records.tournaments, externalOpponents: records['external-opponents'], sessions: records.sessions }, body.targetId);
       const idField = idFieldFor(body.entityType);
       const before = records[collection].find(item => item[idField] === body.targetId) || null;
       if (!before && body.action === 'delete') throw new Error('Record not found');
@@ -71,7 +72,9 @@ export default { async fetch(request, env) {
       if (body.action !== 'create' && body.action !== 'delete' && !diff.length) return json({ ok: true, change: null, message: 'No changes detected' });
       const changedFields = diff.map(d => d.field);
       const summary = buildSummary(body.entityType, mergedAfter || before);
-      const change = { changeId: existingIndex >= 0 ? changes[existingIndex].changeId : `CHANGE-${Date.now()}`, entityType: body.entityType, action: body.action || (before ? 'update' : 'create'), targetId: body.targetId, before: refBefore, after: mergedAfter, diff, changedFields, summary, createdBy: actor?.role === 'site' ? 'member' : actor?.role || 'admin', createdAt: existingIndex >= 0 ? changes[existingIndex].createdAt : new Date().toISOString(), status: 'pending' };
+      const batchId = body.batchId && /^[A-Za-z0-9_-]{4,100}$/.test(body.batchId) ? body.batchId : existingIndex >= 0 ? changes[existingIndex].batchId || '' : '';
+      const correctionOf = body.correctionOf && /^CHANGE-[A-Za-z0-9_-]+$/.test(body.correctionOf) ? body.correctionOf : existingIndex >= 0 ? changes[existingIndex].correctionOf || '' : '';
+      const change = { changeId: existingIndex >= 0 ? changes[existingIndex].changeId : `CHANGE-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, entityType: body.entityType, action: body.action || (before ? 'update' : 'create'), targetId: body.targetId, before: refBefore, after: mergedAfter, diff, changedFields, summary, batchId, correctionOf, createdBy: actor?.role === 'site' ? 'member' : actor?.role || 'admin', createdAt: existingIndex >= 0 ? changes[existingIndex].createdAt : new Date().toISOString(), status: 'pending' };
       const next = [...changes]; if (existingIndex >= 0) next[existingIndex] = change; else next.push(change);
       await repo.write(environment, 'pending-changes', next); return json({ ok: true, change });
     }
@@ -101,6 +104,36 @@ export default { async fetch(request, env) {
         await repo.write(environment, collection, next);
         await repo.write(environment, 'pending-changes', changes.map(item => item.changeId === change.changeId ? { ...item, status: 'accepted', reviewedAt: new Date().toISOString(), reviewedBy: actor.role } : item));
         return { ok: true };
+      }));
+    }
+    if (url.pathname === '/api/approve-batch' && request.method === 'POST') {
+      const actor = await session(request, env);
+      if (actor.role !== 'approver' && actor.role !== 'admin') throw new Error('Approver or admin role required');
+      const body = await request.json();
+      if (!body.batchId || !['accept', 'reject'].includes(body.decision)) throw new Error('A batch ID and valid decision are required');
+      return json(await repo.withLock(environment, async () => {
+        const changes = await repo.read(environment, 'pending-changes');
+        const batch = changes.filter(change => change.status === 'pending' && change.batchId === body.batchId);
+        if (!batch.length) throw new Error('Pending batch not found');
+        const reviewedAt = new Date().toISOString();
+        if (body.decision === 'reject') {
+          await repo.write(environment, 'pending-changes', changes.map(change => batch.some(item => item.changeId === change.changeId) ? { ...change, status: 'rejected', reviewedAt, reviewedBy: actor.role } : change));
+          return { ok: true, processed: batch.length };
+        }
+        const collections = new Map();
+        for (const change of batch) {
+          const collection = collectionFor(change.entityType), idField = idFieldFor(change.entityType);
+          if (!collection || !idField) throw new Error(`Unsupported batch entity type: ${change.entityType}`);
+          if (!collections.has(collection)) collections.set(collection, await repo.read(environment, collection));
+          const current = collections.get(collection), existing = current.find(item => item[idField] === change.targetId);
+          if (change.before && JSON.stringify(existing) !== JSON.stringify(change.before)) throw new Error(`Batch contains a stale change: ${change.targetId}`);
+          const next = current.filter(item => item[idField] !== change.targetId);
+          if (change.action !== 'delete') next.push(change.after);
+          collections.set(collection, next);
+        }
+        for (const [collection, records] of collections) await repo.write(environment, collection, records);
+        await repo.write(environment, 'pending-changes', changes.map(change => batch.some(item => item.changeId === change.changeId) ? { ...change, status: 'accepted', reviewedAt, reviewedBy: actor.role } : change));
+        return { ok: true, processed: batch.length };
       }));
     }
     if (url.pathname === '/api/bulk-rubbers' && request.method === 'POST') {
