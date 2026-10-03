@@ -64,7 +64,7 @@ function submitEquipmentSurvey_(request) {
   if (!['右','左'].includes(request.playingHand)) throw new Error('Invalid playing hand.');
   if (!['シェークハンド / Shakehand','ペンホルダー / Penhold'].includes(request.grip)) throw new Error('Invalid grip.');
   if (!['Yes','No'].includes(request.profilePicturePermission)) throw new Error('Invalid profile-picture permission.');
-  if (!['裏ソフト','表ソフト','粒高','アンチ'].includes(request.forehandType) || !['裏ソフト','表ソフト','粒高','アンチ'].includes(request.backhandType)) throw new Error('Invalid rubber type.');
+  if (!['裏ソフト','表ソフト','粒高','アンチ','一枚'].includes(request.forehandType) || !['裏ソフト','表ソフト','粒高','アンチ','一枚'].includes(request.backhandType)) throw new Error('Invalid rubber type.');
   return appendRows_({ sheet:'Player Profile Supplement', rows:[{'Submitted At':new Date(),'Kanji Name':request.kanjiName.trim(),'Romanized Name':request.romanizedName.trim(),'Player Category':request.playerCategory,'Playing Hand':request.playingHand,'Grip':request.grip,'Playing Style':request.playingStyle.trim(),'Forehand Type':request.forehandType,'Forehand Brand and Model':request.forehandModel.trim(),'Backhand Type':request.backhandType,'Backhand Brand and Model':request.backhandModel.trim(),'Profile Picture Permission':request.profilePicturePermission}] });
 }
 

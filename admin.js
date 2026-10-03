@@ -113,21 +113,29 @@
   const entityTypeKey = { clubs: 'club', externalOpponents: 'externalOpponent', tournaments: 'tournament', tournamentMatches: 'tournamentMatch', tournamentProgress: 'tournamentProgress' };
   let players = [];
   let trainingMatches = [];
+  let sessions = [];
   let entityData = {};
   let pendingChanges = [];
+  let allChanges = [];
   let allPlayersList = [];
   let currentRole = '';
   const launchParams = new URLSearchParams(location.search), launchPlayerId = launchParams.get('editPlayer') || launchParams.get('playerId') || '', launchEditPlayer = Boolean(launchParams.get('editPlayer')), launchNewMatch = launchParams.get('newMatch') === '1';
-  let activeTab = launchParams.get('tab') === 'players' ? 'players' : 'matches';
+  const requestedTab = launchParams.get('tab');
+  let activeTab = ['overview', 'sessions', 'import', 'matches', 'players', 'tournaments', 'clubs', 'manage'].includes(requestedTab) ? requestedTab : 'overview';
   let activePlayerSubTab = 'ourPlayers';
   let activeManageSubTab = 'pending';
+  let activeMatchHealthFilter = '';
+  let activeMatchDateFilter = '';
+  let activePlayerHealthFilter = '';
   let selectedId = launchPlayerId;
+  let activeFormDirty = false;
 
   const el = (tag, options = {}) => Object.assign(document.createElement(tag), options);
   const text = (tag, value, className) => { const node = el(tag, { textContent: value }); if (className) node.className = className; return node; };
+  const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[character]);
   function createDiff(before, after) { const keys = new Set([...Object.keys(before || {}), ...Object.keys(after || {})]); return [...keys].filter(key => key === 'gradeHistory' || JSON.stringify(before?.[key]) !== JSON.stringify(after?.[key])).map(field => ({ field, before: before?.[field] ?? '', after: after?.[field] ?? '' })); }
   function computeDiff(change) { if (change.diff && change.diff.length) return change.diff; if (change.changedFields && change.before && change.after) { return change.changedFields.filter(f => f !== 'gradeHistory').map(f => ({ field: f, before: change.before[f] ?? '', after: change.after[f] ?? '' })).filter(d => JSON.stringify(d.before) !== JSON.stringify(d.after)); } if (change.before && change.after) return createDiff(change.before, change.after); return []; }
-  async function loadPendingChanges() { try { const result = await window.LKData.request('/api/pending'); pendingChanges = (result.changes || []).filter(c => c.status === 'pending'); } catch { pendingChanges = []; } }
+  async function loadPendingChanges() { try { const result = await window.LKData.request('/api/pending'); allChanges = result.changes || []; pendingChanges = allChanges.filter(c => c.status === 'pending'); } catch { allChanges = []; pendingChanges = []; } }
   function findPendingChange(entityType, targetId) { return pendingChanges.find(c => c.entityType === entityType && c.targetId === targetId); }
   function renderPendingInfo(change) {
     const box = el('div', { className: 'admin-pending-info' });
@@ -167,17 +175,48 @@
   }
   const empty = node => { node.replaceChildren(); return node; };
   const canEditMatches = () => currentRole === 'admin' || currentRole === 'approver';
+  const matchIsComplete = match => Number(match.player1Sets) >= 3 || Number(match.player2Sets) >= 3;
+  const todayInTokyo = () => { const parts = Object.fromEntries(new Intl.DateTimeFormat('en', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date()).map(part => [part.type, part.value])); return `${parts.year}-${parts.month}-${parts.day}`; };
+  const sessionIdForDate = date => date ? `LKS-${String(date).replace(/-/g, '')}` : '';
+  const profileFields = ['gender', 'schoolLevel', 'playingHand', 'grip', 'playingStyle', 'forehandRubber', 'backhandRubber'];
+  const profileCompleteness = player => Math.round(profileFields.filter(field => player[field]).length / profileFields.length * 100);
+  const profileIsComplete = player => profileFields.every(field => player[field]);
   const playerName = id => players.find(player => player.playerId === id)?.displayName || (entityData.externalOpponents || []).find(e => e.externalOpponentId === id)?.displayName || id || '';
+  const formSnapshot = form => JSON.stringify([...new FormData(form).entries()]);
+  const trackDirtyForm = form => {
+    activeFormDirty = false;
+    const initial = formSnapshot(form), indicator = text('p', language === 'en' ? 'Unsaved changes' : '未保存の変更があります', 'admin-unsaved-indicator');
+    indicator.hidden = true;
+    form.prepend(indicator);
+    const update = () => { activeFormDirty = formSnapshot(form) !== initial; indicator.hidden = !activeFormDirty; };
+    form.addEventListener('input', update); form.addEventListener('change', update); form.addEventListener('click', () => requestAnimationFrame(update)); form.addEventListener('focusout', () => setTimeout(update, 200));
+  };
+  app.addEventListener('click', event => {
+    if (!activeFormDirty || !event.target.closest('.admin-tab,.admin-sub-tab,.admin-player-row,.brand')) return;
+    if (confirm(language === 'en' ? 'Discard unsaved changes?' : '未保存の変更を破棄しますか？')) { activeFormDirty = false; return; }
+    event.preventDefault(); event.stopImmediatePropagation();
+  }, true);
+  window.addEventListener('beforeunload', event => { if (!activeFormDirty) return; event.preventDefault(); event.returnValue = ''; });
 
-  function shell() {
+  async function shell() {
     currentRole = 'admin';
+    const savedSession = localStorage.getItem('lk-admin-session');
+    let savedPayload = null;
+    try { savedPayload = savedSession ? JSON.parse(atob(savedSession.split('.')[0])) : null; } catch { savedPayload = null; }
+    if (savedSession && savedPayload?.expires > Date.now() && ['admin','approver'].includes(savedPayload.role)) {
+      try {
+        const restored = await window.LKData.request('/api/session');
+        if (restored.role === 'approver' || restored.role === 'admin') currentRole = restored.role;
+        else localStorage.removeItem('lk-admin-session');
+      } catch { localStorage.removeItem('lk-admin-session'); }
+    } else if (savedSession) localStorage.removeItem('lk-admin-session');
     loadWorkspace();
   }
 
   function showApproverLogin() {
-    const loginOverlay = el('div', { className: 'admin-login-overlay' });
+    const loginOverlay = el('div', { className: 'admin-login-overlay', role: 'dialog', ariaModal: 'true', ariaLabel: 'Approver sign-in' });
     const login = el('section', { className: 'admin-login admin-panel' });
-    login.append(text('p', 'APPROVER SIGN-IN / 承認者ログイン', 'eyebrow'), text('h2', '承認者アクセス / Approver Access'), text('p', '承認待ちの変更を確認・承認できます。管理者権限はありません。\nYou can review and approve pending changes. No admin privileges.', 'admin-login-desc'));
+    login.append(text('p', 'APPROVER SIGN-IN / 承認者ログイン', 'eyebrow'), text('h2', '承認者アクセス / Approver Access'), text('p', '承認待ちの変更を確認・承認できます。このブラウザでは7日間ログイン状態を保持します。\nYou can review and approve pending changes. This browser stays signed in for 7 days.', 'admin-login-desc'));
     const form = el('form', { className: 'admin-login-form' });
     const password = el('input', { name: 'password', type: 'password', required: true, autocomplete: 'current-password', placeholder: 'Password / パスワード' });
     const actions = el('div', { className: 'admin-login-actions' });
@@ -186,14 +225,18 @@
     actions.append(submit, cancelBtn);
     const status = el('p', { className: 'admin-status', role: 'status' });
     form.append(password, actions); login.append(form, status); loginOverlay.append(login); app.append(loginOverlay);
-    loginOverlay.addEventListener('click', e => { if (e.target === loginOverlay) loginOverlay.remove(); });
-    cancelBtn.onclick = () => loginOverlay.remove();
+    document.body.classList.add('modal-open');
+    const closeLogin = () => { loginOverlay.remove(); document.body.classList.remove('modal-open'); document.removeEventListener('keydown', onKeydown); };
+    const onKeydown = event => { if (event.key === 'Escape') closeLogin(); };
+    document.addEventListener('keydown', onKeydown);
+    loginOverlay.addEventListener('click', e => { if (e.target === loginOverlay) closeLogin(); });
+    cancelBtn.onclick = closeLogin;
     password.focus();
     form.addEventListener('submit', async event => {
       event.preventDefault(); status.textContent = 'Verifying... / 確認中...';
       try {
         const result = await window.LKData.request('/api/login', { method: 'POST', body: JSON.stringify({ role: 'approver', password: password.value }) });
-        localStorage.setItem('lk-admin-session', result.token); currentRole = result.role; loginOverlay.remove(); renderWorkspace();
+        localStorage.setItem('lk-admin-session', result.token); currentRole = result.role; activeTab = 'manage'; closeLogin(); renderWorkspace();
       } catch { status.textContent = 'Sign-in failed. / パスワードを確認してください。'; }
     });
   }
@@ -201,9 +244,9 @@
   async function loadWorkspace() {
     try {
       const data = await window.LKData.loadPublicData();
-      players = data.players || []; trainingMatches = data.matches || [];
+      players = data.players || []; trainingMatches = data.matches || []; sessions = data.sessions || [];
       players.forEach(p => { if (!p.gradeHistory) p.gradeHistory = []; });
-      entityData = { clubs: data.clubs || [], externalOpponents: data.externalOpponents || [], tournaments: data.tournaments || [], tournamentMatches: data.tournamentMatches || [], tournamentProgress: data.tournamentProgress || [] };
+      entityData = { clubs: data.clubs || [], externalOpponents: data.externalOpponents || [], tournaments: data.tournaments || [], tournamentMatches: data.tournamentMatches || [], tournamentProgress: data.tournamentProgress || [], importBatches: data.importBatches || [] };
       await loadPendingChanges();
       renderWorkspace();
     } catch { empty(app).append(text('p', 'Could not load admin data. / 管理データを読み込めませんでした。', 'admin-load-error')); }
@@ -218,6 +261,7 @@
 
   function renderWorkspace() {
     empty(app);
+    if (currentRole === 'approver') activeTab = 'manage';
     const header = el('header', { className: 'site-header' });
     const brand = el('a', { className: 'brand', href: 'index.html', 'aria-label': 'Little Kings home' });
     const brandText = el('span');
@@ -232,19 +276,133 @@
     } else {
       headerActions.append(button('APPROVER LOGIN / 承認者ログイン', () => showApproverLogin(), 'language-toggle'));
     }
-    header.append(brand, nav, headerActions);
+    header.append(text('h1', language === 'en' ? 'Data Maintenance' : 'データメンテナンス', 'visually-hidden'), brand, nav, headerActions);
     const tabs = el('nav', { className: 'admin-tabs', ariaLabel: 'Data maintenance sections' });
-    tabs.append(tab('matches', 'MATCHES / 試合'));
-    tabs.append(tab('players', 'PLAYERS / 選手'));
-    tabs.append(tab('tournaments', 'TOURNAMENTS / 大会'));
-    if (currentRole === 'admin') tabs.append(tab('clubs', 'CLUBS / クラブ'));
-    tabs.append(tab('manage', 'MANAGE / 管理'));
+    if (currentRole === 'approver') tabs.append(tab('manage', 'REVIEW / 承認'));
+    else {
+      tabs.append(tab('overview', 'OVERVIEW / 概要'));
+      tabs.append(tab('sessions', 'SESSIONS / セッション'));
+      tabs.append(tab('import', 'IMPORT / インポート'));
+      tabs.append(tab('matches', 'MATCHES / 試合'));
+      tabs.append(tab('players', 'PLAYERS / 選手'));
+      tabs.append(tab('tournaments', 'TOURNAMENTS / 大会'));
+      tabs.append(tab('clubs', 'CLUBS / クラブ'));
+      tabs.append(tab('manage', 'MANAGE / 管理'));
+    }
     app.append(header, tabs);
-    if (activeTab === 'matches') renderAllMatches(); else if (activeTab === 'players') renderPlayers(activePlayerSubTab); else if (activeTab === 'tournaments') renderTournaments(); else if (activeTab === 'clubs') renderEntity('clubs'); else if (activeTab === 'manage') renderManage(); else renderAllMatches();
+    if (activeTab === 'overview') renderOverview(); else if (activeTab === 'sessions') renderSessions(); else if (activeTab === 'import') renderImportCenter(); else if (activeTab === 'matches') renderAllMatches(); else if (activeTab === 'players') renderPlayers(activePlayerSubTab); else if (activeTab === 'tournaments') renderTournaments(); else if (activeTab === 'clubs') renderEntity('clubs'); else if (activeTab === 'manage') renderManage(); else renderOverview();
   }
   function button(label, onclick, className = '') { const node = el('button', { className: `admin-button ${className}`.trim(), type: 'button', textContent: label }); node.onclick = onclick; return node; }
   function tab(id, label) { const node = button(label, () => { activeTab = id; selectedId = ''; renderWorkspace(); }, `admin-tab${activeTab === id ? ' active' : ''}`); return node; }
   function roleLabel(role) { return ({ admin: '管理者', approver: '承認者' })[role] || role; }
+
+  function renderOverview() {
+    const activePlayers = players.filter(isActivePlayer);
+    const inactivePlayers = players.filter(player => !isActivePlayer(player));
+    const dates = [...new Set(trainingMatches.map(match => match.matchDate).filter(Boolean))].sort().reverse();
+    const latestDate = dates[0] || '';
+    const latestMatches = trainingMatches.filter(match => match.matchDate === latestDate);
+    const latestComplete = latestMatches.filter(matchIsComplete);
+    const shortCompleted = trainingMatches.filter(match => resultStatusId(match.resultStatus) === completedStatusId && !matchIsComplete(match));
+    const completeMarkedIncomplete = trainingMatches.filter(match => isIncompleteStatus(match.resultStatus) && matchIsComplete(match));
+    const missingCategory = activePlayers.filter(player => !player.schoolLevel);
+    const incompleteProfiles = activePlayers.filter(player => !profileIsComplete(player));
+    const missingGrade = activePlayers.filter(player => ['SL-001', 'SL-002', 'SL-003'].includes(player.schoolLevel) && !player.grade);
+    const recentAccepted = allChanges.filter(change => change.status === 'accepted').sort((a, b) => (b.reviewedAt || b.createdAt || '').localeCompare(a.reviewedAt || a.createdAt || '')).slice(0, 5);
+    const go = (target, setup) => { if (setup) setup(); activeTab = target; selectedId = ''; renderWorkspace(); };
+    const labels = language === 'en' ? {
+      kicker:'DATA MAINTENANCE', title:'Overview', subtitle:'What needs attention now', active:'Active players', inactive:'Inactive', matches:'Training matches', pending:'Pending approval', latest:'Latest session', complete:'completed', incomplete:'not complete', actions:'Quick actions', addMatch:'Add training match', rapidEntry:'Rapid session entry', importData:'Import CSV / paste', addPlayer:'Add player', addTournament:'Add tournament', review:'Review pending changes', health:'Data health', rule:'Kept exactly as recorded and excluded from completed statistics until a player reaches three sets.', missingCategory:'Active players without category', incompleteProfiles:'Incomplete active profiles', missingGrade:'Student players without grade', statusMismatch:'Complete score marked incomplete', recent:'Recently accepted', none:'No accepted changes yet', view:'View records'
+    } : {
+      kicker:'データメンテナンス', title:'概要', subtitle:'いま確認が必要な項目', active:'アクティブ選手', inactive:'無効', matches:'練習試合', pending:'承認待ち', latest:'最新セッション', complete:'完了', incomplete:'未完了', actions:'クイック操作', addMatch:'練習試合を追加', rapidEntry:'セッション一括入力', importData:'CSV・貼付インポート', addPlayer:'選手を追加', addTournament:'大会を追加', review:'承認待ちを確認', health:'データヘルス', rule:'記録はそのまま保持し、どちらかの選手が3セットに達するまでは完了統計から除外します。', missingCategory:'カテゴリ未設定のアクティブ選手', incompleteProfiles:'プロフィール未完成のアクティブ選手', missingGrade:'学年未設定の学生選手', statusMismatch:'完了スコアだが未完了ステータス', recent:'最近の承認', none:'承認履歴はまだありません', view:'記録を見る'
+    };
+    const section = el('section', { className: 'admin-overview' });
+    section.innerHTML = `<header class="admin-overview-hero"><div><p class="eyebrow">${labels.kicker}</p><h2>${labels.title}</h2><span>${labels.subtitle}</span></div><aside><b>${window.LKData.environment.toUpperCase()}</b><small>${new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'ja-JP')}</small></aside></header>
+      <div class="admin-overview-kpis"><article><small>${labels.active}</small><b>${activePlayers.length}</b><span>${inactivePlayers.length} ${labels.inactive}</span></article><article><small>${labels.matches}</small><b>${trainingMatches.length}</b><span>${dates.length} ${language === 'en' ? 'dates' : '試合日'}</span></article><article><small>${labels.pending}</small><b>${pendingChanges.length}</b><span>${pendingChanges.length ? (language === 'en' ? 'Review required' : '確認が必要') : (language === 'en' ? 'Queue clear' : '承認待ちなし')}</span></article><article><small>${labels.latest}</small><b>${latestDate || '—'}</b><span>${latestComplete.length} ${labels.complete} · ${latestMatches.length - latestComplete.length} ${labels.incomplete}</span></article></div>
+      <div class="admin-overview-grid"><section class="admin-overview-panel admin-health-panel"><header><p class="eyebrow">QUALITY</p><h3>${labels.health}</h3></header><div class="admin-health-list"></div></section><section class="admin-overview-panel"><header><p class="eyebrow">ACTIONS</p><h3>${labels.actions}</h3></header><div class="admin-quick-actions"></div><header class="admin-recent-head"><p class="eyebrow">HISTORY</p><h3>${labels.recent}</h3></header><div class="admin-recent-list">${recentAccepted.length ? recentAccepted.map(change => `<span><b>${escapeHtml(change.summary || change.targetId || change.entityType)}</b><small>${formatPendingDate(change.reviewedAt || change.createdAt)}</small></span>`).join('') : `<p>${labels.none}</p>`}</div></section></div>`;
+    const healthList = section.querySelector('.admin-health-list');
+    const healthItem = (count, title, detail, severity, action) => { const row = el('article', { className: `admin-health-item ${severity}` }); row.innerHTML = `<i>${count}</i><span><b>${title}</b><small>${detail}</small></span>`; if (action) row.append(button(labels.view, action, 'secondary')); healthList.append(row); };
+    healthItem(shortCompleted.length, language === 'en' ? 'Below 3 sets — not counted complete' : '3セット未満（完了統計の対象外）', labels.rule, 'info', () => go('matches', () => { activeMatchHealthFilter = 'short-completed'; }));
+    healthItem(completeMarkedIncomplete.length, labels.statusMismatch, language === 'en' ? 'Score and status disagree.' : 'スコアとステータスが一致していません。', completeMarkedIncomplete.length ? 'error' : 'ok', () => go('matches', () => { activeMatchHealthFilter = 'complete-marked-incomplete'; }));
+    healthItem(incompleteProfiles.length, labels.incompleteProfiles, language === 'en' ? `${missingCategory.length} also lack a category.` : `うち${missingCategory.length}名はカテゴリも未設定です。`, 'review', () => go('players', () => { activePlayerHealthFilter = 'incomplete'; }));
+    healthItem(missingGrade.length, labels.missingGrade, language === 'en' ? 'Grade-based views may be incomplete.' : '学年別表示が不完全になる可能性があります。', 'info', () => go('players', () => { activePlayerHealthFilter = 'missing-grade'; }));
+    const actions = section.querySelector('.admin-quick-actions');
+    actions.append(button(`＋ ${labels.addMatch}`, () => { activeTab = 'matches'; selectedId = ''; renderWorkspace(); requestAnimationFrame(() => showMatchEditor(null)); }, 'primary'), button(`⚡ ${labels.rapidEntry}`, () => { activeTab = 'matches'; selectedId = ''; renderWorkspace(); requestAnimationFrame(() => showRapidSessionEntry()); }, 'primary'), button(`⇧ ${labels.importData}`, () => go('import'), 'primary'), button(`＋ ${labels.addPlayer}`, () => { activeTab = 'players'; activePlayerSubTab = 'ourPlayers'; selectedId = ''; renderWorkspace(); requestAnimationFrame(() => showPlayerEditor(null)); }, 'primary'), button(`＋ ${labels.addTournament}`, () => { activeTab = 'tournaments'; selectedId = ''; renderWorkspace(); requestAnimationFrame(() => showEntityEditor('tournament', null)); }, 'secondary'), button(labels.review, () => go('manage'), pendingChanges.length ? 'danger' : 'secondary'));
+    app.append(section);
+  }
+
+  function renderImportCenter() {
+    const labels = language === 'en' ? {
+      kicker:'IMPORT & DATA QUALITY',title:'Training Match Import',intro:'Paste CSV/TSV rows or upload a file. Resolve names and review every warning before creating one approval batch.',source:'Source name',date:'Session date',session:'Session ID',format:'Match format',venue:'Venue',verified:'Verified date',note:'Import note',paste:'CSV / TSV data',parse:'Preview import',template:'Download template',errors:'Download issues',submit:'Submit reviewed batch',upload:'Choose CSV file',mapping:'Resolve names',preview:'Validation preview',history:'Import history',empty:'Paste data or choose a file to begin.',valid:'valid',warnings:'warnings',blocked:'blocked',rows:'rows',duplicateBatch:'This exact resolved import is already approved or awaiting review.',noIssues:'Ready for grouped approval.',pending:'Submitting',success:'Import batch submitted for approval.',failed:'Import stopped after an error.',select:'Select a player or opponent',showing:'Showing first 200 rows'
+    } : {
+      kicker:'インポート・データ品質',title:'練習試合インポート',intro:'CSV/TSVを貼り付けるかファイルを選択し、名前解決と全警告を確認してから一括承認申請します。',source:'出典名',date:'セッション日',session:'セッションID',format:'試合形式',venue:'会場',verified:'確認日',note:'インポートメモ',paste:'CSV / TSVデータ',parse:'インポートを確認',template:'テンプレート取得',errors:'問題一覧を取得',submit:'確認済みバッチを申請',upload:'CSVファイルを選択',mapping:'名前を解決',preview:'検証プレビュー',history:'インポート履歴',empty:'データを貼り付けるかファイルを選択してください。',valid:'有効',warnings:'警告',blocked:'エラー',rows:'行',duplicateBatch:'同じ解決済みインポートが承認済み、または承認待ちです。',noIssues:'一括承認申請できます。',pending:'送信中',success:'インポートバッチを承認申請しました。',failed:'エラーのためインポートを停止しました。',select:'選手・対戦相手を選択',showing:'先頭200行を表示'};
+    const section=el('section',{className:'admin-import-center'}),hero=el('header',{className:'admin-import-hero'});hero.innerHTML=`<div><p class="eyebrow">${labels.kicker}</p><h2>${labels.title}</h2><span>${labels.intro}</span></div><aside><b>CSV</b><small>UTF-8 · CSV / TSV</small></aside>`;section.append(hero);
+    const form=el('form',{className:'admin-import-form'}),settings=el('section',{className:'admin-import-settings'}),source=el('input',{name:'importSource',type:'text',required:true,maxLength:200,value:'',placeholder:'Notebook 2026-10-03 / ノート'}),date=el('input',{name:'importDate',type:'date',required:true,value:todayInTokyo()}),sessionId=el('input',{name:'importSessionId',type:'text',required:true,value:sessionIdForDate(todayInTokyo()),pattern:'[A-Za-z0-9_\\-]{4,64}',maxLength:64}),format=select('importMatchFormat',['Best of 5','Best of 3','Short practice'],'Best of 5'),venue=el('input',{name:'importVenue',type:'text',maxLength:500,value:''}),verified=el('input',{name:'importVerifiedAt',type:'date',value:''}),note=el('input',{name:'importNote',type:'text',maxLength:500,value:''});
+    const field=(label,input)=>{const node=el('label');node.append(text('span',label),input);settings.append(node);};field(labels.source,source);field(labels.date,date);field(labels.session,sessionId);field(labels.format,format);field(labels.venue,venue);field(labels.verified,verified);field(labels.note,note);form.append(settings);
+    const inputPanel=el('section',{className:'admin-import-input'}),textarea=el('textarea',{name:'importText',placeholder:'matchDate,player1,player1Sets,player2,player2Sets,division,matchFormat\n2026-10-03,岡田,3,三田村,1,Open,Best of 5'}),file=el('input',{type:'file',accept:'.csv,.tsv,text/csv,text/tab-separated-values'}),inputActions=el('div',{className:'admin-import-input-actions'}),previewButton=button(labels.parse,()=>paintPreview(),'primary'),templateButton=button(labels.template,()=>downloadTemplate(),'secondary'),issuesButton=button(labels.errors,()=>downloadIssues(),'secondary');issuesButton.disabled=true;inputActions.append(previewButton,templateButton,issuesButton);const fileLabel=el('label',{className:'admin-import-file'});fileLabel.append(text('span',labels.upload),file);inputPanel.append(text('h3',labels.paste),textarea,fileLabel,inputActions);form.append(inputPanel);
+    const mappingPanel=el('section',{className:'admin-import-mapping'}),previewPanel=el('section',{className:'admin-import-preview'}),submitStatus=text('p','', 'admin-status admin-import-submit-status'),submitButton=button(labels.submit,()=>submitImport(),'primary');submitButton.disabled=true;form.append(mappingPanel,previewPanel,submitButton,submitStatus);form.onsubmit=event=>event.preventDefault();section.append(form);
+    const history=el('section',{className:'admin-import-history'});history.append(text('h3',labels.history));const historyRows=[...(entityData.importBatches||[]).map(item=>({...item,reviewState:'approved'})),...allChanges.filter(change=>change.entityType==='importBatch'&&change.status!=='accepted').map(change=>({...change.after,reviewState:change.status,createdAt:change.createdAt}))].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));history.innerHTML+=historyRows.slice(0,20).map(item=>`<article class="${escapeHtml(item.reviewState)}"><div><b>${escapeHtml(item.sourceName||item.importBatchId)}</b><small>${escapeHtml(item.sessionDate||'')} · ${escapeHtml(item.importBatchId||'')}</small></div><span><b>${Number(item.rowCount)||0}</b>${labels.rows}</span><em>${escapeHtml(item.reviewState)}</em></article>`).join('')||`<p class="admin-empty">—</p>`;section.append(history);app.append(section);
+
+    const people=[...players.filter(isActivePlayer),...(entityData.externalOpponents||[])],personId=person=>person.playerId||person.externalOpponentId,personLabel=person=>[preferredName(person),person.displayName!==preferredName(person)?person.displayName:'',person.englishName,personId(person)].filter(Boolean).join(' · '),normalize=value=>String(value||'').normalize('NFKC').toLowerCase().replace(/[\s　_.・-]+/g,''),aliasMappings=new Map(),aliasIndex=new Map();
+    people.forEach(person=>[personId(person),person.displayName,person.englishName,person.notebookName,person.fullName,person.kanjiName].filter(Boolean).forEach(alias=>{const key=normalize(alias);if(!aliasIndex.has(key))aliasIndex.set(key,[]);if(!aliasIndex.get(key).some(item=>personId(item)===personId(person)))aliasIndex.get(key).push(person);}));
+    let previewState={rows:[],records:[],issues:[],hash:'',importBatchId:'',duplicate:false},paintVersion=0;
+    const resolvePerson=token=>{const mapped=aliasMappings.get(token);if(mapped)return people.find(person=>personId(person)===mapped)||null;const found=aliasIndex.get(normalize(token))||[];return found.length===1?found[0]:null;};
+    const suggestionsFor=token=>{const key=normalize(token);return people.map(person=>({person,score:Math.max(...[person.displayName,person.englishName,person.notebookName,personId(person)].filter(Boolean).map(alias=>{const candidate=normalize(alias);return candidate===key?100:candidate.startsWith(key)||key.startsWith(candidate)?70:candidate.includes(key)||key.includes(candidate)?50:0;}))})).filter(item=>item.score>0).sort((a,b)=>b.score-a.score||personLabel(a.person).localeCompare(personLabel(b.person),'ja')).slice(0,5).map(item=>item.person);};
+    const parseDelimited=value=>{const delimiter=(value.split(/\r?\n/,1)[0].match(/\t/g)||[]).length>(value.split(/\r?\n/,1)[0].match(/,/g)||[]).length?'\t':',',rows=[];let row=[],cell='',quoted=false;for(let index=0;index<value.length;index++){const character=value[index],next=value[index+1];if(character==='"'&&quoted&&next==='"'){cell+='"';index++;}else if(character==='"')quoted=!quoted;else if(character===delimiter&&!quoted){row.push(cell);cell='';}else if((character==='\n'||character==='\r')&&!quoted){if(character==='\r'&&next==='\n')index++;row.push(cell);if(row.some(item=>String(item).trim()))rows.push(row);row=[];cell='';}else cell+=character;}row.push(cell);if(row.some(item=>String(item).trim()))rows.push(row);return rows;};
+    const headerKey=value=>normalize(value).replace(/[\/]/g,''),headerAliases={date:['date','matchdate','日付'],player1:['player1','player1name','p1','選手1','選手１'],player1Sets:['player1sets','p1sets','score1','選手1セット','選手１セット'],player2:['player2','player2name','p2','選手2','選手２'],player2Sets:['player2sets','p2sets','score2','選手2セット','選手２セット'],division:['division','group','部門','グループ'],matchFormat:['matchformat','format','試合形式'],sessionId:['sessionid','セッションid']};
+    const parseInput=()=>{const table=parseDelimited(textarea.value.trim());if(table.length<2)return {error:labels.empty,rows:[]};if(table.length>1001)return {error:language==='en'?'One import may contain at most 1,000 rows.':'1回のインポートは1,000行までです。',rows:[]};const headers=table[0].map(headerKey),columns={};Object.entries(headerAliases).forEach(([field,names])=>{columns[field]=headers.findIndex(header=>names.map(headerKey).includes(header));});const required=['player1','player1Sets','player2','player2Sets'];if(required.some(field=>columns[field]<0))return {error:language==='en'?'Required headers: player1, player1Sets, player2, player2Sets':'必須ヘッダー: player1, player1Sets, player2, player2Sets',rows:[]};return {rows:table.slice(1).map((values,index)=>({rowNumber:index+2,raw:Object.fromEntries(Object.entries(columns).map(([field,column])=>[field,column>=0?String(values[column]??'').trim():'']))}))};};
+    const exactKey=record=>{const first=record.player1Id<=record.player2Id?`${record.player1Id}:${record.player1Sets}`:`${record.player2Id}:${record.player2Sets}`,second=record.player1Id<=record.player2Id?`${record.player2Id}:${record.player2Sets}`:`${record.player1Id}:${record.player1Sets}`;return `${record.matchDate}|${first}|${second}`;},pairKey=record=>`${record.matchDate}|${[record.player1Id,record.player2Id].sort().join('|')}`;
+    const validIsoDate=value=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;const parsed=new Date(`${value}T00:00:00Z`);return !Number.isNaN(parsed.getTime())&&parsed.toISOString().slice(0,10)===value;};
+    const digest=async value=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))].map(byte=>byte.toString(16).padStart(2,'0')).join('');
+    async function paintPreview(){const version=++paintVersion,parsed=parseInput();empty(mappingPanel);empty(previewPanel);submitButton.disabled=true;issuesButton.disabled=true;submitStatus.textContent='';if(parsed.error){previewPanel.append(text('p',parsed.error,'admin-load-error'));return;}const unresolved=[...new Set(parsed.rows.flatMap(item=>[item.raw.player1,item.raw.player2]).filter(token=>token&&!resolvePerson(token)))];if(unresolved.length){mappingPanel.append(text('h3',`${labels.mapping} · ${unresolved.length}`));unresolved.forEach(token=>{const line=el('label'),selectNode=el('select',{ariaLabel:`Resolve ${token}`});selectNode.append(el('option',{value:'',textContent:labels.select}));const suggested=suggestionsFor(token),ordered=[...suggested,...people.filter(person=>!suggested.includes(person)).sort((a,b)=>personLabel(a).localeCompare(personLabel(b),'ja'))];ordered.forEach(person=>selectNode.append(el('option',{value:personId(person),textContent:personLabel(person)})));selectNode.value=aliasMappings.get(token)||'';selectNode.onchange=()=>{if(selectNode.value)aliasMappings.set(token,selectNode.value);else aliasMappings.delete(token);paintPreview();};line.append(text('span',token),selectNode,text('small',suggested.length?`${language==='en'?'Suggestions':'候補'}: ${suggested.map(person=>preferredName(person)).join(' · ')}`:''));mappingPanel.append(line);});}
+      const existingPending=pendingChanges.filter(change=>change.entityType==='match'&&change.after).map(change=>change.after),existing=trainingMatches,allExisting=[...trainingMatches,...existingPending],seenExact=new Set(),seenPairs=new Set(),issues=[];const rows=parsed.rows.map(item=>{const errors=[],warnings=[],one=resolvePerson(item.raw.player1),two=resolvePerson(item.raw.player2),oneSets=Number(item.raw.player1Sets),twoSets=Number(item.raw.player2Sets),scoreValid=item.raw.player1Sets!==''&&item.raw.player2Sets!==''&&Number.isInteger(oneSets)&&oneSets>=0&&Number.isInteger(twoSets)&&twoSets>=0,matchDate=item.raw.date||date.value,matchFormat=item.raw.matchFormat||format.value,record={matchDate,sessionId:item.raw.sessionId||sessionId.value,matchFormat,event:'Club Training',division:item.raw.division||'',format:'Singles',player1Id:one?personId(one):'',player1Name:one?playerName(personId(one)):item.raw.player1,player1Sets:oneSets,player2Id:two?personId(two):'',player2Name:two?playerName(personId(two)):item.raw.player2,player2Sets:twoSets};if(!one)errors.push(`${item.raw.player1}: ${language==='en'?'unresolved':'未解決'}`);if(!two)errors.push(`${item.raw.player2}: ${language==='en'?'unresolved':'未解決'}`);if(!validIsoDate(matchDate))errors.push(language==='en'?'Invalid date':'日付が無効');else if(matchDate!==date.value)errors.push(language==='en'?'Row date differs from session date':'行の日付がセッション日と異なります');if(!scoreValid)errors.push(language==='en'?'Invalid set score':'セット数が無効');if(one&&two&&personId(one)===personId(two))errors.push(language==='en'?'Same player selected twice':'同じ選手が選択されています');if(!['Best of 5','Best of 3','Short practice'].includes(matchFormat))errors.push(language==='en'?'Unsupported match format':'未対応の試合形式');const complete=scoreValid&&(oneSets>=3||twoSets>=3)&&oneSets!==twoSets;if(oneSets===twoSets&&oneSets>=3)errors.push(language==='en'?'Completed score cannot be tied':'完了スコアは同点にできません');if(scoreValid&&!complete)warnings.push(language==='en'?'Incomplete under the three-set statistics rule':'3セット到達ルールでは未完了');if(scoreValid&&(oneSets>3||twoSets>3))warnings.push(language==='en'?'Unusual score':'通常外スコア');if(one&&two&&scoreValid){record.score=`${oneSets}-${twoSets}`;record.resultStatus=complete?completedStatusId:incompleteStatusId;record.winnerId=complete?(oneSets>twoSets?record.player1Id:record.player2Id):'';record.winnerName=record.winnerId?playerName(record.winnerId):'';record.player1SchoolLevel=one.schoolLevel||'';record.player1Grade=one.grade||'';record.player2SchoolLevel=two.schoolLevel||'';record.player2Grade=two.grade||'';const exact=exactKey(record),pair=pairKey(record);if(existing.some(match=>exactKey(match)===exact))errors.push(language==='en'?'Exact duplicate already exists':'同一試合が登録済み');else if(seenExact.has(exact))errors.push(language==='en'?'Duplicate row in this import':'インポート内の重複行');if(allExisting.some(match=>pairKey(match)===pair)&&!errors.some(message=>message.includes('duplicate')||message.includes('同一')))warnings.push(language==='en'?'Pair already met on this date':'同日に同じ組合せがあります');if(seenPairs.has(pair))warnings.push(language==='en'?'Repeated pairing in this import':'インポート内の再対戦');seenExact.add(exact);seenPairs.add(pair);}errors.forEach(message=>issues.push({row:item.rowNumber,type:'ERROR',message,raw:item.raw}));warnings.forEach(message=>issues.push({row:item.rowNumber,type:'WARNING',message,raw:item.raw}));return {...item,record,errors,warnings};});
+      const canonical=rows.map(item=>({matchDate:item.record.matchDate,sessionId:item.record.sessionId,matchFormat:item.record.matchFormat,division:item.record.division,player1Id:item.record.player1Id,player1Sets:item.record.player1Sets,player2Id:item.record.player2Id,player2Sets:item.record.player2Sets})),hash=await digest(JSON.stringify(canonical));if(version!==paintVersion)return;const importBatchId=`IMP-${hash.slice(0,16).toUpperCase()}`,suffix=hash.slice(0,6).toUpperCase(),records=rows.map((item,index)=>({...item.record,matchId:`LKM-${String(item.record.matchDate||date.value).replace(/-/g,'')}-I${suffix}-${String(index+1).padStart(3,'0')}`,importBatchId}));rows.forEach(item=>{if(!item.record.score)return;const conflict=existingPending.find(match=>exactKey(match)===exactKey(item.record)&&match.importBatchId!==importBatchId);if(!conflict)return;const message=language==='en'?'Exact duplicate is already pending in another batch':'同一試合が別のバッチで承認待ち';item.errors.push(message);issues.push({row:item.rowNumber,type:'ERROR',message,raw:item.raw});});const approvedDuplicate=(entityData.importBatches||[]).some(item=>item.inputHash===hash),pendingImport=pendingChanges.find(change=>change.entityType==='importBatch'&&change.after?.inputHash===hash),pendingTargets=new Set(pendingChanges.filter(change=>change.batchId===`BATCH-${importBatchId}`).map(change=>change.targetId)),completePending=Boolean(pendingImport)&&records.every(record=>pendingTargets.has(record.matchId)),duplicate=approvedDuplicate||completePending,errorCount=rows.reduce((sum,item)=>sum+item.errors.length,0),warningCount=rows.reduce((sum,item)=>sum+item.warnings.length,0);previewState={rows,records,issues,hash,importBatchId,duplicate};previewPanel.innerHTML=`<header><div><h3>${labels.preview}</h3><small>${escapeHtml(importBatchId)}</small></div><div><span><b>${rows.length}</b>${labels.rows}</span><span class="valid"><b>${rows.filter(item=>!item.errors.length).length}</b>${labels.valid}</span><span class="warning"><b>${warningCount}</b>${labels.warnings}</span><span class="error"><b>${errorCount}</b>${labels.blocked}</span></div></header>${duplicate?`<p class="admin-import-duplicate">${labels.duplicateBatch}</p>`:pendingImport?`<p class="admin-import-ready">${language==='en'?'A partial attempt was found. Submission will safely resume the same batch.':'途中まで送信されたバッチがあります。同じバッチを安全に再開します。'}</p>`:errorCount?`<p class="admin-import-duplicate">${language==='en'?'Resolve every blocked row before submission.':'申請前にすべてのエラーを解決してください。'}</p>`:`<p class="admin-import-ready">${labels.noIssues}</p>`}<div class="admin-import-table-wrap"><table><thead><tr><th>#</th><th>${language==='en'?'Players':'選手'}</th><th>${language==='en'?'Score':'スコア'}</th><th>${language==='en'?'Status':'状態'}</th></tr></thead><tbody>${rows.slice(0,200).map(item=>`<tr class="${item.errors.length?'error':item.warnings.length?'warning':'valid'}"><td>${item.rowNumber}</td><td><b>${escapeHtml(item.record.player1Name||item.raw.player1)}</b><i>VS</i><b>${escapeHtml(item.record.player2Name||item.raw.player2)}</b></td><td>${Number.isFinite(item.record.player1Sets)?item.record.player1Sets:'?'}-${Number.isFinite(item.record.player2Sets)?item.record.player2Sets:'?'}</td><td>${[...item.errors.map(message=>`<em>${escapeHtml(message)}</em>`),...item.warnings.map(message=>`<small>${escapeHtml(message)}</small>`)].join('')||'✓'}</td></tr>`).join('')}</tbody></table></div>${rows.length>200?`<p class="admin-import-showing">${labels.showing}</p>`:''}`;issuesButton.disabled=!issues.length;submitButton.disabled=!rows.length||Boolean(errorCount)||duplicate||unresolved.length>0||!source.value.trim();
+    }
+    async function submitImport(){if(submitButton.disabled||!previewState.records.length)return;if(!confirm(`${labels.submit}?\n\n${previewState.records.length} ${labels.rows} · ${previewState.importBatchId}`))return;submitButton.disabled=true;const batchId=`BATCH-${previewState.importBatchId}`,now=new Date().toISOString(),matchIds=previewState.records.map(record=>record.matchId),importRecord={importBatchId:previewState.importBatchId,importType:'trainingMatches',inputHash:previewState.hash,sourceName:source.value.trim(),sessionDate:date.value,sessionId:sessionId.value,rowCount:matchIds.length,matchIds,note:note.value.trim(),createdAt:now},existingSession=sessions.find(item=>item.sessionId===sessionId.value),sessionRecord=existingSession?{...existingSession}:{sessionId:sessionId.value,sessionDate:date.value,venue:venue.value.trim(),sessionType:'Club Training',matchFormat:format.value,source:source.value.trim(),verifiedAt:verified.value,coachGoal:'',coachNote:'',createdAt:now,updatedAt:now};if(existingSession){let changed=false;for(const [field,value] of Object.entries({venue:venue.value.trim(),source:source.value.trim(),verifiedAt:verified.value,matchFormat:format.value})){if(!sessionRecord[field]&&value){sessionRecord[field]=value;changed=true;}}if(changed)sessionRecord.updatedAt=now;}submitStatus.textContent=`${labels.pending} 0 / ${matchIds.length+2}`;try{await submitChange('importBatch',importRecord.importBatchId,importRecord,'create',{batchId});await submitChange('session',sessionRecord.sessionId,sessionRecord,existingSession?'update':'create',{batchId});for(let index=0;index<previewState.records.length;index++){await submitChange('match',previewState.records[index].matchId,previewState.records[index],'create',{batchId});submitStatus.textContent=`${labels.pending} ${index+3} / ${matchIds.length+2}`;}submitStatus.textContent=labels.success;activeFormDirty=false;await loadWorkspace();}catch(error){submitStatus.textContent=`${labels.failed} ${error.message}`;submitButton.disabled=false;}}
+    function csvCell(value){const text=String(value??'');return /[",\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text;}
+    function download(name,content){const link=document.createElement('a'),url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));link.href=url;link.download=name;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+    function downloadTemplate(){download('little-kings-training-match-import.csv','matchDate,player1,player1Sets,player2,player2Sets,division,matchFormat\n2026-10-03,岡田,3,三田村,1,Open,Best of 5\n');}
+    function downloadIssues(){const lines=['row,type,message,player1,player1Sets,player2,player2Sets'];previewState.issues.forEach(issue=>lines.push([issue.row,issue.type,issue.message,issue.raw.player1,issue.raw.player1Sets,issue.raw.player2,issue.raw.player2Sets].map(csvCell).join(',')));download(`import-issues-${date.value||'session'}.csv`,`${lines.join('\n')}\n`);}
+    date.onchange=()=>{if(!sessionId.value||/^LKS-\d{8}$/.test(sessionId.value))sessionId.value=sessionIdForDate(date.value);};file.onchange=async()=>{const selected=file.files?.[0];if(!selected)return;textarea.value=await selected.text();if(!source.value)source.value=selected.name;paintPreview();};[source,date,sessionId,format,venue,verified,note,textarea].forEach(input=>input.addEventListener('input',()=>{submitButton.disabled=true;}));trackDirtyForm(form);
+  }
+
+  function renderSessions() {
+    const labels = language === 'en' ? {
+      kicker:'SESSION MANAGER', title:'Training Sessions', intro:'Manage shared session metadata without rewriting historical match records.', add:'Add session record', date:'Date', venue:'Venue', type:'Session type', format:'Match format', source:'Source', verified:'Verified date', goal:'Coach goal', note:'Coach note', save:'Submit for approval', reset:'Reset', create:'Create session record', edit:'Edit session record', open:'Open session matches', insights:'Open in Training Insights', metadata:'Metadata', unrecorded:'Metadata unrecorded', matches:'matches', completed:'completed', participants:'match participants', linked:'linked by session ID', unlinked:'date records not linked', incomplete:'incomplete', duplicate:'possible duplicates', unusual:'unusual scores', none:'No training sessions recorded.'
+    } : {
+      kicker:'セッション管理', title:'練習セッション', intro:'過去の試合記録を書き換えずに、共有セッション情報を一か所で管理します。', add:'セッション記録を追加', date:'日付', venue:'会場', type:'セッション種別', format:'試合形式', source:'出典', verified:'確認日', goal:'指導目標', note:'指導メモ', save:'承認申請する', reset:'リセット', create:'セッション記録を作成', edit:'セッション記録を編集', open:'この日の試合を開く', insights:'練習分析で開く', metadata:'メタデータ', unrecorded:'メタデータ未登録', matches:'試合', completed:'完了', participants:'試合参加選手', linked:'セッションID連携', unlinked:'日付のみ・未連携', incomplete:'未完了', duplicate:'重複候補', unusual:'通常外スコア', none:'登録済み練習セッションはありません。'
+    };
+    const workspace = el('section', { className:'admin-workspace admin-session-workspace' }), listPanel = el('section', { className:'admin-panel admin-list-panel' }), editor = el('section', { className:'admin-panel admin-editor-panel' });
+    const dates = [...new Set([...trainingMatches.map(match => match.matchDate), ...sessions.map(item => item.sessionDate)].filter(Boolean))].sort().reverse();
+    const records = dates.map(date => {
+      const matches = trainingMatches.filter(match => match.matchDate === date), record = sessions.find(item => item.sessionDate === date) || null, expectedId = record?.sessionId || sessionIdForDate(date), linked = matches.filter(match => match.sessionId === expectedId), unlinked = matches.filter(match => match.sessionId !== expectedId), participants = new Set(matches.flatMap(match => [match.player1Id, match.player2Id]).filter(Boolean));
+      const seen = new Set(); let duplicates = 0;
+      matches.forEach(match => { const ordered = match.player1Id <= match.player2Id ? `${match.player1Id}:${match.player1Sets}|${match.player2Id}:${match.player2Sets}` : `${match.player2Id}:${match.player2Sets}|${match.player1Id}:${match.player1Sets}`, key = `${date}|${ordered}`; if (seen.has(key)) duplicates++; else seen.add(key); });
+      return { date, record, sessionId:expectedId, matches, linked, unlinked, participants:participants.size, completed:matches.filter(matchIsComplete).length, incomplete:matches.filter(match => !matchIsComplete(match)).length, duplicates, unusual:matches.filter(match => Number(match.player1Sets) > 3 || Number(match.player2Sets) > 3).length };
+    });
+    const head = el('div', { className:'admin-list-header' }), title = el('div'); title.append(text('p',labels.kicker,'eyebrow'),text('h2',`${records.length} ${labels.title}`)); head.append(title); listPanel.append(head,text('p',labels.intro,'admin-session-intro'));
+    if (canEditMatches()) listPanel.append(button(`＋ ${labels.add}`,()=>showSessionEditor(null),'primary'));
+    const list = el('div',{className:'admin-player-list admin-session-list'}); listPanel.append(list); workspace.append(listPanel,editor); app.append(workspace);
+    const selected = records.find(item=>item.sessionId===selectedId) || records[0] || null;if(selected)selectedId=selected.sessionId;
+    if (!records.length) list.append(text('p',labels.none,'admin-empty'));
+    records.forEach(item => {
+      const row = el('button',{type:'button',className:`admin-player-row admin-session-row${selectedId===item.sessionId?' selected':''}`});
+      row.innerHTML = `<span><b>${escapeHtml(item.date)}</b><small>${escapeHtml(item.record?.venue || labels.unrecorded)} · ${escapeHtml(item.sessionId)}</small></span><span class="admin-session-row-metrics"><b>${item.matches.length}</b><small>${labels.matches}</small></span><span class="admin-session-record-state ${item.record?'recorded':'missing'}">${item.record?labels.metadata:labels.unrecorded}</span>`;
+      row.onclick=()=>{selectedId=item.sessionId;renderWorkspace();}; list.append(row);
+    });
+    if (selected) showSessionEditor(selected); else showSessionEditor(null);
+
+    function showSessionEditor(item) {
+      empty(editor); const existing = item?.record || null, dateValue = item?.date || todayInTokyo(), record = existing ? {...existing} : {sessionId:item?.sessionId || sessionIdForDate(dateValue),sessionDate:dateValue,venue:'',sessionType:'Club Training',matchFormat:'Best of 5',source:'',verifiedAt:'',coachGoal:'',coachNote:''}, metrics = item || {matches:[],linked:[],unlinked:[],participants:0,completed:0,incomplete:0,duplicates:0,unusual:0};
+      editor.append(text('p',existing?labels.edit:labels.create,'eyebrow'),text('h2',record.sessionDate || labels.create));
+      const health = el('div',{className:'admin-session-health'}); health.innerHTML=`<span><b>${metrics.matches.length}</b>${labels.matches}</span><span><b>${metrics.completed}</b>${labels.completed}</span><span><b>${metrics.participants}</b>${labels.participants}</span><span><b>${metrics.linked.length}</b>${labels.linked}</span><span class="${metrics.unlinked.length?'warning':''}"><b>${metrics.unlinked.length}</b>${labels.unlinked}</span><span class="${metrics.incomplete?'warning':''}"><b>${metrics.incomplete}</b>${labels.incomplete}</span><span class="${metrics.duplicates?'error':''}"><b>${metrics.duplicates}</b>${labels.duplicate}</span><span class="${metrics.unusual?'warning':''}"><b>${metrics.unusual}</b>${labels.unusual}</span>`; editor.append(health);
+      const links=el('div',{className:'admin-session-links'}); links.append(button(labels.open,()=>{activeMatchSubTab='training';activeMatchDateFilter=record.sessionDate;activeTab='matches';selectedId='';renderWorkspace();},'secondary'),el('a',{href:`insights.html?session=${encodeURIComponent(record.sessionDate)}#session`,textContent:`${labels.insights} →`}));editor.append(links);
+      const form=el('form',{className:'admin-player-form admin-session-form'}), date=el('input',{name:'sessionDate',type:'date',required:true,value:record.sessionDate}), id=el('input',{name:'sessionId',type:'text',required:true,value:record.sessionId,pattern:'[A-Za-z0-9_\\-]{4,64}',maxLength:64}), venue=el('input',{name:'venue',type:'text',value:record.venue||'',maxLength:500}), type=select('sessionType',['Club Training','Open Practice','Private Lesson','Other'],record.sessionType||'Club Training'), format=select('matchFormat',['','Best of 5','Best of 3','Short practice','Mixed'],record.matchFormat||''), source=el('input',{name:'source',type:'text',value:record.source||'',maxLength:500}), verified=el('input',{name:'verifiedAt',type:'date',value:record.verifiedAt||''}), goal=el('textarea',{name:'coachGoal',value:record.coachGoal||'',maxLength:500}), note=el('textarea',{name:'coachNote',value:record.coachNote||'',maxLength:1500});
+      const field=(label,input)=>{const node=el('label');node.append(text('span',label),input);form.append(node);}; field('Session ID / セッションID',id);field(labels.date,date);field(labels.venue,venue);field(labels.type,type);field(labels.format,format);field(labels.source,source);field(labels.verified,verified);field(labels.goal,goal);field(labels.note,note);
+      if (!existing) date.onchange=()=>{if(!id.value||/^LKS-\d{8}$/.test(id.value))id.value=sessionIdForDate(date.value);};
+      if (canEditMatches()) { const actions=el('div',{className:'admin-editor-actions'}), status=text('p','','admin-status'); actions.append(button(labels.save,()=>form.requestSubmit(),'primary'),button(labels.reset,()=>{form.reset();},'secondary'));form.append(actions,status);form.onsubmit=event=>{event.preventDefault();const next={...(existing||{}),...Object.fromEntries(new FormData(form)),createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};submitChange('session',next.sessionId,next,existing?'update':'create').then(()=>refreshWorkspace(next.sessionId)).catch(error=>{status.textContent=`${error.message} / 保存できませんでした`;});}; }
+      trackDirtyForm(form); editor.append(form); const pending=findPendingChange('session',record.sessionId);if(pending)editor.append(renderPendingInfo(pending));if(existing)renderRecordHistory('session',record.sessionId).then(history=>{if(history.childNodes.length)editor.append(history);});
+    }
+  }
 
   let activeMatchSubTab = 'training';
 
@@ -257,7 +415,7 @@
     listHeader.append(heading); listPanel.append(listHeader);
     // Sub-tabs: Training / Tournament
     const subTabs = el('div', { className: 'admin-sub-tabs' });
-    const subTab = (id, label) => { const node = button(label, () => { activeMatchSubTab = id; selectedId = ''; renderWorkspace(); }, `admin-sub-tab${activeMatchSubTab === id ? ' active' : ''}`); return node; };
+    const subTab = (id, label) => { const node = button(label, () => { activeMatchSubTab = id; activeMatchDateFilter = ''; selectedId = ''; renderWorkspace(); }, `admin-sub-tab${activeMatchSubTab === id ? ' active' : ''}`); return node; };
     subTabs.append(subTab('training', 'TRAINING / 練習'), subTab('tournament', 'TOURNAMENT / 大会'));
     listPanel.append(subTabs);
     // Filters
@@ -275,23 +433,41 @@
     const allDates = [...new Set((isTraining ? trainingMatches : (entityData.tournamentMatches || [])).map(m => m.matchDate).filter(Boolean))].sort().reverse();
     dateSelect.append(el('option', { value: '', textContent: language === 'en' ? 'ALL DATES' : 'すべての日付' }));
     allDates.forEach(d => { dateSelect.append(el('option', { value: d, textContent: d })); });
-    const statusFilter = el('select');
+    if (isTraining && allDates.includes(activeMatchDateFilter)) dateSelect.value = activeMatchDateFilter;
+    const statusFilter = el('select', { ariaLabel: 'Filter by match status' });
     ['', completedStatusId, incompleteStatusId].forEach(s => { statusFilter.append(el('option', { value: s, textContent: s ? statusLabel(s) : (language === 'en' ? 'ALL STATUS' : 'すべてのステータス') })); });
     detailRow.append(text('span', 'DATE:', 'admin-filter-label'), dateSelect, text('span', 'STATUS:', 'admin-filter-label'), statusFilter);
     if (!isTraining) {
       const tournFilter = tournamentSelect('tournFilter', '');
       tournFilter.querySelector('input').placeholder = '大会 / Tournament...';
       detailRow.append(text('span', '大会:', 'admin-filter-label'), tournFilter);
-      // Wire up tournament filter change
-      tournFilter.onchange = updateList;
     }
     filters.append(detailRow);
+    if (isTraining && activeMatchHealthFilter) {
+      const healthBanner = el('div', { className: 'admin-active-health-filter' });
+      const label = activeMatchHealthFilter === 'short-completed'
+        ? (language === 'en' ? 'Showing completed-status records where neither player reached 3 sets' : 'どちらも3セット未満の完了ステータス記録を表示中')
+        : (language === 'en' ? 'Showing complete scores marked incomplete' : '完了スコアで未完了ステータスの記録を表示中');
+      healthBanner.append(text('span', label), button(language === 'en' ? 'Clear' : '解除', () => { activeMatchHealthFilter = ''; renderWorkspace(); }, 'secondary'));
+      filters.append(healthBanner);
+    }
     listPanel.append(filters);
-    if (canEditMatches()) listPanel.append(button('+ ADD MATCH / 試合追加', () => isTraining ? showMatchEditor(null) : showTournamentMatchEditor(null), 'primary'));
+    if (canEditMatches()) {
+      const matchActions = el('div', { className: 'admin-list-actions' });
+      matchActions.append(button('+ ADD MATCH / 試合追加', () => isTraining ? showMatchEditor(null) : showTournamentMatchEditor(null), 'primary'));
+      if (isTraining) matchActions.append(button('⚡ RAPID SESSION ENTRY / 一括入力', () => showRapidSessionEntry(), 'secondary'));
+      listPanel.append(matchActions);
+    }
     const list = el('div', { className: 'admin-player-list admin-match-list' }); listPanel.append(list);
     const editor = el('section', { className: 'admin-panel admin-editor-panel' }); workspace.append(listPanel, editor); app.append(workspace);
     const statusColor = s => isIncompleteStatus(s) || s === 'Void' ? 'status-incomplete' : 'status-complete';
     const tournName = tid => { const t = tourns.find(x => x.tournamentId === tid); return t ? t.name : tid; };
+    let visibleLimit = 100;
+    const appendMore = total => {
+      if (total <= visibleLimit) return;
+      const more = button(language === 'en' ? `Show next ${Math.min(100, total - visibleLimit)} of ${total}` : `${total}件中、次の${Math.min(100, total - visibleLimit)}件を表示`, () => { visibleLimit += 100; updateList(); }, 'progressive-load admin-load-more');
+      list.append(more);
+    };
     const updateList = () => {
       empty(list);
       const dateVal = dateSelect.value; const sf = statusFilter.value;
@@ -300,6 +476,8 @@
         const results = trainingMatches.filter(match => {
           if (sf && resultStatusId(match.resultStatus) !== sf) return false;
           if (dateVal && match.matchDate !== dateVal) return false;
+          if (activeMatchHealthFilter === 'short-completed' && !(resultStatusId(match.resultStatus) === completedStatusId && !matchIsComplete(match))) return false;
+          if (activeMatchHealthFilter === 'complete-marked-incomplete' && !(isIncompleteStatus(match.resultStatus) && matchIsComplete(match))) return false;
           if (pq) {
             const hay = `${match.player1Name || ''} ${match.player2Name || ''} ${match.player1Id || ''} ${match.player2Id || ''}`.toLowerCase();
             if (!hay.includes(pq)) return false;
@@ -307,11 +485,13 @@
           return true;
         });
         if (!results.length) { list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty')); return; }
-        const groups = {}; results.forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
+        const orderedResults = [...results].sort((a, b) => `${b.matchDate || ''}${b.matchId || ''}`.localeCompare(`${a.matchDate || ''}${a.matchId || ''}`));
+        const totalsByDate = results.reduce((totals, match) => { const date = match.matchDate || 'No date'; totals[date] = (totals[date] || 0) + 1; return totals; }, {});
+        const groups = {}; orderedResults.slice(0, visibleLimit).forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
         Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(date => {
           const dateHeader = el('div', { className: 'admin-match-date-header' });
           dateHeader.append(text('span', date === 'No date' ? 'No date / 日付なし' : date, 'admin-match-date'));
-          dateHeader.append(text('span', `${groups[date].length} matches / 試合`, 'admin-match-date-count'));
+          dateHeader.append(text('span', `${totalsByDate[date]} matches / 試合`, 'admin-match-date-count'));
           list.append(dateHeader);
           groups[date].sort((a, b) => b.matchId.localeCompare(a.matchId)).forEach(match => {
             const row = el('button', { type: 'button', className: `admin-player-row admin-match-row${match.matchId === selectedId ? ' selected' : ''}` });
@@ -325,6 +505,7 @@
             list.append(row);
           });
         });
+        appendMore(results.length);
       } else {
         const tournFilterEl = detailRow.querySelector('.player-combobox');
         const tq = tournFilterEl ? tournFilterEl.querySelector('input')?.dataset?.value || '' : '';
@@ -339,11 +520,13 @@
           return true;
         });
         if (!results.length) { list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty')); return; }
-        const groups = {}; results.forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
+        const orderedResults = [...results].sort((a, b) => `${b.matchDate || ''}${b.tournamentMatchId || ''}`.localeCompare(`${a.matchDate || ''}${a.tournamentMatchId || ''}`));
+        const totalsByDate = results.reduce((totals, match) => { const date = match.matchDate || 'No date'; totals[date] = (totals[date] || 0) + 1; return totals; }, {});
+        const groups = {}; orderedResults.slice(0, visibleLimit).forEach(m => { const d = m.matchDate || 'No date'; if (!groups[d]) groups[d] = []; groups[d].push(m); });
         Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(date => {
           const dateHeader = el('div', { className: 'admin-match-date-header' });
           dateHeader.append(text('span', date === 'No date' ? 'No date / 日付なし' : date, 'admin-match-date'));
-          dateHeader.append(text('span', `${groups[date].length} matches / 試合`, 'admin-match-date-count'));
+          dateHeader.append(text('span', `${totalsByDate[date]} matches / 試合`, 'admin-match-date-count'));
           list.append(dateHeader);
           groups[date].forEach(m => {
             const row = el('button', { type: 'button', className: `admin-player-row admin-match-row${m.tournamentMatchId === selectedId ? ' selected' : ''}` });
@@ -357,19 +540,22 @@
             list.append(row);
           });
         });
+        appendMore(results.length);
       }
     };
-    dateSelect.onchange = updateList; statusFilter.onchange = updateList;
-    playerSearch.oninput = updateList;
+    const resetAndUpdate = () => { visibleLimit = 100; updateList(); };
+    dateSelect.onchange = () => { if (isTraining) activeMatchDateFilter = dateSelect.value; resetAndUpdate(); }; statusFilter.onchange = resetAndUpdate;
+    playerSearch.oninput = resetAndUpdate;
     const tournFilterEl = detailRow.querySelector('.player-combobox');
-    if (tournFilterEl) { tournFilterEl.addEventListener('change', updateList); }
+    if (tournFilterEl) { tournFilterEl.addEventListener('change', resetAndUpdate); }
     updateList();
-    if (isTraining) { showMatchEditor(launchNewMatch ? null : trainingMatches.find(match => match.matchId === selectedId) || trainingMatches[0] || null); }
-    else { const tm = entityData.tournamentMatches || []; showTournamentMatchEditor(tm.find(m => m.tournamentMatchId === selectedId) || tm[0] || null); }
+    if (isTraining) { const newest = [...trainingMatches].sort((a, b) => `${b.matchDate || ''}${b.matchId || ''}`.localeCompare(`${a.matchDate || ''}${a.matchId || ''}`))[0]; showMatchEditor(launchNewMatch ? null : trainingMatches.find(match => match.matchId === selectedId) || newest || null); }
+    else { const tm = entityData.tournamentMatches || [], newest = [...tm].sort((a, b) => `${b.matchDate || ''}${b.tournamentMatchId || ''}`.localeCompare(`${a.matchDate || ''}${a.tournamentMatchId || ''}`))[0]; showTournamentMatchEditor(tm.find(m => m.tournamentMatchId === selectedId) || newest || null); }
   }
 
   function showMatchEditor(match) {
     const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
+    editor.closest('.admin-workspace')?.classList.remove('rapid-entry-active');
     const readOnly = !canEditMatches(); const record = match ? { ...match } : { ...newMatch(), player1Id: launchNewMatch ? launchPlayerId : '', player1Name: launchNewMatch ? playerName(launchPlayerId) : '' };
     editor.append(text('p', readOnly ? 'VIEW ONLY / 閲覧専用' : match ? 'EDIT TRAINING MATCH / 練習試合編集' : 'NEW TRAINING MATCH / 新規練習試合', 'eyebrow'), text('h2', match ? `${record.player1Name || record.player1Id} vs ${record.player2Name || record.player2Id}` : 'Add training match / 練習試合を追加'));
     const form = el('form', { className: 'admin-player-form admin-match-form' });
@@ -379,8 +565,11 @@
     const event = el('input', { name: 'event', type: 'text', required: true, value: record.event || 'Club Training' });
     const division = el('input', { name: 'division', type: 'text', value: record.division || '' });
     const format = select('format', ['Singles'], record.format || 'Singles');
+    const sessionId = el('input', { name: 'sessionId', type: 'text', value: record.sessionId || '', placeholder: sessionIdForDate(record.matchDate), pattern: '[A-Za-z0-9_\\-]{4,64}', maxLength: 64 });
+    const sessionChoices = el('datalist', { id:'admin-session-id-options' }); sessions.forEach(item=>sessionChoices.append(el('option',{value:item.sessionId,label:`${item.sessionDate} · ${item.venue||item.sessionType||''}`}))); sessionId.setAttribute('list',sessionChoices.id);
+    const matchFormat = select('matchFormat', ['', 'Best of 5', 'Best of 3', 'Short practice'], record.matchFormat || '');
     const addMetaField = (label, input) => { const l = el('label'); l.append(text('span', label), input); sectionMeta.append(l); };
-    addMetaField('日付 / Date', date); addMetaField('イベント / Event', event); addMetaField('部門 / Division', division); addMetaField('形式 / Format', format);
+    addMetaField('日付 / Date', date); addMetaField('セッションID / Session ID', sessionId); addMetaField('イベント / Event', event); addMetaField('部門 / Division', division); addMetaField('競技形式 / Event format', format); addMetaField('試合形式 / Match format', matchFormat);
     form.append(sectionMeta);
     // --- Players & Score section ---
     const sectionMatch = el('div', { className: 'admin-match-section' }); sectionMatch.append(text('p', 'PLAYERS & SCORE / 選手＆スコア', 'admin-match-section-title'));
@@ -402,8 +591,12 @@
     addMatchField('選手1 セット / P1 Sets', sets1); addMatchField('選手2 セット / P2 Sets', sets2);
     addMatchField('結果ステータス / Result Status', resultStatus);
     form.append(sectionMatch);
+    form.append(sessionChoices);
+    const sectionContext = el('div', { className: 'admin-match-session-reference' }); sectionContext.innerHTML=`<b>${language==='en'?'Shared session metadata':'共有セッション情報'}</b><span>${language==='en'?'Venue, source, verification, and coach notes are managed once in Sessions. Legacy values on old matches are preserved.':'会場・出典・確認日・指導メモは「セッション」で一括管理します。過去の試合に保存済みの値は保持されます。'}</span><a href="admin.html?tab=sessions">${language==='en'?'Open Session Manager':'セッション管理を開く'} →</a>`; form.append(sectionContext);
     form.append(p1sl, p1gr, p2sl, p2gr);
-    [date, event, division, format, player1, player2, sets1, sets2, resultStatus].forEach(input => { input.disabled = readOnly; });
+    [date, sessionId, event, division, format, matchFormat, player1, player2, sets1, sets2, resultStatus].forEach(input => { input.disabled = readOnly; });
+    if (!match) date.addEventListener('change', () => { if (!sessionId.value || /^LKS-\d{8}$/.test(sessionId.value)) sessionId.value = sessionIdForDate(date.value); });
+    sessionId.addEventListener('change',()=>{const linked=sessions.find(item=>item.sessionId===sessionId.value);if(!linked)return;date.value=linked.sessionDate||date.value;if(linked.matchFormat&&linked.matchFormat!=='Mixed')matchFormat.value=linked.matchFormat;});
     const derived = text('p', '', 'admin-derived'); form.append(derived);
     const updateDerived = () => {
       const one = Number(sets1.value); const two = Number(sets2.value); const incomplete = isIncompleteStatus(resultStatus.value);
@@ -419,12 +612,14 @@
         event.preventDefault(); const next = match ? { ...record, ...Object.fromEntries(new FormData(form)) } : Object.fromEntries(new FormData(form));
         if (!next.player1Id || !next.player2Id || next.player1Id === next.player2Id) { derived.textContent = 'Choose two different players. / 異なる2名の選手を選択してください。'; return; }
         next.player1Sets = Number(next.player1Sets); next.player2Sets = Number(next.player2Sets); next.player1Name = playerName(next.player1Id); next.player2Name = playerName(next.player2Id); next.score = `${next.player1Sets}-${next.player2Sets}`;
+        if (!match) { next.sessionId ||= sessionIdForDate(next.matchDate); next.matchFormat ||= 'Best of 5'; }
+        ['sessionId','matchFormat','source','verifiedAt','coachGoal','coachNote'].forEach(field => { if (!next[field] && match && !(field in record)) delete next[field]; });
         if (isIncompleteStatus(next.resultStatus) || next.player1Sets === next.player2Sets) { next.winnerId = ''; next.winnerName = ''; } else { next.winnerId = next.player1Sets > next.player2Sets ? next.player1Id : next.player2Id; next.winnerName = playerName(next.winnerId); }
         next.matchId = match?.matchId || newMatchId();
         submitChange('match', next.matchId, next, match ? 'update' : 'create').then(() => refreshWorkspace(next.matchId)).catch(error => { derived.textContent = `${error.message} / 保存できませんでした`; });
       };
     }
-    editor.append(form);
+    trackDirtyForm(form); editor.append(form);
     if (match) {
       const pending = findPendingChange('match', match.matchId);
       if (pending) editor.append(renderPendingInfo(pending));
@@ -432,8 +627,72 @@
     }
   }
 
+  function showRapidSessionEntry() {
+    const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
+    editor.closest('.admin-workspace')?.classList.add('rapid-entry-active');
+    const labels = language === 'en' ? {
+      kicker:'RAPID SESSION ENTRY', title:'Enter a Training Session', intro:'Set session details once, add matches to the review queue, then submit the batch for approval.', settings:'Session settings', entry:'Next match', quick:'Session players', review:'Review before submission', add:'Save & add next', swap:'Swap players', clear:'Clear entry', submit:'Submit batch', empty:'No matches in the review queue.', complete:'completed', incomplete:'excluded as incomplete', repeat:'Repeated pairing in this batch/session', duplicate:'Possible duplicate: this exact result already exists or is pending.', players:'Choose two different players.', invalidScore:'Enter non-negative whole-number set scores.', tiedComplete:'A score where both players reached three sets cannot be submitted as a tie.', shortRule:'Under the current statistics rule, scores below three sets remain incomplete.', unusual:'Unusual score — review before submitting.', clone:'Clone', remove:'Remove', locked:'Session settings are locked while matches are in review.', recovered:'Recovered an unfinished batch saved on this device.', discard:'Discard saved batch', discardConfirm:'Discard this saved batch and clear every reviewed match?', confirm:'Submit every reviewed match for approval?', success:'Batch submitted for approval.', pending:'Submitting', failed:'Batch stopped after an error.'
+    } : {
+      kicker:'セッション一括入力', title:'練習セッションを入力', intro:'セッション情報を一度設定し、試合をレビュー一覧へ追加してからまとめて承認申請します。', settings:'セッション設定', entry:'次の試合', quick:'セッション選手', review:'申請前レビュー', add:'保存して次へ', swap:'選手を入替', clear:'入力をクリア', submit:'まとめて承認申請', empty:'レビュー一覧に試合がありません。', complete:'完了', incomplete:'未完了として統計対象外', repeat:'この一括入力・セッション内の再対戦', duplicate:'重複の可能性：同じ結果が登録済み、または承認待ちです。', players:'異なる2名の選手を選択してください。', invalidScore:'セット数は0以上の整数で入力してください。', tiedComplete:'両選手が3セットに達した同点スコアは申請できません。', shortRule:'現在の統計ルールでは3セット未満のスコアは未完了です。', unusual:'通常と異なるスコアです。申請前に確認してください。', clone:'複製', remove:'削除', locked:'レビューに試合がある間、セッション設定は固定されます。', recovered:'この端末に保存された未完了の一括入力を復元しました。', discard:'保存済み一括入力を破棄', discardConfirm:'保存済み一括入力とレビュー中の全試合を破棄しますか？', confirm:'レビュー済みの全試合を承認申請しますか？', success:'一括申請を送信しました。', pending:'送信中', failed:'エラーのため一括申請を停止しました。'
+    };
+    editor.append(text('p', labels.kicker, 'eyebrow'), text('h2', labels.title), text('p', labels.intro, 'rapid-entry-intro'));
+    const form = el('form', { className: 'admin-player-form rapid-session-form' });
+    const settings = el('section', { className: 'rapid-session-settings' }); settings.append(text('h3', labels.settings));
+    const defaults = newMatch(), rapidStorageKey=`lk-rapid-session-draft-${window.LKData.environment}`;
+    let recoveredDraft=null; try { const saved=JSON.parse(localStorage.getItem(rapidStorageKey)||'null'); if(saved&&Date.now()-Number(saved.savedAt)<7*24*60*60*1000)recoveredDraft=saved; else if(saved)localStorage.removeItem(rapidStorageKey); } catch { localStorage.removeItem(rapidStorageKey); }
+    const savedMeta=recoveredDraft?.metadata||{},savedCurrent=recoveredDraft?.current||{};
+    const date = el('input', { name:'matchDate', type:'date', required:true, value:savedMeta.matchDate||defaults.matchDate });
+    const sessionId = el('input', { name:'sessionId', type:'text', required:true, value:savedMeta.sessionId||defaults.sessionId, pattern:'[A-Za-z0-9_\\-]{4,64}', maxLength:64 });
+    const matchFormat = select('matchFormat', ['Best of 5','Best of 3','Short practice'], savedMeta.matchFormat||defaults.matchFormat);
+    const venue = el('input', { name:'venue', type:'text', value:savedMeta.venue||'', placeholder:'Venue / 会場', maxLength:500 });
+    const sessionType = select('sessionType',['Club Training','Open Practice','Private Lesson','Other'],savedMeta.sessionType||'Club Training');
+    const division = el('input', { name:'division', type:'text', value:savedMeta.division||'', placeholder:'Optional group / 任意のグループ' });
+    const source = el('input', { name:'source', type:'text', value:savedMeta.source||'', placeholder:'Notebook / Admin entry / Import batch', maxLength:500 });
+    const verifiedAt = el('input', { name:'verifiedAt', type:'date', value:savedMeta.verifiedAt||'' });
+    const coachGoal = el('input', { name:'coachGoal', type:'text', value:savedMeta.coachGoal||'', placeholder:'Optional coach goal / 任意の指導目標', maxLength:500 });
+    const coachNote = el('input', { name:'coachNote', type:'text', value:savedMeta.coachNote||'', placeholder:'Optional coach note / 任意の指導メモ', maxLength:500 });
+    const settingsInputs=[date,sessionId,matchFormat,venue,sessionType,division,source,verifiedAt,coachGoal,coachNote], settingsLock=text('p','', 'rapid-settings-lock');
+    const field = (label,input) => { const node=el('label'); node.append(text('span',label),input); settings.append(node); };
+    field('日付 / Date',date); field('セッションID / Session ID',sessionId); field('試合形式 / Match format',matchFormat); field('会場 / Venue',venue); field('セッション種別 / Session type',sessionType); field('部門 / Division',division); field('出典 / Source',source); field('確認日 / Verified date',verifiedAt); field('指導目標 / Coach goal',coachGoal); field('指導メモ / Coach note',coachNote);
+    settings.append(settingsLock);
+    const entry = el('section', { className:'rapid-match-entry' }); entry.append(text('h3',labels.entry));
+    const player1 = playerSelect('rapidPlayer1Id',savedCurrent.player1Id||''), player2 = playerSelect('rapidPlayer2Id',savedCurrent.player2Id||'');
+    const sets1 = el('input', { name:'rapidPlayer1Sets', type:'number', min:'0', step:'1', required:true, value:String(savedCurrent.player1Sets??0) }), sets2 = el('input', { name:'rapidPlayer2Sets', type:'number', min:'0', step:'1', required:true, value:String(savedCurrent.player2Sets??0) });
+    const entryField=(label,input)=>{const node=el('label');node.append(text('span',label),input);entry.append(node);};
+    entryField('選手1 / Player 1',player1); entryField('選手2 / Player 2',player2); entryField('選手1 セット / P1 Sets',sets1); entryField('選手2 セット / P2 Sets',sets2);
+    const entryStatus=text('p','', 'rapid-entry-status'); entry.append(entryStatus);
+    const entryActions=el('div',{className:'rapid-entry-actions'}), addButton=button(labels.add,()=>addDraft(),'primary'), swapButton=button(labels.swap,()=>{const one=player1.value;player1.value=player2.value;player2.value=one;persistRapidDraft();},'secondary'), clearButton=button(labels.clear,()=>clearEntry(),'secondary'); entryActions.append(addButton,swapButton,clearButton); entry.append(entryActions);
+    const quick = el('section', { className:'rapid-quick-picks' }); quick.append(text('h3',labels.quick),el('div'));
+    const review = el('section', { className:'rapid-review' }); review.append(text('h3',labels.review));
+    const recoveryNotice=text('p',recoveredDraft?labels.recovered:'','rapid-recovery-notice'),reviewSummary=el('div',{className:'rapid-review-summary'}),reviewList=el('div',{className:'rapid-review-list'}),batchStatus=text('p','', 'admin-status rapid-batch-status'),submitButton=button(labels.submit,()=>submitBatch(),'primary'),discardButton=button(labels.discard,()=>discardSavedBatch(),'secondary');recoveryNotice.hidden=!recoveredDraft;review.append(recoveryNotice,reviewSummary,reviewList,submitButton,discardButton,batchStatus);
+    const draftCount=el('input',{name:'rapidDraftCount',type:'hidden',value:'0'}); form.append(settings,entry,quick,review,draftCount); form.onsubmit=event=>event.preventDefault(); editor.append(form); trackDirtyForm(form);
+    let drafts=Array.isArray(recoveredDraft?.drafts)?recoveredDraft.drafts.filter(match=>match&&match.player1Id&&match.player2Id):[],rapidReady=false;
+    const allPeople=()=>[...players,...(entityData.externalOpponents||[])],personById=id=>allPeople().find(person=>(person.playerId||person.externalOpponentId)===id);
+    const pairKey=match=>[match.player1Id,match.player2Id].sort().join('|');
+    const exactKey=match=>{const first=match.player1Id<=match.player2Id?[match.player1Id,Number(match.player1Sets)]:[match.player2Id,Number(match.player2Sets)],second=match.player1Id<=match.player2Id?[match.player2Id,Number(match.player2Sets)]:[match.player1Id,Number(match.player1Sets)];return `${match.matchDate}|${first[0]}:${first[1]}|${second[0]}:${second[1]}`;};
+    const existingPending=()=>pendingChanges.filter(change=>change.entityType==='match'&&change.action==='create'&&change.after).map(change=>change.after);
+    const warningsFor=(record,selfId='')=>{const candidates=[...trainingMatches,...existingPending(),...drafts.filter(match=>match.draftId!==selfId)],warnings=[];if(candidates.some(match=>exactKey(match)===exactKey(record)))warnings.push(labels.duplicate);if(candidates.some(match=>match.matchDate===record.matchDate&&pairKey(match)===pairKey(record)))warnings.push(labels.repeat);if(record.resultStatus!==completedStatusId)warnings.push(labels.shortRule);if(Number(record.player1Sets)>3||Number(record.player2Sets)>3)warnings.push(labels.unusual);return [...new Set(warnings)];};
+    const quickIds=()=>{const ids=[];const add=id=>{if(id&&!ids.includes(id)&&personById(id))ids.push(id);};drafts.forEach(match=>[match.player1Id,match.player2Id].forEach(add));trainingMatches.filter(match=>match.matchDate===date.value).forEach(match=>[match.player1Id,match.player2Id].forEach(add));[...trainingMatches].sort((a,b)=>`${b.matchDate||''}${b.matchId||''}`.localeCompare(`${a.matchDate||''}${a.matchId||''}`)).forEach(match=>[match.player1Id,match.player2Id].forEach(add));return ids.slice(0,18);};
+    const renderQuickPicks=()=>{const target=quick.querySelector('div');empty(target);const ids=quickIds();if(!ids.length){target.append(text('p',language==='en'?'Players appear here after matches are added.':'試合を追加すると選手がここに表示されます。','admin-empty'));return;}ids.forEach(id=>{const person=personById(id);target.append(button(preferredName(person)||playerName(id),()=>{if(!player1.value)player1.value=id;else if(!player2.value&&player1.value!==id)player2.value=id;else player2.value=id;persistRapidDraft();},'rapid-player-chip'));});};
+    const clearEntry=(keepStatus=false)=>{player1.value='';player2.value='';sets1.value='0';sets2.value='0';if(!keepStatus)entryStatus.textContent='';persistRapidDraft();player1.querySelector('.player-combobox-input')?.focus();};
+    const sessionMetadata=()=>({sessionId:sessionId.value||sessionIdForDate(date.value),sessionDate:date.value,venue:venue.value,sessionType:sessionType.value||'Club Training',matchFormat:matchFormat.value||'Best of 5',source:source.value,verifiedAt:verifiedAt.value,coachGoal:coachGoal.value,coachNote:coachNote.value}),matchMetadata=()=>({matchDate:date.value,sessionId:sessionId.value||sessionIdForDate(date.value),matchFormat:matchFormat.value||'Best of 5',event:'Club Training',division:division.value,format:'Singles'});
+    const persistRapidDraft=()=>{if(!rapidReady)return;localStorage.setItem(rapidStorageKey,JSON.stringify({savedAt:Date.now(),metadata:{...sessionMetadata(),division:division.value},current:{player1Id:player1.value,player2Id:player2.value,player1Sets:Number(sets1.value)||0,player2Sets:Number(sets2.value)||0},drafts}));discardButton.hidden=false;};
+    const discardSavedBatch=()=>{if(!confirm(labels.discardConfirm))return;rapidReady=false;drafts=[];recoveredDraft=null;date.value=defaults.matchDate;sessionId.value=defaults.sessionId;matchFormat.value=defaults.matchFormat;venue.value='';sessionType.value='Club Training';division.value='';source.value='';verifiedAt.value='';coachGoal.value='';coachNote.value='';clearEntry();localStorage.removeItem(rapidStorageKey);recoveryNotice.hidden=true;renderDrafts();renderQuickPicks();rapidReady=true;activeFormDirty=false;form.querySelector('.admin-unsaved-indicator').hidden=true;};
+    const buildDraft=()=>{const one=Number(sets1.value),two=Number(sets2.value),p1=player1.value,p2=player2.value;if(!p1||!p2||p1===p2)return {error:labels.players};if(!Number.isInteger(one)||!Number.isInteger(two)||one<0||two<0)return {error:labels.invalidScore};if(one===two&&one>=3)return {error:labels.tiedComplete};const complete=(one>=3||two>=3)&&one!==two,p1Record=players.find(person=>person.playerId===p1),p2Record=players.find(person=>person.playerId===p2),record={...matchMetadata(),player1Id:p1,player1Name:playerName(p1),player1Sets:one,player2Id:p2,player2Name:playerName(p2),player2Sets:two,player1SchoolLevel:p1Record?.schoolLevel||'',player1Grade:p1Record?.grade||'',player2SchoolLevel:p2Record?.schoolLevel||'',player2Grade:p2Record?.grade||'',score:`${one}-${two}`,resultStatus:complete?completedStatusId:incompleteStatusId,winnerId:complete?(one>two?p1:p2):'',winnerName:complete?playerName(one>two?p1:p2):'',draftId:`draft-${Date.now()}-${drafts.length}`};record.warnings=warningsFor(record);return {record};};
+    const addDraft=()=>{const built=buildDraft();if(built.error){entryStatus.textContent=built.error;entryStatus.className='rapid-entry-status error';return;}drafts.push(built.record);entryStatus.textContent=`${built.record.player1Name} ${built.record.score} ${built.record.player2Name} · ${built.record.resultStatus===completedStatusId?labels.complete:labels.incomplete}`;entryStatus.className='rapid-entry-status ok';clearEntry(true);renderDrafts();renderQuickPicks();};
+    const cloneDraft=match=>{player1.value=match.player1Id;player2.value=match.player2Id;sets1.value=String(match.player1Sets);sets2.value=String(match.player2Sets);entryStatus.textContent=language==='en'?'Cloned into the next-match form.':'次の試合フォームに複製しました。';entryStatus.className='rapid-entry-status warning';persistRapidDraft();player1.querySelector('.player-combobox-input')?.focus();};
+    const renderDrafts=()=>{empty(reviewList);drafts.forEach(match=>{match.warnings=warningsFor(match,match.draftId);});const complete=drafts.filter(match=>match.resultStatus===completedStatusId).length,warningCount=drafts.reduce((sum,match)=>sum+(match.warnings?.length||0),0),locked=Boolean(drafts.length);settingsInputs.forEach(input=>{input.disabled=locked;});settingsLock.textContent=locked?labels.locked:'';settingsLock.hidden=!locked;reviewSummary.innerHTML=`<span><b>${drafts.length}</b>${language==='en'?'matches':'試合'}</span><span><b>${complete}</b>${labels.complete}</span><span><b>${drafts.length-complete}</b>${labels.incomplete}</span><span><b>${warningCount}</b>${language==='en'?'warnings':'注意'}</span>`;if(!drafts.length)reviewList.append(text('p',labels.empty,'admin-empty'));drafts.forEach((match,index)=>{const row=el('article',{className:`rapid-draft-row${match.warnings?.length?' warning':''}`}),main=el('div'),actions=el('span',{className:'rapid-draft-actions'});main.innerHTML=`<small>#${index+1} · ${escapeHtml(match.resultStatus===completedStatusId?labels.complete:labels.incomplete)}</small><b>${escapeHtml(match.player1Name)} <strong>${escapeHtml(match.score)}</strong> ${escapeHtml(match.player2Name)}</b>${match.warnings?.map(warning=>`<em>${escapeHtml(warning)}</em>`).join('')||''}`;actions.append(button(labels.clone,()=>cloneDraft(match),'secondary'),button(labels.remove,()=>{drafts=drafts.filter(item=>item.draftId!==match.draftId);renderDrafts();renderQuickPicks();},'danger'));row.append(main,actions);reviewList.append(row);});draftCount.value=String(drafts.length);draftCount.dispatchEvent(new Event('input',{bubbles:true}));submitButton.disabled=!drafts.length;submitButton.textContent=`${labels.submit} · ${drafts.length}`;discardButton.hidden=!drafts.length&&!recoveredDraft;persistRapidDraft();};
+    const batchReservedIds=[];
+    async function submitBatch(){if(!drafts.length||!confirm(`${labels.confirm}\n\n${drafts.length} ${language==='en'?'matches':'試合'}`))return;submitButton.disabled=true;const submitted=[],batchId=`BATCH-${(sessionId.value||sessionIdForDate(date.value)).replace(/[^A-Za-z0-9_-]/g,'')}-${Date.now()}`,existingSession=sessions.find(item=>item.sessionId===(sessionId.value||sessionIdForDate(date.value))),now=new Date().toISOString(),sessionRecord={...(existingSession||{}),...sessionMetadata(),createdAt:existingSession?.createdAt||now,updatedAt:now};batchStatus.textContent=`${labels.pending} 0 / ${drafts.length}`;try{await submitChange('session',sessionRecord.sessionId,sessionRecord,existingSession?'update':'create',{batchId});}catch(error){batchStatus.textContent=`${labels.failed} ${error.message}`;submitButton.disabled=false;return;}for(let index=0;index<drafts.length;index++){const sourceDraft=drafts[index],matchId=newMatchId(batchReservedIds);batchReservedIds.push(matchId);const record={...sourceDraft,matchId};delete record.draftId;delete record.warnings;try{await submitChange('match',matchId,record,'create',{batchId});submitted.push(sourceDraft.draftId);batchStatus.textContent=`${labels.pending} ${index+1} / ${drafts.length}`;}catch(error){drafts=drafts.filter(item=>!submitted.includes(item.draftId));renderDrafts();batchStatus.textContent=`${labels.failed} ${error.message}`;return;}}rapidReady=false;drafts=[];recoveredDraft=null;renderDrafts();localStorage.removeItem(rapidStorageKey);rapidReady=true;recoveryNotice.hidden=true;await loadPendingChanges();activeFormDirty=false;form.querySelector('.admin-unsaved-indicator').hidden=true;batchStatus.textContent=labels.success;}
+    date.addEventListener('change',()=>{if(!sessionId.value||/^LKS-\d{8}$/.test(sessionId.value))sessionId.value=sessionIdForDate(date.value);renderQuickPicks();});
+    matchFormat.addEventListener('change',()=>{entryStatus.textContent=matchFormat.value==='Best of 5'?'':labels.shortRule;entryStatus.className='rapid-entry-status warning';});
+    [sets1,sets2].forEach(input=>input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();addDraft();}}));
+    renderQuickPicks(); renderDrafts(); rapidReady=true;form.addEventListener('input',persistRapidDraft);form.addEventListener('change',persistRapidDraft);
+  }
+
   function showTournamentMatchEditor(match) {
     const editor = document.querySelector('.admin-editor-panel'); if (!editor) return; empty(editor);
+    editor.closest('.admin-workspace')?.classList.remove('rapid-entry-active');
     const readOnly = !canEditMatches(); const record = match ? { ...match } : { tournamentMatchId: newEntityId('tournamentMatch'), tournamentId: '', matchDate: new Date().toISOString().slice(0, 10), round: '', format: '', player1Id: '', player1Sets: 0, player2Id: '', player2Sets: 0, winnerId: '', score: '0-0', resultStatus: completedStatusId };
     editor.append(text('p', readOnly ? 'VIEW ONLY / 閲覧専用' : match ? 'EDIT TOURNAMENT MATCH / 大会試合編集' : 'NEW TOURNAMENT MATCH / 新規大会試合', 'eyebrow'), text('h2', match ? `${record.player1Name || record.player1Id || '?'} vs ${record.player2Name || record.player2Id || '?'}` : 'Add tournament match / 大会試合を追加'));
     const form = el('form', { className: 'admin-player-form admin-match-form' });
@@ -480,7 +739,7 @@
         submitChange('tournamentMatch', next.tournamentMatchId, next, match ? 'update' : 'create').then(() => refreshWorkspace(next.tournamentMatchId)).catch(error => { derived.textContent = `${error.message} / 保存できませんでした`; });
       };
     }
-    editor.append(form);
+    trackDirtyForm(form); editor.append(form);
     if (match) {
       const pending = findPendingChange('tournamentMatch', match.tournamentMatchId);
       if (pending) editor.append(renderPendingInfo(pending));
@@ -593,7 +852,7 @@
         submitChange('tournamentProgress', next.tournamentProgressId, next, record ? 'update' : 'create').then(() => refreshWorkspace(next.tournamentProgressId)).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
       };
     }
-    editor.append(form);
+    trackDirtyForm(form); editor.append(form);
     if (record) {
       const pending = findPendingChange('tournamentProgress', record.tournamentProgressId);
       if (pending) editor.append(renderPendingInfo(pending));
@@ -732,8 +991,8 @@
     Object.defineProperty(wrapper, 'disabled', { set(v) { input.disabled = v; }, get() { return input.disabled; } });
     return wrapper;
   }
-  function newMatch() { return { matchDate: new Date().toISOString().slice(0, 10), event: 'Club Training', division: '', format: 'Singles', player1Id: '', player1Name: '', player1Sets: 0, player2Id: '', player2Name: '', player2Sets: 0, winnerId: '', winnerName: '', score: '0-0', resultStatus: completedStatusId }; }
-  function newMatchId() { const stamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14); let sequence = 1; let id; do { id = `LK-T-${stamp}-${String(sequence++).padStart(3, '0')}`; } while (trainingMatches.some(match => match.matchId === id)); return id; }
+  function newMatch() { const matchDate = todayInTokyo(); return { matchDate, sessionId: sessionIdForDate(matchDate), matchFormat: 'Best of 5', event: 'Club Training', division: '', format: 'Singles', player1Id: '', player1Name: '', player1Sets: 0, player2Id: '', player2Name: '', player2Sets: 0, winnerId: '', winnerName: '', score: '0-0', resultStatus: completedStatusId, source: '', verifiedAt: '', coachGoal: '', coachNote: '' }; }
+  function newMatchId(reserved = []) { const stamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14), existing = new Set([...trainingMatches.map(match=>match.matchId),...pendingChanges.filter(change=>change.entityType==='match').map(change=>change.targetId),...reserved]); let sequence = 1; let id; do { id = `LK-T-${stamp}-${String(sequence++).padStart(3, '0')}`; } while (existing.has(id)); return id; }
   function newEntityId(type) {
     const existing = entityData[entityStorageKey[type]] || [];
     const idField = entityIdKey[type];
@@ -761,13 +1020,19 @@
     const searchRow = el('div', { className: 'admin-match-filter-row' });
     searchRow.append(text('span', '🔍', 'admin-filter-icon'), search);
     filters.append(searchRow);
-    // Row 2: Category filter
+    // Row 2: Category, status and profile completeness filters
     const catFilter = el('select', { ariaLabel: 'Filter by category' });
     catFilter.append(el('option', { value: '', textContent: language === 'en' ? 'ALL CATEGORIES' : 'すべてのカテゴリ' }));
     catFilter.append(el('option', { value: 'unassigned', textContent: language === 'en' ? 'Unassigned' : '未設定' }));
     (S.schoolLevels || []).forEach(sl => { catFilter.append(el('option', { value: sl.id, textContent: language === 'en' ? sl.nameEn : sl.nameJa })); });
     const detailRow = el('div', { className: 'admin-match-filter-row' });
     detailRow.append(text('span', 'CATEGORY:', 'admin-filter-label'), catFilter);
+    const statusFilter = el('select', { ariaLabel: 'Filter by player status' });
+    statusFilter.append(el('option', { value: '', textContent: language === 'en' ? 'ALL STATUS' : 'すべての状態' }), el('option', { value: 'active', textContent: language === 'en' ? 'ACTIVE' : '有効' }), el('option', { value: 'inactive', textContent: language === 'en' ? 'INACTIVE' : '無効' }));
+    const completenessFilter = el('select', { ariaLabel: 'Filter by profile completeness' });
+    completenessFilter.append(el('option', { value: '', textContent: language === 'en' ? 'ALL PROFILES' : 'すべてのプロフィール' }), el('option', { value: 'complete', textContent: language === 'en' ? 'COMPLETE PROFILES' : '完成プロフィール' }), el('option', { value: 'incomplete', textContent: language === 'en' ? 'INCOMPLETE PROFILES' : '未完成プロフィール' }), el('option', { value: 'missing-grade', textContent: language === 'en' ? 'MISSING GRADE' : '学年未設定' }));
+    if (!isExtTab) detailRow.append(text('span', 'STATUS:', 'admin-filter-label'), statusFilter, text('span', 'PROFILE:', 'admin-filter-label'), completenessFilter);
+    if (!isExtTab && activePlayerHealthFilter) completenessFilter.value = activePlayerHealthFilter;
     filters.append(detailRow);
     listPanel.append(listHeader, subTabs, filters);
     const addBtn = isExtTab
@@ -785,7 +1050,7 @@
     const stats = {};
     allPlayers.forEach(p => { const id = p.playerId || p.externalOpponentId; stats[id] = { played: 0, wins: 0, losses: 0 }; });
     (trainingMatches || []).forEach(m => {
-      if (isIncompleteStatus(m.resultStatus)) return;
+      if (!matchIsComplete(m)) return;
       const s1 = stats[m.player1Id]; const s2 = stats[m.player2Id];
       if (s1) s1.played++;
       if (s2) s2.played++;
@@ -795,8 +1060,31 @@
         if (stats[loserId]) stats[loserId].losses++;
       }
     });
-    const updateList = () => { empty(list); const query = search.value.trim().toLowerCase(); const catVal = catFilter.value; allPlayers.filter(player => { if (catVal && catVal === 'unassigned' && player.schoolLevel) return false; if (catVal && catVal !== 'unassigned' && player.schoolLevel !== catVal) return false; return `${player.playerId || player.externalOpponentId || ''} ${player.displayName} ${player.englishName || ''} ${player.notebookName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query); }).sort((a, b) => { const idA = a.playerId || a.externalOpponentId; const idB = b.playerId || b.externalOpponentId; return (stats[idB]?.played || 0) - (stats[idA]?.played || 0) || idA.localeCompare(idB); }).forEach(player => { const row = el('button', { type: 'button', className: `admin-player-row${(player.playerId || player.externalOpponentId) === selectedId ? ' selected' : ''}` }); const names = el('span'); const id = player.playerId || player.externalOpponentId; const gradeTag = player.grade ? ` · ${lookupName('grades', player.grade)}` : ''; const s = stats[id] || { played: 0, wins: 0, losses: 0 }; const statsTag = s.played > 0 ? ` · ${s.played}G ${s.wins}W ${s.losses}L` : ''; names.append(text('b', player.displayName || 'No display name'), text('small', `${id} · ${player.englishName || '-'}${player.notebookName ? ' · 📝' + player.notebookName : ''}${gradeTag}${statsTag}`)); row.append(names, text('i', playerStatusLabel(player.status) || 'Active')); row.onclick = () => { selectedId = id; updateList(); showPlayerEditor(player); }; list.append(row); }); };
-    search.oninput = updateList; catFilter.onchange = updateList; window.adminPlayerListUpdate = updateList; updateList(); const selectedPlayer = allPlayers.find(player => (player.playerId || player.externalOpponentId) === selectedId) || allPlayers[0] || null; showPlayerEditor(selectedPlayer);
+    let visiblePlayers = [];
+    const updateList = () => {
+      empty(list);
+      const query = search.value.trim().toLowerCase(), catVal = catFilter.value, statusVal = statusFilter.value, completenessVal = completenessFilter.value;
+      visiblePlayers = allPlayers.filter(player => {
+        if (catVal === 'unassigned' && player.schoolLevel) return false;
+        if (catVal && catVal !== 'unassigned' && player.schoolLevel !== catVal) return false;
+        if (!isExtTab && statusVal === 'active' && !isActivePlayer(player)) return false;
+        if (!isExtTab && statusVal === 'inactive' && isActivePlayer(player)) return false;
+        if (!isExtTab && completenessVal === 'complete' && !profileIsComplete(player)) return false;
+        if (!isExtTab && completenessVal === 'incomplete' && profileIsComplete(player)) return false;
+        if (!isExtTab && completenessVal === 'missing-grade' && !(['SL-001', 'SL-002', 'SL-003'].includes(player.schoolLevel) && !player.grade)) return false;
+        return `${player.playerId || player.externalOpponentId || ''} ${player.displayName} ${player.englishName || ''} ${player.notebookName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query);
+      }).sort((a, b) => { const idA = a.playerId || a.externalOpponentId, idB = b.playerId || b.externalOpponentId; return (stats[idB]?.played || 0) - (stats[idA]?.played || 0) || idA.localeCompare(idB); });
+      visiblePlayers.forEach(player => {
+        const row = el('button', { type: 'button', className: `admin-player-row${(player.playerId || player.externalOpponentId) === selectedId ? ' selected' : ''}` });
+        const names = el('span'), id = player.playerId || player.externalOpponentId, gradeTag = player.grade ? ` · ${lookupName('grades', player.grade)}` : '', s = stats[id] || { played: 0, wins: 0, losses: 0 }, statsTag = s.played > 0 ? ` · ${s.played}G ${s.wins}W ${s.losses}L` : '', completenessTag = !isExtTab ? ` · ${profileCompleteness(player)}%` : '';
+        names.append(text('b', player.displayName || 'No display name'), text('small', `${id} · ${player.englishName || '-'}${player.notebookName ? ' · 📝' + player.notebookName : ''}${gradeTag}${statsTag}${completenessTag}`));
+        row.append(names, text('i', playerStatusLabel(player.status) || 'Active'));
+        row.onclick = () => { selectedId = id; updateList(); showPlayerEditor(player); };
+        list.append(row);
+      });
+      if (!visiblePlayers.length) list.append(text('p', language === 'en' ? 'No matching players.' : '該当する選手がいません。', 'admin-empty'));
+    };
+    search.oninput = updateList; catFilter.onchange = updateList; statusFilter.onchange = () => { activePlayerHealthFilter = ''; updateList(); }; completenessFilter.onchange = () => { activePlayerHealthFilter = ''; updateList(); }; window.adminPlayerListUpdate = updateList; updateList(); const selectedPlayer = visiblePlayers.find(player => (player.playerId || player.externalOpponentId) === selectedId) || visiblePlayers[0] || null; showPlayerEditor(selectedPlayer);
     if (launchEditPlayer && selectedPlayer && (selectedPlayer.playerId || selectedPlayer.externalOpponentId) === launchPlayerId) requestAnimationFrame(() => document.querySelector('.admin-editor-panel')?.scrollIntoView({ block: 'start', behavior: 'instant' }));
   }
   function showPlayerEditor(player) {
@@ -913,7 +1201,7 @@
       }
       submitChange(submitEntityType, submitId, next, player ? 'update' : 'create').then(() => refreshWorkspace(submitId)).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
     };
-    editor.append(form);
+    trackDirtyForm(form); editor.append(form);
     if (player) {
       const pending = findPendingChange(entityType, recordId);
       if (pending) editor.append(renderPendingInfo(pending));
@@ -1065,7 +1353,7 @@
       Object.keys(next).forEach(key => { if (next[key] === '' && fields.find(f => f[0] === key && f[2] === 'number')) next[key] = 0; });
       submitChange(entityType, next[idField], next, record ? 'update' : 'create').then(() => refreshWorkspace(next[idField])).catch(error => { actions.append(text('span', `${error.message} / 保存できませんでした`, 'admin-status')); });
     };
-    editor.append(form);
+    trackDirtyForm(form); editor.append(form);
     if (record) {
       const pending = findPendingChange(entityType, record[idField]);
       if (pending) editor.append(renderPendingInfo(pending));
@@ -1073,7 +1361,7 @@
     }
   }
 
-  async function submitChange(entityType, targetId, after, action) { return window.LKData.request('/api/change', { method: 'POST', body: JSON.stringify({ entityType, targetId, after, action }) }); }
+  async function submitChange(entityType, targetId, after, action, options = {}) { return window.LKData.request('/api/change', { method: 'POST', body: JSON.stringify({ entityType, targetId, after, action, ...options }) }); }
 
   async function renderRecordHistory(entityType, targetId) {
     const container = el('div', { className: 'admin-record-history' });
@@ -1132,6 +1420,7 @@
       const result = await window.LKData.request('/api/pending'); const changes = (result.changes || []).filter(change => change.status === 'pending');
       if (!changes.length) { panel.append(text('p', 'No pending changes. / 承認待ちの変更はありません。', 'admin-empty')); return; }
       const summary = text('p', `${changes.length} change${changes.length > 1 ? 's' : ''} awaiting review / 承認待ち`, 'admin-pending-summary'); panel.append(summary);
+      const batchGroups = [...changes.reduce((groups,change)=>{if(!change.batchId)return groups;if(!groups.has(change.batchId))groups.set(change.batchId,[]);groups.get(change.batchId).push(change);return groups;},new Map()).entries()].filter(([,items])=>items.length>1);
       if (currentRole === 'approver') {
         const bulkActions = el('div', { className: 'admin-pending-bulk-actions' });
         const bulkStatus = text('span', '', 'admin-pending-action-status');
@@ -1152,6 +1441,10 @@
         };
         bulkActions.append(button('APPROVE ALL / すべて承認', () => handleBulk('accept'), 'primary'), button('REJECT ALL / すべて却下', () => handleBulk('reject'), 'danger'), bulkStatus);
         panel.append(bulkActions);
+        if (batchGroups.length) {
+          const batchSection=el('section',{className:'admin-batch-review'});batchSection.append(text('h3',language==='en'?'Grouped session batches':'セッション一括申請'));
+          batchGroups.forEach(([batchId,items])=>{const card=el('article'),main=el('div'),actions=el('div'),status=text('span','','admin-pending-action-status'),sessionChange=items.find(item=>item.entityType==='session'),date=sessionChange?.after?.sessionDate||items.find(item=>item.after?.matchDate)?.after?.matchDate||'';main.innerHTML=`<b>${escapeHtml(date||batchId)}</b><span>${items.length} ${language==='en'?'changes':'件'} · ${items.filter(item=>item.entityType==='match').length} ${language==='en'?'matches':'試合'}</span><small>${escapeHtml(batchId)}</small>`;const decide=async decision=>{if(!confirm(`${decision==='accept'?(language==='en'?'Approve':'承認'):(language==='en'?'Reject':'却下')} ${items.length} ${language==='en'?'changes as one reviewed batch?':'件を一括処理しますか？'}`))return;actions.querySelectorAll('button').forEach(node=>node.disabled=true);status.textContent=language==='en'?'Processing...':'処理中…';try{await window.LKData.request('/api/approve-batch',{method:'POST',body:JSON.stringify({batchId,decision})});await loadWorkspace();}catch(error){status.textContent=error.message;actions.querySelectorAll('button').forEach(node=>node.disabled=false);}};actions.append(button(language==='en'?'APPROVE BATCH':'一括承認',()=>decide('accept'),'primary'),button(language==='en'?'REJECT BATCH':'一括却下',()=>decide('reject'),'danger'),status);card.append(main,actions);batchSection.append(card);});panel.append(batchSection);
+        }
       }
       if (currentRole !== 'approver') {
         const loginHint = el('div', { className: 'admin-pending-login-hint' });
@@ -1159,14 +1452,14 @@
         loginHint.append(button('APPROVER LOGIN / 承認者ログイン', () => showApproverLogin(), 'primary'));
         panel.append(loginHint);
       }
-      changes.forEach(change => {
+      [...changes].sort((a,b)=>(a.batchId||a.changeId).localeCompare(b.batchId||b.changeId)||(a.entityType==='session'?-1:b.entityType==='session'?1:0)).forEach(change => {
         const card = el('article', { className: 'admin-pending-card' });
         const actionLabels = { create: 'NEW / 新規', update: 'MODIFIED / 変更', delete: 'DELETE / 削除' };
         const actionClass = { create: 'create', update: 'update', delete: 'delete' };
         const header = el('div', { className: 'admin-pending-card-header' });
         header.append(text('span', actionLabels[change.action] || change.action, `admin-pending-badge ${actionClass[change.action] || ''}`), text('h3', change.summary || `${change.entityType} · ${change.targetId}`), text('span', formatPendingDate(change.createdAt), 'admin-pending-date'));
         const meta = el('div', { className: 'admin-pending-meta' });
-        meta.append(text('span', `${change.entityType} · ${change.targetId} · Submitted by: / 申請者: ${change.createdBy}`, 'admin-pending-by'));
+        meta.append(text('span', `${change.entityType} · ${change.targetId} · Submitted by: / 申請者: ${change.createdBy}${change.batchId?` · Batch: ${change.batchId}`:''}`, 'admin-pending-by'));
         card.append(header, meta);
         if (change.action === 'delete' && change.before) {
           const deleted = el('div', { className: 'admin-pending-deleted' }); deleted.append(text('p', 'Record to be deleted / 削除対象レコード', 'admin-pending-section-title'));
@@ -1289,6 +1582,12 @@
               const tbody = el('tbody'); table.append(tbody);
             diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : displayValue(d.field, d.before)), text('td', d.after === '' || d.after == null ? '—' : displayValue(d.field, d.after))); tbody.append(row); });
               diffSection.append(table); card.append(diffSection);
+            }
+            if (currentRole === 'admin' && (c.before || c.after)) {
+              const corrective=el('div',{className:'admin-history-corrective'}),status=text('span','','admin-pending-action-status');
+              const label=c.status==='rejected'?(language==='en'?'RESUBMIT AS NEW REQUEST':'再申請する'):(language==='en'?'PROPOSE CORRECTION / RESTORE':'修正・復元を申請');
+              const propose=async()=>{let action,after;if(c.status==='rejected'){action=c.action;after=c.after;}else if(c.action==='create'){action='delete';after=null;}else if(c.action==='delete'){action='create';after=c.before;}else{action='update';after=c.before;}if(!confirm(language==='en'?'Create a new pending correction while preserving this history record?':'この履歴を保持したまま、新しい修正申請を作成しますか？'))return;status.textContent=language==='en'?'Submitting...':'申請中…';try{await submitChange(c.entityType,c.targetId,after,action,{correctionOf:c.changeId});await loadWorkspace();}catch(error){status.textContent=error.message;}};
+              corrective.append(button(label,propose,'secondary'),status);card.append(corrective);
             }
             group.append(card);
           });
