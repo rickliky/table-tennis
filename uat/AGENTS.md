@@ -206,6 +206,13 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Global Back to Top Control (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commit `15d403c` adds one shared bilingual Back to Top control through `access-gate.js` on Home, Player, Tournament, Training Insights, supplement directory, and Data Maintenance pages. GitHub Actions run `37086482698` passed the syntax gate and deployment; production remains unchanged.
+- The control stays hidden near the top or on short pages, appears after meaningful scrolling, uses a 44 px minimum touch target, avoids the fixed environment badge, and updates between `TOP` / `上へ` with an accessible label.
+- Scrolling is smooth by default and immediate when the visitor requests reduced motion. The control is hidden behind the password gate and in print output.
+- Local validation across all six page types at 320, 390, and 1440 px found zero horizontal overflow, no environment-badge overlap, and no console errors. The button returned the page to the top and hid again correctly.
+- Live UAT validation on Training Insights passed at 320, 390, 768, 1024, and 1440 px with a 44 px touch target, zero horizontal overflow, no badge overlap, correct hide/show behavior, successful return to the page top, and zero console errors.
+
 ### Session Trends, Pairing Heatmap, and Rapid Entry (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commit `e8ea9c3` adds the approved Session Trend + Pairing Heatmap + Rapid Session Entry package. GitHub Actions run `37076813150` passed the syntax gate and deployment; production remains unchanged.
 - Session Insights now compares the latest 12 training dates with recorded-match volume, match participants, completion rate, and close-match rate. Selecting a chart date opens that session. The selected session also shows a four-band recorded-workload distribution (1, 2–3, 4–5, and 6+ matches per participant).
