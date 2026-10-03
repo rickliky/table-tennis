@@ -206,6 +206,16 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Plain-Language Data Interpretation Guides (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commit `b7161df` audits the major member-facing statistics and analysis areas and adds bilingual, task-focused guidance. GitHub Actions run `37117561762` passed the syntax gate and UAT deployment; production remains unchanged.
+- Home now explains Club Pulse and Club Statistics in addition to the existing ranking, session, volume, player-profile, and Head-to-Head guides. The guidance defines completion, match participation versus attendance, close-match rate, unique pairings, profile reporting coverage, intended uses, and conclusions the data cannot support.
+- Player pages now expose direct help for Form & Activity, Growth Summary, and Tournament Readiness alongside the existing trend, win-rate, set, rank, statistics, opponent, archive, and Head-to-Head help. The Form guide explicitly notes that its cards use different periods; Growth and Readiness direct readers to underlying matches and coach discussion.
+- Each Training Insights view now has a collapsible `How to read and use this analysis` guide organized as `Read the data`, `Use it for`, and `Do not conclude`. Session guidance separates recorded/completed matches and match participation/attendance; Growth explains its 5-match windows, sample thresholds, opponent context, and limitations; Readiness defines field coverage, evidence sources, priorities, and unknowns.
+- Training Insights labels such as `Improving`, `Downward`, and `Stable` were replaced with neutral higher/lower/similar recent set-differential wording. This aligns the workspace with coach-arranged opponent context and avoids presenting a result sample as a development grade.
+- Tournament overview and event detail pages now explain participant totals, badges, recorded versus potentially incomplete fields, documented matches, preparation coverage, and why prior results do not predict a future match.
+- Corrected the Match-Day Volume guide: its gold line includes all recorded matches, including incomplete records, rather than completed matches only. No calculations, records, thresholds, matches, or Upstash data were changed.
+- Local and live UAT validation passed in English and Japanese across Home, Player, all three Training Insights views, and Tournament list/detail at 320, 390, 768, 1024, and 1440 px. All guides opened correctly, settled page overflow was zero, and no console errors occurred.
+
 ### Coach-Arranged Opponent Context (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commit `37198b7` updates the Player page so falling win rate or set differential is not presented as automatic player regression. GitHub Actions run `37115917901` passed the syntax gate and UAT deployment; production site code remains unchanged.
 - Performance win-rate charts and the Opponents dashboard now show a bilingual `Coach-arranged challenge context` notice: coaches select training opponents for development, so lower results may reflect a planned move to stronger opposition rather than reduced ability.
