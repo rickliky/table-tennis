@@ -23,14 +23,14 @@
       session: 'Session Insights', growth: 'Player Growth', tournament: 'Tournament Readiness',
       completedOnly: 'Completed statistics require one player to reach three sets. Match participation is not attendance.',
       selectSession: 'Training date', compareSession:'Compare with', recorded: 'Recorded matches', complete: 'Completed', participants: 'Match participants', pairings: 'Unique pairings',
-      close: 'Close matches', incomplete: 'Incomplete records', attention: 'Attention & progress signals', noSignals: 'No notable signals for this session.',
+      close: 'Close matches', incomplete: 'Incomplete records', attention: 'Review signals', noSignals: 'No notable review signals for this session.',
       workload: 'Recorded / complete', record: 'Record', setDiff: 'Avg. set diff.', change: 'vs previous 5', diversity: 'Opponents', confidence: 'Evidence',
-      stronger: 'Stronger', medium: 'Medium', limited: 'Limited', improving: 'Improving', declining: 'Downward', stable: 'Stable', more: 'More matches needed',
-      oneMatch: 'Only one recorded match', closeLoss: 'Close loss to review', decisiveLoss: 'Decisive-loss pattern', movementUp: 'Set differential improved', movementDown: 'Set differential declined',
+      stronger: 'Stronger', medium: 'Medium', limited: 'Limited', improving: 'Higher recent set differential', declining: 'Lower recent set differential', stable: 'Similar recent set differential', more: 'More matches needed',
+      oneMatch: 'Only one recorded match', closeLoss: 'Close loss to review', decisiveLoss: 'Decisive-loss pattern to review', movementUp: 'Recent set differential is higher', movementDown: 'Recent set differential is lower',
       sessionPlayers: 'Player session summary', recurring: 'Recurring pairings', matches: 'Session matches', priorMeetings: 'prior meetings',
       sessionTrend: 'Last 12 training dates', trendNote: 'Recorded volume, match participation, completion, and close-match share', workloadDistribution: 'Selected-session workload distribution', pairingHeatmap: 'Pairing heatmap', heatmapNote: 'Recorded meetings among this session’s participants across the latest six training dates', maxRepeat: 'Highest repeat count', reflections: 'Player reflections', reflectionNote: 'Player self-feedback; not a coach evaluation or attendance record', effort: 'Avg. effort', confidenceLabel: 'Avg. confidence', addReflection: 'Add reflection', wentWell: 'Went well', nextFocus: 'Next focus', noReflections: 'No approved reflections for this date.', sessionReflections:'Session reflections', matchReflections:'Match reflections', whatWorked:'What worked', challenge:'Main difficulty', nextPlan:'Next-match plan',
-      playerSearch: 'Search player', allCategories: 'All categories', growthIntro: 'Transparent rolling indicators; not an official ranking or development score.',
-      sampledPlayers: 'Players with 10-match sample', improvingPlayers: 'Improving signals', limitedPlayers: 'Limited samples', inactivePlayers: 'No matches in last 3 sessions',
+      playerSearch: 'Search player', allCategories: 'All categories', growthIntro: 'Transparent rolling results; not an official ranking or development score. Coach-arranged opponent difficulty may change between periods.',
+      sampledPlayers: 'Players with 10-match sample', improvingPlayers: 'Higher recent set diff.', limitedPlayers: 'Limited samples', inactivePlayers: 'No matches in last 3 sessions',
       last10: 'Last 10', previous10: 'Previous 10', lastFive: 'Last 5', previousFive: 'Previous 5', scorelines: 'Scorelines', sessions: 'Sessions',
       normalized: 'Last 10 per match day', activity: 'Recorded-match activity', opponentMix: 'Opponent category mix',
       readinessIntro: 'Training and tournament records remain separate. Training results are scouting context only.', field: 'Field opponents', known: 'Known opponents', coverage: 'Field coverage', priority: 'Priority opponents', recentForm: 'Recent training form', missing: 'Missing scouting data', noTournaments: 'No Little Kings tournament entries found.',
@@ -41,14 +41,14 @@
       session: 'セッション分析', growth: '選手の成長', tournament: '大会準備',
       completedOnly: '完了スタッツはどちらかが3セット到達した試合のみ。試合参加は出席記録ではありません。',
       selectSession: '練習日', compareSession:'比較する練習日', recorded: '登録試合', complete: '完了', participants: '試合参加選手', pairings: '対戦組合せ',
-      close: '接戦', incomplete: '未完了記録', attention: '注目・成長シグナル', noSignals: 'このセッションに顕著なシグナルはありません。',
+      close: '接戦', incomplete: '未完了記録', attention: '振り返りシグナル', noSignals: 'このセッションに顕著な振り返りシグナルはありません。',
       workload: '登録 / 完了', record: '戦績', setDiff: '平均セット差', change: '前5試合比', diversity: '対戦相手', confidence: 'データ量',
-      stronger: '比較的十分', medium: '中程度', limited: '少数', improving: '改善傾向', declining: '下降傾向', stable: '横ばい', more: 'データ不足',
-      oneMatch: '登録試合が1試合のみ', closeLoss: '振り返りたい接戦負け', decisiveLoss: '大差敗戦の傾向', movementUp: 'セット差が改善', movementDown: 'セット差が下降',
+      stronger: '比較的十分', medium: '中程度', limited: '少数', improving: '直近のセット差が上昇', declining: '直近のセット差が低下', stable: '直近のセット差は同程度', more: 'データ不足',
+      oneMatch: '登録試合が1試合のみ', closeLoss: '振り返りたい接戦負け', decisiveLoss: '振り返りたい大差敗戦', movementUp: '直近のセット差が上昇', movementDown: '直近のセット差が低下',
       sessionPlayers: '選手別セッション概要', recurring: '継続対戦カード', matches: 'セッション試合', priorMeetings: '過去対戦',
       sessionTrend: '直近12回の練習推移', trendNote: '登録試合数・試合参加選手数・完了率・接戦率', workloadDistribution: '選択セッションの試合数分布', pairingHeatmap: '対戦組合せヒートマップ', heatmapNote: '今回の参加選手について、直近6回の練習日に登録された対戦回数', maxRepeat: '最多反復回数', reflections: '選手振り返り', reflectionNote: '選手本人の自己振り返りです。コーチ評価・出席記録ではありません', effort: '平均がんばり度', confidenceLabel: '平均自信', addReflection: '振り返りを書く', wentWell: 'うまくできたこと', nextFocus: '次に意識すること', noReflections: 'この日の承認済み振り返りはありません。', sessionReflections:'セッション振り返り', matchReflections:'試合振り返り', whatWorked:'機能したこと', challenge:'一番難しかったこと', nextPlan:'次の対戦プラン',
-      playerSearch: '選手を検索', allCategories: '全カテゴリ', growthIntro: '透明性のある移動指標です。公式ランキングや総合成長スコアではありません。',
-      sampledPlayers: '10試合サンプル', improvingPlayers: '改善シグナル', limitedPlayers: '少数サンプル', inactivePlayers: '直近3回に試合なし',
+      playerSearch: '選手を検索', allCategories: '全カテゴリ', growthIntro: '透明性のある移動結果です。公式ランキングや総合成長スコアではありません。コーチ設定による対戦難易度は期間ごとに変わる場合があります。',
+      sampledPlayers: '10試合サンプル', improvingPlayers: '直近セット差が上昇', limitedPlayers: '少数サンプル', inactivePlayers: '直近3回に試合なし',
       last10: '直近10試合', previous10: 'その前の10試合', lastFive: '直近5試合', previousFive: 'その前の5試合', scorelines: 'スコア内訳', sessions: '試合日',
       normalized: '直近10試合の日別平均', activity: '試合記録のある直近活動', opponentMix: '対戦カテゴリ構成',
       readinessIntro: '練習試合と大会結果は分けて表示します。練習結果はスカウティング参考情報のみです。', field: '同部門の対戦候補', known: '対戦記録あり', coverage: 'フィールド把握率', priority: '優先対戦相手', recentForm: '直近の練習成績', missing: '未スカウト', noTournaments: 'リトルキングス選手の大会登録がありません。',
@@ -56,6 +56,21 @@
     }
   };
   const t = key => words[language][key];
+  const analysisGuides = {
+    session: {
+      en:{title:'How to Use Session Insights',intro:'Use this view to review what was recorded on two training dates. It compares sessions; it does not score the quality of a session.',read:['Recorded includes every saved match; completed includes only matches where a player reached three sets. Result rates use completed matches.','Match participants are players with a recorded match, not an attendance list. Close matches are 3–2 or 2–3.','The common-player chart compares average set differential only for players recorded on both dates. Opponents and training goals may still differ.'],action:'Open the underlying matches and reflections, then choose one session-wide pattern or one player-specific situation to discuss and practise.',limit:'Do not conclude that a higher volume, close-match rate, or set differential means a better session. Point-by-point play, attendance, coach-assigned difficulty, and session conditions are not fully recorded.'},
+      ja:{title:'セッション分析の使い方',intro:'2つの練習日に登録された内容を振り返るための画面です。練習日を比較しますが、練習の質を採点するものではありません。',read:['登録試合は保存された全試合、完了試合はどちらかが3セットに到達した試合です。結果の割合は完了試合のみで集計します。','試合参加選手は試合記録がある選手で、出席者一覧ではありません。接戦は3–2または2–3です。','共通選手グラフは両日に記録がある選手の平均セット差を比較します。対戦相手や練習目標が異なる場合があります。'],action:'元の試合と振り返りを開き、全体で1つ、または選手ごとに1つ、話し合って練習する場面を選んでください。',limit:'試合数、接戦率、セット差が高いだけで「より良い練習日」と判断しないでください。ポイント内容、出席、コーチ設定の難易度、当日の条件は十分に記録されていません。'},
+    },
+    growth: {
+      en:{title:'How to Use Player Growth',intro:'Use this view to find result patterns worth reviewing. It is not an ability grade, official ranking, or prediction.',read:['Last 10 combines W–L, average set differential, opponent variety, match days, and scorelines. Read them together.','The recent comparison uses the last five versus the previous five. A label appears only with at least three matches in each window and a ±0.5 average-set change.','Higher or lower recent results describe the recorded sample only. Coaches may have arranged stronger or different opponents.'],action:'Open the player profile and actual matches, ask what changed, and agree on one observable next focus such as receive choice, first attack, or closing a close game.',limit:'Do not use a label to rank development or assume its cause. The data does not record point patterns, physical condition, every training activity, or coach-assigned opponent difficulty.'},
+      ja:{title:'選手の成長データの使い方',intro:'振り返る価値がある結果パターンを探す画面です。実力評価、公式順位、将来予測ではありません。',read:['直近10試合は、勝敗、平均セット差、相手の多様性、試合日数、スコア内訳を合わせて確認します。','直近比較は直近5試合とその前の5試合です。両方3試合以上、平均セット差±0.5以上のときだけ表示します。','直近結果の上昇・低下は記録サンプルの説明です。コーチがより強い相手や異なる相手を設定している場合があります。'],action:'選手プロフィールと実際の試合を開き、何が変わったかを確認して、レシーブ選択、先手、接戦の締め方など次の観察可能な課題を1つ決めてください。',limit:'表示ラベルで成長順位をつけたり、原因を決めつけたりしないでください。ポイント内容、体調、練習全体、コーチ設定の対戦難易度は記録されていません。'},
+    },
+    tournament: {
+      en:{title:'How to Use Tournament Readiness',intro:'Use this view to organize known information before an event—not to predict who will win.',read:['Field opponents are other listed players in the same recorded division. Coverage is the share with at least one documented Little Kings meeting.','Known-opponent records show training and tournament evidence separately. Training results are scouting context, not tournament results.','Priority opponents are listed representatives or recommended players. Priority does not mean they are automatically the strongest or most likely opponent.'],action:'Review known scorelines, identify missing opponents, then prepare one or two adaptable match plans rather than a plan based on a single past result.',limit:'Published fields may be incomplete, draws can change, and past matches may not reflect current form. No record means “unknown,” not “easy” or “never played.”'},
+      ja:{title:'大会準備データの使い方',intro:'大会前に分かっている情報を整理する画面です。勝敗を予測するものではありません。',read:['同部門の対戦候補は、記録された同じ部門の他選手です。把握率は、リトルキングスとの対戦記録が1試合以上ある相手の割合です。','既知の相手は、練習試合と大会試合を分けて表示します。練習結果はスカウティング参考情報であり、大会結果ではありません。','優先相手は代表または推薦として登録された選手です。必ず最強、または必ず対戦するという意味ではありません。'],action:'既知のスコアを確認し、情報がない相手を把握したうえで、過去1試合だけに依存しない1〜2個の対応可能な試合プランを準備してください。',limit:'公開フィールドが未完成の場合や組合せ変更があります。過去結果が現在の状態を表すとは限りません。記録なしは「不明」であり、「簡単」「未対戦確定」ではありません。'},
+    }
+  };
+  const analysisGuide = key => { const guide=analysisGuides[key]?.[language]||analysisGuides[key]?.en;if(!guide)return'';const labels=language==='en'?{summary:'How to read and use this analysis',read:'READ THE DATA',action:'USE IT FOR',limit:'DO NOT CONCLUDE'}:{summary:'この分析の見方・使い方',read:'データの読み方',action:'活用方法',limit:'判断できないこと'};return `<details class="data-guide"><summary><span>▣</span>${labels.summary}</summary><div><header><h2>${guide.title}</h2><p>${guide.intro}</p></header><section><h3>${labels.read}</h3><ul>${guide.read.map(item=>`<li>${item}</li>`).join('')}</ul></section><section class="guide-action"><h3>${labels.action}</h3><p>${guide.action}</p></section><section class="guide-limit"><h3>${labels.limit}</h3><p>${guide.limit}</p></section></div></details>`; };
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' })[character]);
   const eventType = match => /club|training|練習/i.test(`${match.event || ''} ${match.division || ''}`) ? 'Training' : 'Tournament';
   const isComplete = match => Number(match.player1Sets) >= 3 || Number(match.player2Sets) >= 3;
@@ -95,7 +110,7 @@
 
   function shell(content) {
     const labels = { session:t('session'), growth:t('growth'), tournament:t('tournament') };
-    return `<section class="insights-hero"><div><p class="eyebrow">TRAINING INTELLIGENCE</p><h1>${t('title')}</h1><span>${t('subtitle')}</span></div><aside><b>${dates().length}</b><small>${language === 'en' ? 'recorded training dates' : '登録練習日'}</small><em>${t('lastUpdated')}: ${new Date(data.lastUpdated).toLocaleString(language === 'en' ? 'en-GB' : 'ja-JP')}</em></aside></section><nav class="insights-tabs" aria-label="${t('title')}">${Object.entries(labels).map(([key,label]) => `<button type="button" data-insights-view="${key}" class="${activeView === key ? 'active' : ''}">${label}</button>`).join('')}</nav><p class="insights-method">${activeView === 'tournament' ? t('readinessIntro') : t('completedOnly')}</p><section id="insights-content">${content}</section>`;
+    return `<section class="insights-hero"><div><p class="eyebrow">TRAINING INTELLIGENCE</p><h1>${t('title')}</h1><span>${t('subtitle')}</span></div><aside><b>${dates().length}</b><small>${language === 'en' ? 'recorded training dates' : '登録練習日'}</small><em>${t('lastUpdated')}: ${new Date(data.lastUpdated).toLocaleString(language === 'en' ? 'en-GB' : 'ja-JP')}</em></aside></section><nav class="insights-tabs" aria-label="${t('title')}">${Object.entries(labels).map(([key,label]) => `<button type="button" data-insights-view="${key}" class="${activeView === key ? 'active' : ''}">${label}</button>`).join('')}</nav><p class="insights-method">${activeView === 'tournament' ? t('readinessIntro') : t('completedOnly')}</p>${analysisGuide(activeView)}<section id="insights-content">${content}</section>`;
   }
 
   function sessionPlayerRecord(player, recorded, completed) {
