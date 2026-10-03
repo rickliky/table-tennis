@@ -206,6 +206,16 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Training Match Import & Data Quality Center (2026-10-03) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commits `a5d96f3`, `7548824`, and `ae00b50` add a bilingual Training Match Import workspace for UTF-8 CSV/TSV file upload or direct paste. GitHub Actions run `37115197681` passed the syntax gate and UAT deployment; production site code remains unchanged.
+- Import preview resolves canonical IDs, display names, English names, notebook aliases, and explicit manual mappings across active Little Kings players and external opponents. Ambiguous/unresolved names stay blocked and expose ranked suggestions rather than being guessed.
+- Validation blocks missing/invalid scores, invalid or mismatched dates, same-player matches, unsupported formats, exact approved duplicates, duplicate input rows, and exact records pending in another batch. It warns without blocking for incomplete three-set-rule records, unusual scores, same-day rematches, and repeated pairings within the import.
+- Every resolved input receives a SHA-256-based `IMP-…` batch ID and deterministic `LKM-…` match IDs. Submission creates one import-history record, one session create/update when needed, and separate match changes under a shared batch ID for grouped approval. A partially interrupted submission safely resumes the same batch; a complete pending or approved import is blocked from repeating.
+- The preview provides row-level status, an error/warning CSV download, a downloadable source template, a 1,000-row limit, and durable approved/pending/rejected import history. Existing approved records are never rewritten silently.
+- Worker version `84570c8b-7fcd-4664-b694-e9951d643029` adds the `import-batches` collection, immutable batch-history validation, deterministic hash/ID checks, and approval-time atomic completeness checks. An import batch cannot be approved unless all declared match changes and its session are present; already approved hashes cannot be approved again.
+- Local mocked validation covered exact duplicates, unresolved-name mapping, blank and invalid scores/dates, grouped request payloads, deterministic repeat behavior, and interrupted-batch recovery. Live UAT passed in English and Japanese at 320, 390, 768, 1024, and 1440 px with 44 px controls, zero page overflow, and zero console errors. Error downloads and the cache-busted asset were verified live.
+- No test import, session, match, or pending change was created. UAT remains at 87 total / 86 active players, 1,793 training matches, zero approved sessions, zero import batches, and zero pending changes.
+
 ### Next Whole-Product Priority (2026-10-03) — PROPOSED
 - Stop adding reflection features and avoid more isolated charts until the administration/security/data-quality foundation is strengthened.
 - Highest priority: Admin/API security hardening. Require a valid Admin session for normal CRUD submissions, Admin/Approver authentication for pending/history access and review, authenticated cancellation/rejection, and an authenticated all-records maintenance endpoint separate from the member-facing active-data endpoint. Keep the new seven-day same-browser login so stronger security does not add repeated login friction.
