@@ -682,6 +682,10 @@ body.access-locked,body.modal-open { overflow:hidden; }
 .opponent-trend-toolbar > div { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
 .opponent-trend-toolbar a,.opponent-trend-toolbar button { align-items:center; background:transparent; border:1px solid var(--gold); color:var(--gold); cursor:pointer; display:inline-flex; font:800 11px "Noto Sans JP",sans-serif; justify-content:center; min-height:44px; padding:9px 12px; text-decoration:none; }
 .opponent-trend-toolbar a:hover,.opponent-trend-toolbar a:focus-visible,.opponent-trend-toolbar button:hover,.opponent-trend-toolbar button:focus-visible { background:var(--gold); color:var(--black); }
+.coach-pairing-context { background:linear-gradient(110deg,rgba(84,184,209,.1),rgba(214,165,22,.06)); border:1px solid rgba(84,184,209,.35); border-left:4px solid #54b8d1; display:grid; gap:5px; padding:13px 15px; }
+.coach-pairing-context b { color:#8ed5e6; font:800 11px "Noto Sans JP",sans-serif; letter-spacing:.04em; }
+.coach-pairing-context p { color:var(--cream); font:600 10px/1.65 "Noto Sans JP",sans-serif; margin:0; }
+.win-rate-trends > .coach-pairing-context { grid-column:1/-1; }
 .opponent-evidence { border-left:2px solid var(--gold); margin:-8px 0 0; padding-left:10px; text-transform:none; }
 .opponent-trend-kpis { display:grid; gap:1px; grid-template-columns:repeat(4,minmax(0,1fr)); }
 .opponent-trend-kpis article { background:#101214; border:1px solid var(--line); display:grid; min-height:128px; padding:18px; }
