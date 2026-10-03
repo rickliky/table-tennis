@@ -198,15 +198,25 @@
   }, true);
   window.addEventListener('beforeunload', event => { if (!activeFormDirty) return; event.preventDefault(); event.returnValue = ''; });
 
-  function shell() {
+  async function shell() {
     currentRole = 'admin';
+    const savedSession = localStorage.getItem('lk-admin-session');
+    let savedPayload = null;
+    try { savedPayload = savedSession ? JSON.parse(atob(savedSession.split('.')[0])) : null; } catch { savedPayload = null; }
+    if (savedSession && savedPayload?.expires > Date.now() && ['admin','approver'].includes(savedPayload.role)) {
+      try {
+        const restored = await window.LKData.request('/api/session');
+        if (restored.role === 'approver' || restored.role === 'admin') currentRole = restored.role;
+        else localStorage.removeItem('lk-admin-session');
+      } catch { localStorage.removeItem('lk-admin-session'); }
+    } else if (savedSession) localStorage.removeItem('lk-admin-session');
     loadWorkspace();
   }
 
   function showApproverLogin() {
     const loginOverlay = el('div', { className: 'admin-login-overlay', role: 'dialog', ariaModal: 'true', ariaLabel: 'Approver sign-in' });
     const login = el('section', { className: 'admin-login admin-panel' });
-    login.append(text('p', 'APPROVER SIGN-IN / 承認者ログイン', 'eyebrow'), text('h2', '承認者アクセス / Approver Access'), text('p', '承認待ちの変更を確認・承認できます。管理者権限はありません。\nYou can review and approve pending changes. No admin privileges.', 'admin-login-desc'));
+    login.append(text('p', 'APPROVER SIGN-IN / 承認者ログイン', 'eyebrow'), text('h2', '承認者アクセス / Approver Access'), text('p', '承認待ちの変更を確認・承認できます。このブラウザでは7日間ログイン状態を保持します。\nYou can review and approve pending changes. This browser stays signed in for 7 days.', 'admin-login-desc'));
     const form = el('form', { className: 'admin-login-form' });
     const password = el('input', { name: 'password', type: 'password', required: true, autocomplete: 'current-password', placeholder: 'Password / パスワード' });
     const actions = el('div', { className: 'admin-login-actions' });

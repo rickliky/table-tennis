@@ -34,6 +34,7 @@ export default { async fetch(request, env) {
   try {
     const url = new URL(request.url); const repo = repository(env); const environment = validateEnvironment(url.searchParams.get('environment') || 'prod');
     if (url.pathname === '/api/login' && request.method === 'POST') { const body = await request.json(); const role = body.role || 'site'; return json({ ok: true, token: await login(role, body.password, env), role }); }
+    if (url.pathname === '/api/session' && request.method === 'GET') { const actor = await session(request, env); return json({ ok: true, role: actor.role, expires: actor.expires }); }
     if (url.pathname === '/api/public-data' && request.method === 'GET') {
       const values = await Promise.all(publicTypes.map(type => repo.read(environment, type)));
       return json({ ok: true, club: values[0][0] || null, clubs: values[0], players: values[1], matches: values[2], externalOpponents: values[3], tournaments: values[4], tournamentMatches: values[5], tournamentProgress: values[6], rubbers: values[7], sessionFeedback: values[8], matchFeedback: values[9], sessions: values[10], lastUpdated: new Date().toISOString() });
