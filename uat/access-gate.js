@@ -109,12 +109,30 @@
 
   const environment = /\/uat(?:\/|$)/i.test(location.pathname) ? 'UAT' : 'PROD';
   document.body.insertAdjacentHTML('beforeend', `<aside class="environment-badge ${environment.toLowerCase()}" aria-label="Environment: ${environment}">${environment}</aside>`);
+  const backToTop = document.createElement('button');
+  backToTop.id = 'site-back-to-top';
+  backToTop.className = 'site-back-to-top';
+  backToTop.type = 'button';
+  const updateBackToTopLanguage = nextLanguage => {
+    const english = nextLanguage === 'en';
+    backToTop.innerHTML = `<span aria-hidden="true">↑</span>${english ? 'TOP' : '上へ'}`;
+    backToTop.setAttribute('aria-label', english ? 'Back to top' : 'ページ上部へ戻る');
+    backToTop.title = english ? 'Back to top' : 'ページ上部へ戻る';
+  };
+  updateBackToTopLanguage(language);
+  document.body.append(backToTop);
+  const updateBackToTopVisibility = () => backToTop.classList.toggle('visible', window.scrollY > Math.min(600, window.innerHeight * .7));
+  window.addEventListener('scroll', updateBackToTopVisibility, { passive: true });
+  window.addEventListener('resize', updateBackToTopVisibility, { passive: true });
+  backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }));
+  updateBackToTopVisibility();
   const nav = document.querySelector('nav');
   if (nav) nav.insertAdjacentHTML('beforeend', `<a href="tournament.html" id="nav-tournaments">${language === 'en' ? 'Tournaments' : '大会'}</a><a href="insights.html" id="nav-insights">${language === 'en' ? 'Training Insights' : '練習分析'}</a><a href="admin.html" id="nav-maintenance" style="color:#8c423a;border-bottom:2px solid #8c423a;padding-bottom:0">${language === 'en' ? 'Data Maintenance' : 'データメンテナンス'}</a>`);
   window.lkUpdateInjectedNavigation = nextLanguage => {
     const english = nextLanguage === 'en';
     const labels = [['#nav-home', english ? 'Home' : 'ホーム'], ['#nav-players', english ? 'Players' : '選手'], ['#nav-sessions', english ? 'Sessions' : 'セッション'], ['#nav-tournaments', english ? 'Tournaments' : '大会'], ['#nav-insights', english ? 'Training Insights' : '練習分析'], ['#nav-maintenance', english ? 'Data Maintenance' : 'データメンテナンス']];
     labels.forEach(([selector, label]) => { const link = document.querySelector(selector); if (link) link.textContent = label; });
+    updateBackToTopLanguage(nextLanguage);
   };
   document.addEventListener('click', event => {
     if (!event.target.closest('#language-toggle')) return;
