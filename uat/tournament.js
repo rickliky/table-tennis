@@ -35,6 +35,17 @@
     }
   };
   const t = key => words[language][key];
+  const tournamentGuides = {
+    overview:{
+      en:{title:'How to Use the Tournament Hub',intro:'Use this page to find recorded events, Little Kings entries, published results, and available preparation evidence.',read:['Participant totals count records currently entered for each event; they may not represent a complete draw.','Representative and recommended badges reproduce the recorded event information. They are not Little Kings performance ratings.','Select an event to review divisions, documented match results, and the players behind the totals.'],action:'Start with the relevant event and division, confirm the listed field, then use documented matches to prepare questions and adaptable tactics.',limit:'Do not compare events by participant count alone or assume a missing player, result, or match did not exist. It may simply not be recorded yet.'},
+      ja:{title:'大会ハブの使い方',intro:'登録済みの大会、リトルキングス出場選手、公開結果、対戦準備に使える情報を確認するページです。',read:['参加者数は現在その大会に登録されているレコード数です。大会の全組合せが登録済みとは限りません。','代表・推薦バッジは登録された大会情報を表示しています。リトルキングス独自の実力評価ではありません。','大会を選ぶと、部門、登録済み試合結果、集計対象の選手を確認できます。'],action:'対象の大会・部門を開き、登録フィールドを確認してから、記録済み試合を対戦準備の質問や対応可能な戦術に変えてください。',limit:'参加者数だけで大会を比較しないでください。選手・結果・試合が表示されない場合も、存在しなかったのではなく未登録の可能性があります。'}
+    },
+    detail:{
+      en:{title:'How to Read This Event',intro:'Read the event overview, Little Kings outcomes, documented matches, and division field as separate types of evidence.',read:['The scoreboard summarizes recorded entries, divisions, representatives, and Little Kings players. Open a division to see the underlying names.','Documented match results are actual saved event matches. A listed finish or badge is event-progress information and may exist without a match-by-match record.','Preparation coverage means a Little Kings player has a documented meeting with that opponent. Training and tournament evidence should remain separate.'],action:'Check the player, score, date, and source; then use repeated patterns to plan serve, receive, first attack, and fallback options with the coach.',limit:'A past result does not predict the next match. Fields and brackets may be incomplete, and no documented meeting means “unknown,” not “easy.”'},
+      ja:{title:'大会詳細の見方',intro:'大会概要、リトルキングスの結果、登録済み試合、部門フィールドは、それぞれ別の情報として確認してください。',read:['スコアボードは登録済みの参加者、部門、代表、LK選手を集計しています。部門を開くと対象選手を確認できます。','登録済み試合結果は保存された実際の大会試合です。順位やバッジは大会進捗情報であり、試合ごとの記録がない場合もあります。','対戦把握は、LK選手とその相手の記録済み対戦があることを示します。練習試合と大会試合は分けて確認してください。'],action:'選手、スコア、日付、出典を確認し、繰り返し見えるパターンをコーチとサーブ、レシーブ、先手、代替プランに変えてください。',limit:'過去結果は次の試合を予測しません。フィールドや組合せが未完成の場合があり、対戦記録なしは「不明」であって「簡単」ではありません。'}
+    }
+  };
+  const tournamentGuide = key => { const guide=tournamentGuides[key]?.[language]||tournamentGuides[key]?.en,labels=language==='en'?{summary:'How to read and use tournament data',read:'READ THE DATA',action:'USE IT FOR',limit:'DO NOT CONCLUDE'}:{summary:'大会データの見方・使い方',read:'データの読み方',action:'活用方法',limit:'判断できないこと'};return `<details class="data-guide tournament-data-guide"><summary><span>▣</span>${labels.summary}</summary><div><header><h2>${guide.title}</h2><p>${guide.intro}</p></header><section><h3>${labels.read}</h3><ul>${guide.read.map(item=>`<li>${item}</li>`).join('')}</ul></section><section class="guide-action"><h3>${labels.action}</h3><p>${guide.action}</p></section><section class="guide-limit"><h3>${labels.limit}</h3><p>${guide.limit}</p></section></div></details>`; };
   const profileImage = playerId => window.lkProfileImage ? window.lkProfileImage(playerId) : 'img/NoProfilePic.jpg';
   const participantLabel = count => `${t('participant')}${count !== 1 && language === 'en' ? 's' : ''}`;
 
@@ -267,6 +278,8 @@
         </div>
       </section>
 
+      ${tournamentGuide('overview')}
+
        ${latest ? `<section class="tp-feature" data-id="${latest.tournamentId}"><div class="tp-feature-label">${t('latestEvent')}</div><div><h2>${escapeHtml(latest.name)}</h2><p>${formatDate(latest.date)} · ${escapeHtml(latest.location || '-')}</p></div><div class="tp-feature-stats"><span><b>${latestProgress.length}</b>${participantLabel(latestProgress.length)}</span><span><b>${latestProgress.filter(item => item.playerId.startsWith('LK-')).length}</b>${t('lkPlayers')}</span></div><button class="tp-feature-btn" data-id="${latest.tournamentId}">${t('explore')} →</button></section>` : ''}
        ${calendarHtml ? `
         <section class="tp-calendar-section">
@@ -433,7 +446,7 @@
         </div>
       </section>
 
-       <section class="detail-content"><div class="detail-scoreboard"><div><small>${t('field')}</small><b>${tProgress.length}</b></div><div><small>${t('divisions')}</small><b>${divisions.length}</b></div><div><small>${t('qualifiers')}</small><b>${qualifierCount}</b></div><div><small>${t('lkPlayers')}</small><b>${lkPlayers.length}</b></div></div>${divisionNav}
+       <section class="detail-content"><div class="detail-scoreboard"><div><small>${t('field')}</small><b>${tProgress.length}</b></div><div><small>${t('divisions')}</small><b>${divisions.length}</b></div><div><small>${t('qualifiers')}</small><b>${qualifierCount}</b></div><div><small>${t('lkPlayers')}</small><b>${lkPlayers.length}</b></div></div>${tournamentGuide('detail')}${divisionNav}
         ${lkHighlight}
         ${tournamentResultsHtml}
          ${notesHtml}
