@@ -4,11 +4,11 @@ import { repository } from './repository.js';
 import { validateEntity, validateEnvironment } from './validation.js';
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
-const types = ['clubs', 'players', 'matches', 'external-opponents', 'tournaments', 'tournament-matches', 'tournament-progress', 'rubbers', 'session-feedback', 'match-feedback', 'sessions', 'pending-changes'];
+const types = ['clubs', 'players', 'matches', 'external-opponents', 'tournaments', 'tournament-matches', 'tournament-progress', 'rubbers', 'session-feedback', 'match-feedback', 'sessions', 'import-batches', 'pending-changes'];
 const publicTypes = types.filter(type => type !== 'pending-changes');
-const singular = type => ({ clubs: 'club', players: 'player', matches: 'match', 'external-opponents': 'externalOpponent', tournaments: 'tournament', 'tournament-matches': 'tournamentMatch', 'tournament-progress': 'tournamentProgress', rubbers: 'rubber', 'session-feedback': 'sessionFeedback', 'match-feedback': 'matchFeedback', sessions: 'session' }[type]);
-const collectionFor = entityType => ({ club: 'clubs', player: 'players', match: 'matches', externalOpponent: 'external-opponents', tournament: 'tournaments', tournamentMatch: 'tournament-matches', tournamentProgress: 'tournament-progress', rubber: 'rubbers', sessionFeedback: 'session-feedback', matchFeedback: 'match-feedback', session: 'sessions' }[entityType]);
-const idFieldFor = entityType => ({ club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId', sessionFeedback: 'feedbackId', matchFeedback: 'matchFeedbackId', session: 'sessionId' }[entityType]);
+const singular = type => ({ clubs: 'club', players: 'player', matches: 'match', 'external-opponents': 'externalOpponent', tournaments: 'tournament', 'tournament-matches': 'tournamentMatch', 'tournament-progress': 'tournamentProgress', rubbers: 'rubber', 'session-feedback': 'sessionFeedback', 'match-feedback': 'matchFeedback', sessions: 'session', 'import-batches': 'importBatch' }[type]);
+const collectionFor = entityType => ({ club: 'clubs', player: 'players', match: 'matches', externalOpponent: 'external-opponents', tournament: 'tournaments', tournamentMatch: 'tournament-matches', tournamentProgress: 'tournament-progress', rubber: 'rubbers', sessionFeedback: 'session-feedback', matchFeedback: 'match-feedback', session: 'sessions', importBatch: 'import-batches' }[entityType]);
+const idFieldFor = entityType => ({ club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId', sessionFeedback: 'feedbackId', matchFeedback: 'matchFeedbackId', session: 'sessionId', importBatch: 'importBatchId' }[entityType]);
 
 const CORS_HEADERS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' };
 const JSON_HEADERS = { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' };
@@ -25,6 +25,7 @@ function buildSummary(entityType, record) {
     case 'sessionFeedback': return [record.playerName, record.sessionDate, `Effort ${record.effort}/5`, `Confidence ${record.confidence}/5`].filter(Boolean).join(' · ');
     case 'matchFeedback': return [record.playerName, 'vs', record.opponentName, record.matchDate, record.score].filter(Boolean).join(' · ');
     case 'session': return [record.sessionDate, record.venue, record.sessionType, record.matchFormat].filter(Boolean).join(' · ');
+    case 'importBatch': return [record.sourceName, record.sessionDate, `${record.rowCount} rows`].filter(Boolean).join(' · ');
     default: return record.displayName || record.name || record.matchDate || '';
   }
 }
@@ -37,7 +38,7 @@ export default { async fetch(request, env) {
     if (url.pathname === '/api/session' && request.method === 'GET') { const actor = await session(request, env); return json({ ok: true, role: actor.role, expires: actor.expires }); }
     if (url.pathname === '/api/public-data' && request.method === 'GET') {
       const values = await Promise.all(publicTypes.map(type => repo.read(environment, type)));
-      return json({ ok: true, club: values[0][0] || null, clubs: values[0], players: values[1], matches: values[2], externalOpponents: values[3], tournaments: values[4], tournamentMatches: values[5], tournamentProgress: values[6], rubbers: values[7], sessionFeedback: values[8], matchFeedback: values[9], sessions: values[10], lastUpdated: new Date().toISOString() });
+      return json({ ok: true, club: values[0][0] || null, clubs: values[0], players: values[1], matches: values[2], externalOpponents: values[3], tournaments: values[4], tournamentMatches: values[5], tournamentProgress: values[6], rubbers: values[7], sessionFeedback: values[8], matchFeedback: values[9], sessions: values[10], importBatches: values[11], lastUpdated: new Date().toISOString() });
     }
     if (url.pathname === '/api/pending' && request.method === 'GET') return json({ ok: true, changes: await repo.read(environment, 'pending-changes') });
     if (url.pathname === '/api/clear-history' && request.method === 'POST') {
@@ -64,6 +65,8 @@ export default { async fetch(request, env) {
       if (body.action !== 'delete') validateEntity(body.entityType, body.after, { players: records.players, matches: records.matches, tournamentMatches: records['tournament-matches'], tournaments: records.tournaments, externalOpponents: records['external-opponents'], sessions: records.sessions }, body.targetId);
       const idField = idFieldFor(body.entityType);
       const before = records[collection].find(item => item[idField] === body.targetId) || null;
+      if (body.entityType === 'importBatch' && body.action !== 'create') throw new Error('Import batch history is immutable');
+      if (body.entityType === 'importBatch' && before) throw new Error('This import batch is already approved');
       if (!before && body.action === 'delete') throw new Error('Record not found');
       const mergedAfter = (body.action !== 'delete' && before && body.after) ? { ...before, ...body.after } : body.after;
       const changes = await repo.read(environment, 'pending-changes');
@@ -120,6 +123,18 @@ export default { async fetch(request, env) {
         if (body.decision === 'reject') {
           await repo.write(environment, 'pending-changes', changes.map(change => batch.some(item => item.changeId === change.changeId) ? { ...change, status: 'rejected', reviewedAt, reviewedBy: actor.role } : change));
           return { ok: true, processed: batch.length };
+        }
+        const importChanges = batch.filter(change => change.entityType === 'importBatch' && change.action === 'create');
+        for (const importChange of importChanges) {
+          const importRecord = importChange.after;
+          const expectedMatchIds = new Set(importRecord.matchIds || []);
+          const importedMatches = batch.filter(change => change.entityType === 'match' && change.action === 'create' && change.after?.importBatchId === importRecord.importBatchId);
+          if (importedMatches.length !== expectedMatchIds.size || importedMatches.some(change => !expectedMatchIds.has(change.targetId))) throw new Error('Import batch is incomplete and cannot be approved');
+          const approvedImports = await repo.read(environment, 'import-batches');
+          if (approvedImports.some(item => item.inputHash === importRecord.inputHash || item.importBatchId === importRecord.importBatchId)) throw new Error('This import batch is already approved');
+          const approvedSessions = await repo.read(environment, 'sessions');
+          const pendingSession = batch.some(change => change.entityType === 'session' && change.targetId === importRecord.sessionId && change.action !== 'delete');
+          if (!pendingSession && !approvedSessions.some(item => item.sessionId === importRecord.sessionId && item.sessionDate === importRecord.sessionDate)) throw new Error('Import batch must include or reference its session');
         }
         const collections = new Map();
         for (const change of batch) {
