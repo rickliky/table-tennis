@@ -206,6 +206,13 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Training Match Import 2026-10-04 (2026-10-04) — SUBMITTED TO UAT, AWAITING APPROVAL
+- Submitted one repeat-safe UAT import batch `IMP-E560F92947A58806` / `BATCH-IMP-E560F92947A58806` for the 42 user-provided training matches dated 2026-10-04. The atomic batch contains one import-history record, session `LKS-20261004`, and 42 match changes; all 44 changes are pending approval together.
+- The batch has 39 completed matches and 3 records retained as incomplete under the existing three-set rule: `萩谷 1-0 三田村(雛)`, `李 紫妤 ケイシ 2-0 長嵐`, and `望月 2-0 李(母)`.
+- Verified shorthand mappings: `加藤そ` → 加藤(蒼) / `LK-0064`, `加藤ふ` → 加藤(史) / `LK-0046`, `井関つ` → 井関(月) / `LK-0065`, `長島` → 長島(礼) / `LK-0138`, and `長島2` → 長島(向) / `LK-0091`. No approved or other-pending exact duplicate was found.
+- Durable source and repeat-safe importer are `scripts/training-matches-2026-10-04.txt` and `scripts/import-training-matches-2026-10-04.js`. A transient Worker 503 interrupted the first request sequence after the server had stored part of the batch; rerunning safely resumed the same IDs and verified all 44 pending changes without duplicates.
+- The UAT approved collections remain unchanged until an Admin/Approver accepts the complete batch. Production was not touched.
+
 ### Standardized How-to-Read Guides (2026-10-04) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commit `1d347f7` standardizes every How to Read / 見方・使い方 guide across Home, Player, Training Insights, and Tournament. All entry buttons now share the same label and styling, and all guide content follows the same bilingual sequence: `Read the data / データの読み方`, `Use it for / 活用方法`, and `Do not conclude / 判断できないこと`.
 - New shared `how-to-read.js` is the single renderer for modal guides, expandable `<details>` guides, and inline guides nested inside Head-to-Head/category dialogs. This removes the previous page-specific markup while preserving metric-specific guidance and limitations.
