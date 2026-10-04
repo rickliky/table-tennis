@@ -214,7 +214,9 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - No calculations, approved records, pending changes, Worker code, or Upstash data changed. Production remains unchanged pending explicit approval.
 
 ### Profile Images for LK-0046 and LK-0094 (2026-10-05) — LIVE IN UAT
-- Added the supplied profile images `img/LK-0046.jpg` for 加藤(史) and `img/LK-0094.jpg` for 萩谷 in UAT commit `1607f70`. Both JPEGs were visually verified before commit; production was not changed.
+- Added the supplied profile images `img/LK-0046.jpg` for 加藤(史) and `img/LK-0094.jpg` for 萩谷 in UAT commit `1607f70`. Both JPEGs were visually verified before commit.
+- Follow-up UAT commit `7414790` adds both IDs to the explicit `profile-images.js` manifest and cache-busts that manifest on Home, Player, and Tournament pages. Without this registration, the optimized image loader deliberately selected `NoProfilePic.jpg` even though the JPEGs existed.
+- GitHub Actions run `37212684958` passed. Live UAT Player checks confirmed both pages now request their own 1254×1254 JPEG, the manifest recognizes each ID, the fallback is not active, and mobile horizontal overflow is zero. Production was not changed.
 
 ### Corrected Training Match Import 2026-10-04 (2026-10-04) — SUBMITTED TO UAT, AWAITING APPROVAL
 - Final pending UAT batch is `IMP-53327F5D41CC992A` / `BATCH-IMP-53327F5D41CC992A`. The atomic batch contains one import-history record, session `LKS-20261004`, and 44 match changes; all 46 changes are pending approval together.
