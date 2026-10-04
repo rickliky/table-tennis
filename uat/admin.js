@@ -254,7 +254,7 @@
       entityData = { clubs: data.clubs || [], externalOpponents: data.externalOpponents || [], tournaments: data.tournaments || [], tournamentMatches: data.tournamentMatches || [], tournamentProgress: data.tournamentProgress || [], importBatches: data.importBatches || [] };
       await loadPendingChanges();
       renderWorkspace();
-    } catch { empty(app).append(text('p', 'Could not load admin data. / 管理データを読み込めませんでした。', 'admin-load-error')); }
+    } catch (error) { window.LKData.showLoadError(error); empty(app).append(text('p', 'Could not load admin data. / 管理データを読み込めませんでした。', 'admin-load-error')); }
   }
 
   async function refreshWorkspace(stayId = selectedId) {
