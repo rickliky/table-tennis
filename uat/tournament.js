@@ -45,7 +45,7 @@
       ja:{title:'大会詳細の見方',intro:'大会概要、リトルキングスの結果、登録済み試合、部門フィールドは、それぞれ別の情報として確認してください。',read:['スコアボードは登録済みの参加者、部門、代表、LK選手を集計しています。部門を開くと対象選手を確認できます。','登録済み試合結果は保存された実際の大会試合です。順位やバッジは大会進捗情報であり、試合ごとの記録がない場合もあります。','対戦把握は、LK選手とその相手の記録済み対戦があることを示します。練習試合と大会試合は分けて確認してください。'],action:'選手、スコア、日付、出典を確認し、繰り返し見えるパターンをコーチとサーブ、レシーブ、先手、代替プランに変えてください。',limit:'過去結果は次の試合を予測しません。フィールドや組合せが未完成の場合があり、対戦記録なしは「不明」であって「簡単」ではありません。'}
     }
   };
-  const tournamentGuide = key => { const guide=tournamentGuides[key]?.[language]||tournamentGuides[key]?.en,labels=language==='en'?{summary:'How to read and use tournament data',read:'READ THE DATA',action:'USE IT FOR',limit:'DO NOT CONCLUDE'}:{summary:'大会データの見方・使い方',read:'データの読み方',action:'活用方法',limit:'判断できないこと'};return `<details class="data-guide tournament-data-guide"><summary><span>▣</span>${labels.summary}</summary><div><header><h2>${guide.title}</h2><p>${guide.intro}</p></header><section><h3>${labels.read}</h3><ul>${guide.read.map(item=>`<li>${item}</li>`).join('')}</ul></section><section class="guide-action"><h3>${labels.action}</h3><p>${guide.action}</p></section><section class="guide-limit"><h3>${labels.limit}</h3><p>${guide.limit}</p></section></div></details>`; };
+  const tournamentGuide = key => window.LKHowToRead.details(tournamentGuides[key]?.[language] || tournamentGuides[key]?.en, language, 'tournament-data-guide');
   const profileImage = playerId => window.lkProfileImage ? window.lkProfileImage(playerId) : 'img/NoProfilePic.jpg';
   const participantLabel = count => `${t('participant')}${count !== 1 && language === 'en' ? 's' : ''}`;
 

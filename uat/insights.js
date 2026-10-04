@@ -72,7 +72,7 @@
       ja:{title:'大会準備データの使い方',intro:'大会前に分かっている情報を整理する画面です。勝敗を予測するものではありません。',read:['同部門の対戦候補は、記録された同じ部門の他選手です。把握率は、リトルキングスとの対戦記録が1試合以上ある相手の割合です。','既知の相手は、練習試合と大会試合を分けて表示します。練習結果はスカウティング参考情報であり、大会結果ではありません。','優先相手は代表または推薦として登録された選手です。必ず最強、または必ず対戦するという意味ではありません。'],action:'既知のスコアを確認し、情報がない相手を把握したうえで、過去1試合だけに依存しない1〜2個の対応可能な試合プランを準備してください。',limit:'公開フィールドが未完成の場合や組合せ変更があります。過去結果が現在の状態を表すとは限りません。記録なしは「不明」であり、「簡単」「未対戦確定」ではありません。'},
     }
   };
-  const analysisGuide = key => { const guide=analysisGuides[key]?.[language]||analysisGuides[key]?.en;if(!guide)return'';const labels=language==='en'?{summary:'How to read and use this analysis',read:'READ THE DATA',action:'USE IT FOR',limit:'DO NOT CONCLUDE'}:{summary:'この分析の見方・使い方',read:'データの読み方',action:'活用方法',limit:'判断できないこと'};return `<details class="data-guide"><summary><span>▣</span>${labels.summary}</summary><div><header><h2>${guide.title}</h2><p>${guide.intro}</p></header><section><h3>${labels.read}</h3><ul>${guide.read.map(item=>`<li>${item}</li>`).join('')}</ul></section><section class="guide-action"><h3>${labels.action}</h3><p>${guide.action}</p></section><section class="guide-limit"><h3>${labels.limit}</h3><p>${guide.limit}</p></section></div></details>`; };
+  const analysisGuide = key => window.LKHowToRead.details(analysisGuides[key]?.[language] || analysisGuides[key]?.en, language);
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' })[character]);
   const eventType = match => /club|training|練習/i.test(`${match.event || ''} ${match.division || ''}`) ? 'Training' : 'Tournament';
   const isComplete = match => Number(match.player1Sets) >= 3 || Number(match.player2Sets) >= 3;
