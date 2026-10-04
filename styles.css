@@ -792,6 +792,44 @@ body.access-locked,body.modal-open { overflow:hidden; }
 .data-guide .guide-limit h3 { color:#dc8176; }
 .tournament-data-guide { margin-bottom:32px; }
 @media (max-width:760px) { .data-guide > div { grid-template-columns:1fr; padding:14px; }.data-guide header { grid-column:auto; }.data-guide > summary { font-size:11px; padding:11px 13px; } }
+
+/* Shared How to Read & Use pattern */
+.how-to-read { min-height:36px; padding:7px 10px; }
+.how-to-read::before { content:"▣ HOW TO READ & USE"; }
+html[lang="ja"] .how-to-read::before { content:"▣ 見方・使い方"; }
+.guide-content { display:grid; gap:12px; grid-template-columns:1.35fr 1fr 1fr; }
+.data-guide > .guide-content { padding:18px; }
+.guide-content > .guide-intro { grid-column:1/-1; }
+.guide-content .eyebrow { color:var(--gold); font:800 10px "Barlow Condensed","Noto Sans JP",sans-serif; letter-spacing:.14em; margin:0 0 6px; }
+.guide-content h2 { color:var(--cream); font:800 clamp(24px,3vw,36px) "Barlow Condensed","Noto Sans JP",sans-serif; line-height:1; margin:0 0 7px; overflow-wrap:anywhere; }
+.guide-content h3 { color:var(--gold); font:800 10px "Noto Sans JP",sans-serif; letter-spacing:.08em; margin:0 0 8px; }
+.guide-content p,.guide-content li { color:#d6d1c6; font:600 11px/1.7 "Noto Sans JP",sans-serif; }
+.guide-content p { margin:0; }
+.guide-content ul { margin:0; padding-left:18px; }
+.guide-content li + li { margin-top:5px; }
+.guide-content li::marker { color:var(--gold); }
+.guide-content > section { background:rgba(246,240,226,.035); border-left:3px solid var(--gold); min-width:0; padding:13px; }
+.guide-content > .guide-action { border-left-color:#54b8d1; }
+.guide-content > .guide-action h3 { color:#8ed5e6; }
+.guide-content > .guide-limit { border-left-color:#b7665e; }
+.guide-content > .guide-limit h3 { color:#dc8176; }
+.how-to-read-dialog { max-height:min(88vh,760px); overflow:auto; width:min(900px,calc(100vw - 24px)); }
+.how-to-read-dialog .guide-content { padding:4px 0 0; }
+.inline-how-to-read { background:linear-gradient(120deg,rgba(214,165,22,.09),rgba(16,18,20,.96) 48%); border:1px solid rgba(214,165,22,.38); border-left:1px solid rgba(214,165,22,.38); margin-top:20px; padding:16px; }
+.inline-how-to-read .guide-content { padding:0; }
+.inline-how-to-read .guide-content > b,.inline-how-to-read > b { display:none; }
+@media (max-width:760px) {
+  .how-to-read { min-height:36px; padding:7px 9px; }
+  .guide-content { grid-template-columns:1fr; }
+  .guide-content > .guide-intro { grid-column:auto; }
+  .data-guide > .guide-content { padding:14px; }
+  .how-to-read-dialog { padding:32px 16px 20px; }
+  .inline-how-to-read { padding:13px; }
+  .h2h-form { align-items:flex-start; flex-wrap:wrap; }
+  .h2h-form > span { flex-wrap:wrap; }
+  .growth-row > header { flex-wrap:wrap; }
+  .growth-row .signal { flex:1 1 100%; overflow-wrap:anywhere; }
+}
 .insights-filter-bar { align-items:end; background:#101214; border:1px solid var(--line); display:flex; gap:12px; justify-content:space-between; margin-bottom:14px; padding:16px; }
 .insights-filter-bar label { display:grid; flex:1; gap:6px; max-width:460px; }
 .insights-filter-bar label span { color:var(--gold); font:800 10px "Noto Sans JP",sans-serif; letter-spacing:.06em; text-transform:uppercase; }
