@@ -206,6 +206,14 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Standardized How-to-Read Guides (2026-10-04) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commit `1d347f7` standardizes every How to Read / 見方・使い方 guide across Home, Player, Training Insights, and Tournament. All entry buttons now share the same label and styling, and all guide content follows the same bilingual sequence: `Read the data / データの読み方`, `Use it for / 活用方法`, and `Do not conclude / 判断できないこと`.
+- New shared `how-to-read.js` is the single renderer for modal guides, expandable `<details>` guides, and inline guides nested inside Head-to-Head/category dialogs. This removes the previous page-specific markup while preserving metric-specific guidance and limitations.
+- Player-page guidance was reorganized into the shared structure for profile overview, form/activity, growth, performance trends, win-rate trends, sets, statistics, category rank, competitiveness, opponents, archive, Head-to-Head, and tournament readiness. Home, Insights, and Tournament guidance uses the same visual and semantic layout.
+- The responsive layout uses three guide columns on larger screens and one stacked column on mobile. Follow-up wrapping fixes prevent Head-to-Head result dots and long English growth-signal labels from creating narrow-screen overflow.
+- GitHub Actions run `37208350029` passed the syntax gate and UAT deployment. Local and live UAT checks covered English and Japanese at 320, 390, and 1440 px plus Tournament detail and inline Head-to-Head help; all tested guides had the same three sections, zero page/dialog horizontal overflow, and zero console errors.
+- No calculations, match records, reflections, pending changes, Worker code, or Upstash data changed. Production remains unchanged pending explicit approval.
+
 ### Administrator Publishing for Player Reflections (2026-10-03) — LIVE IN UAT AND PROD
 - UAT behavior commit `c642a7d` changes the user-facing workflow for both session and match reflections from approval to administrator publishing. A submitted reflection waits to be published for member visibility; publication explicitly does not approve, endorse, or evaluate what the player wrote.
 - The reflection page now uses `Submit for publishing` / `公開を依頼する`, explains that an administrator publishes the reflection, and labels visible records as `Published` / `公開済み`. The same published terminology is used on Player profiles and Training Insights.
