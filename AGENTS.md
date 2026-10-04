@@ -206,6 +206,9 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Profile Images for LK-0046 and LK-0094 (2026-10-05) — LIVE IN UAT
+- Added the supplied profile images `img/LK-0046.jpg` for 加藤(史) and `img/LK-0094.jpg` for 萩谷 in UAT commit `1607f70`. Both JPEGs were visually verified before commit; production was not changed.
+
 ### Corrected Training Match Import 2026-10-04 (2026-10-04) — SUBMITTED TO UAT, AWAITING APPROVAL
 - Final pending UAT batch is `IMP-53327F5D41CC992A` / `BATCH-IMP-53327F5D41CC992A`. The atomic batch contains one import-history record, session `LKS-20261004`, and 44 match changes; all 46 changes are pending approval together.
 - The user explicitly confirmed that the `井関2` participant in this session is 井関(月) / `LK-0065`. This event-specific confirmation overrides the current notebook alias on `LK-0156`. Other corrected mappings are `加藤2` → 加藤(蒼) / `LK-0064`, `加藤3` → 加藤(史) / `LK-0046`, and `長島2` → 長島(向) / `LK-0091`.
