@@ -206,6 +206,13 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Bilingual Data-Load Failure Screen (2026-10-05) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commit `815da7e` adds a shared full-page failure state through `data-client.js` for Home, Player, Training Insights, Tournament, Player Reflection, the profile directory, and Data Maintenance. A failed public-data request is retried once before the page is replaced by a clear service/connection message.
+- The failure screen follows the saved Japanese/English preference and includes its own language switch, `Try again / もう一度試す`, `Return home / ホームへ戻る`, accessible alert semantics, heading focus, and guidance to return later if the problem continues. It does not use stale local data or confuse a valid empty dataset/missing player with a network failure.
+- Data Maintenance explicitly invokes the same screen if its additional initial pending-data request fails. Shared CSS is responsive, locks background scrolling, stays below the password flow until access succeeds, and is suppressed in print.
+- GitHub Actions run `37212320099` passed the syntax gate and UAT deployment. Forced HTTP 503 testing verified two request attempts, Japanese and English copy, language persistence, retry recovery, and a single visible alert across all seven data-backed page types at 320 px; Home also passed at 390 and 1440 px with zero horizontal overflow. Removing the simulated failure and using `Try again` restored the normal 24-card initial player view.
+- No calculations, approved records, pending changes, Worker code, or Upstash data changed. Production remains unchanged pending explicit approval.
+
 ### Profile Images for LK-0046 and LK-0094 (2026-10-05) — LIVE IN UAT
 - Added the supplied profile images `img/LK-0046.jpg` for 加藤(史) and `img/LK-0094.jpg` for 萩谷 in UAT commit `1607f70`. Both JPEGs were visually verified before commit; production was not changed.
 
