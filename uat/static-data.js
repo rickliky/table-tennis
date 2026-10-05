@@ -297,6 +297,30 @@ window.LK_STATIC = {
       "name": "5回戦 / Round 5",
       "nameJa": "5回戦",
       "nameEn": "Round 5"
+    },
+    {
+      "id": "TP-017",
+      "name": "ベスト8 / Quarterfinal",
+      "nameJa": "ベスト8",
+      "nameEn": "Quarterfinal"
+    },
+    {
+      "id": "TP-018",
+      "name": "ベスト4 / Semifinal",
+      "nameJa": "ベスト4",
+      "nameEn": "Semifinal"
+    },
+    {
+      "id": "TP-019",
+      "name": "決勝進出 / Finalist",
+      "nameJa": "決勝進出",
+      "nameEn": "Finalist"
+    },
+    {
+      "id": "TP-020",
+      "name": "入賞 / Prize winner",
+      "nameJa": "入賞",
+      "nameEn": "Prize winner"
     }
   ],
   "resultStatuses": [

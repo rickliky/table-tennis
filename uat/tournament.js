@@ -56,7 +56,8 @@
       dataCoverage:'Recorded data coverage', coverageNote:'Counts reflect saved records and may not represent a complete draw or all event matches.',
       openField:'Open field scouting', openMatches:'Open documented matches', externalOpponent:'External opponent', profileCompleteness:'Profile data',
       eventRecord:'Event record', fieldPlayers:'Field opponents', knownField:'Known opponents', unknownField:'Unknown opponents',
-      close:'Close', selectLkPlayer:'Select Little Kings player', h2h:'HEAD TO HEAD', olderToNewer:'Oldest to newest'
+      close:'Close', selectLkPlayer:'Select Little Kings player', h2h:'HEAD TO HEAD', olderToNewer:'Oldest to newest',
+      achievements:'Achievements', achievementNote:'Recorded qualification, placement, prize, and reached-stage achievements', champion:'Champion', runnerUp:'Runner-up', thirdPlace:'3rd place', prizeWinner:'Prize winner', finalist:'Finalist', semifinalist:'Semifinalist', quarterfinalist:'Quarterfinalist', top16:'Top 16', representativeAchievement:'Representative', recommendedAchievement:'Recommended entry', recordedPlacement:'Recorded placement'
     },
     ja: {
       overviewView:'概要', littleKingsView:'リトルキングス', fieldView:'フィールド・スカウティング', matchesView:'試合',
@@ -76,7 +77,8 @@
       dataCoverage:'登録データ範囲', coverageNote:'件数は保存済みレコードに基づき、大会の全組合せ・全試合を示すとは限りません。',
       openField:'フィールド分析を開く', openMatches:'登録済み試合を開く', externalOpponent:'外部選手', profileCompleteness:'プロフィール情報',
       eventRecord:'大会戦績', fieldPlayers:'対戦候補', knownField:'既知の相手', unknownField:'未確認の相手',
-      close:'閉じる', selectLkPlayer:'リトルキングス選手を選択', h2h:'直接対決', olderToNewer:'古い順から新しい順'
+      close:'閉じる', selectLkPlayer:'リトルキングス選手を選択', h2h:'直接対決', olderToNewer:'古い順から新しい順',
+      achievements:'大会実績', achievementNote:'登録済みの代表選出・順位・入賞・到達ラウンド', champion:'優勝', runnerUp:'準優勝', thirdPlace:'3位', prizeWinner:'入賞', finalist:'決勝進出', semifinalist:'準決勝進出', quarterfinalist:'準々決勝進出', top16:'ベスト16', representativeAchievement:'代表選出', recommendedAchievement:'推薦出場', recordedPlacement:'登録順位'
     }
   };
   const t = key => words[language][key] ?? intelligenceWords[language][key] ?? key;
@@ -86,8 +88,8 @@
       ja:{title:'大会ハブの使い方',intro:'登録済みの大会、リトルキングス出場選手、公開結果、対戦準備に使える情報を確認するページです。',read:['参加者数は現在その大会に登録されているレコード数です。大会の全組合せが登録済みとは限りません。','代表・推薦バッジは登録された大会情報を表示しています。リトルキングス独自の実力評価ではありません。','大会を選ぶと、部門、登録済み試合結果、集計対象の選手を確認できます。'],action:'対象の大会・部門を開き、登録フィールドを確認してから、記録済み試合を対戦準備の質問や対応可能な戦術に変えてください。',limit:'参加者数だけで大会を比較しないでください。選手・結果・試合が表示されない場合も、存在しなかったのではなく未登録の可能性があります。'}
     },
     detail:{
-      en:{title:'How to Read This Event',intro:'Read the event overview, Little Kings outcomes, documented matches, and division field as separate types of evidence.',read:['The scoreboard summarizes recorded entries, divisions, representatives, and Little Kings players. Open a division to see the underlying names.','Documented match results are actual saved event matches. A listed finish or badge is event-progress information and may exist without a match-by-match record.','Preparation coverage means a Little Kings player has a documented meeting with that opponent. Training and tournament evidence should remain separate.'],action:'Check the player, score, date, and source; then use repeated patterns to plan serve, receive, first attack, and fallback options with the coach.',limit:'A past result does not predict the next match. Fields and brackets may be incomplete, and no documented meeting means “unknown,” not “easy.”'},
-      ja:{title:'大会詳細の見方',intro:'大会概要、リトルキングスの結果、登録済み試合、部門フィールドは、それぞれ別の情報として確認してください。',read:['スコアボードは登録済みの参加者、部門、代表、LK選手を集計しています。部門を開くと対象選手を確認できます。','登録済み試合結果は保存された実際の大会試合です。順位やバッジは大会進捗情報であり、試合ごとの記録がない場合もあります。','対戦把握は、LK選手とその相手の記録済み対戦があることを示します。練習試合と大会試合は分けて確認してください。'],action:'選手、スコア、日付、出典を確認し、繰り返し見えるパターンをコーチとサーブ、レシーブ、先手、代替プランに変えてください。',limit:'過去結果は次の試合を予測しません。フィールドや組合せが未完成の場合があり、対戦記録なしは「不明」であって「簡単」ではありません。'}
+      en:{title:'How to Read This Event',intro:'Read the event overview, Little Kings outcomes, documented matches, and division field as separate types of evidence.',read:['The scoreboard summarizes recorded entries, divisions, representatives, and Little Kings players. Open a division to see the underlying names.','Documented match results are actual saved event matches. A listed finish or badge is event-progress information and may exist without a match-by-match record.','Achievement highlights reproduce recorded qualification, placement, prize, or reached-stage fields only; they are never inferred from an incomplete match sequence.','Preparation coverage means a Little Kings player has a documented meeting with that opponent. Training and tournament evidence should remain separate.'],action:'Check the player, score, date, and source; then use repeated patterns to plan serve, receive, first attack, and fallback options with the coach.',limit:'A past result does not predict the next match. Fields and brackets may be incomplete, and no documented meeting means “unknown,” not “easy.”'},
+      ja:{title:'大会詳細の見方',intro:'大会概要、リトルキングスの結果、登録済み試合、部門フィールドは、それぞれ別の情報として確認してください。',read:['スコアボードは登録済みの参加者、部門、代表、LK選手を集計しています。部門を開くと対象選手を確認できます。','登録済み試合結果は保存された実際の大会試合です。順位やバッジは大会進捗情報であり、試合ごとの記録がない場合もあります。','大会実績は登録済みの代表選出、順位、入賞、到達ラウンドだけを表示し、不完全な試合記録から推測しません。','対戦把握は、LK選手とその相手の記録済み対戦があることを示します。練習試合と大会試合は分けて確認してください。'],action:'選手、スコア、日付、出典を確認し、繰り返し見えるパターンをコーチとサーブ、レシーブ、先手、代替プランに変えてください。',limit:'過去結果は次の試合を予測しません。フィールドや組合せが未完成の場合があり、対戦記録なしは「不明」であって「簡単」ではありません。'}
     }
   };
   const tournamentGuide = key => window.LKHowToRead.details(tournamentGuides[key]?.[language] || tournamentGuides[key]?.en, language, 'tournament-data-guide');
@@ -215,18 +217,19 @@
     const divisions = [...new Set(tProgress.map(p => p.division))];
     const totalParticipants = tProgress.length;
 
-    const lkResults = lkPlayers.sort((a, b) => Number(b.recommended) - Number(a.recommended) || (a.rank || 99) - (b.rank || 99));
+    const lkResults = lkPlayers.sort((a, b) => (achievementsFor(a)[0]?.priority ?? 99) - (achievementsFor(b)[0]?.priority ?? 99) || (a.rank || 99) - (b.rank || 99));
 
     const lkResultHtml = lkResults.map(p => {
       const player = pMap.get(p.playerId);
       const name = fullName(player) || p.playerName;
       const club = player ? clubName(player.clubId, cMap) : '';
       const resultText = p.result ? escapeHtml(lookupValue('tournamentResults', p.result)) : '';
+      const achievementHtml = achievementBadgesHtml(p);
       return `<span class="tc-lk-result">
-       <a href="player.html?id=${p.playerId}">${escapeHtml(name)}</a>
-        ${club ? `<small>${escapeHtml(club)}</small>` : ''}
-         <i>${escapeHtml(progressLabel(p))}</i>
-      </span>`;
+        <a href="player.html?id=${p.playerId}">${escapeHtml(name)}</a>
+         ${club ? `<small>${escapeHtml(club)}</small>` : ''}
+          ${achievementHtml ? `<span class="tc-achievement-badges">${achievementHtml}</span>` : `<i>${escapeHtml(progressLabel(p))}</i>`}
+       </span>`;
     }).join('');
 
     // Avatars for top players
@@ -371,6 +374,29 @@
   const scorelineCounts = (records,id) => ['3-0','3-1','3-2','2-3','1-3','0-3'].map(scoreline => ({ scoreline, count:records.filter(match => { const score=scoreFor(match,id); return `${score.own}-${score.other}`===scoreline; }).length }));
   const recordLabel = stats => stats.decided.length ? matchRecordText(stats.wins,stats.losses,stats.decided.length) : t('noDocumentedMatches');
   const progressStatus = item => item?.recommended ? (language==='en'?'Recommended':'推薦') : item?.qualified ? t('representative') : item?.rank ? resultLabel(item.rank) : item?.result ? lookupValue('tournamentResults',item.result) : t('participantStatus');
+  const achievementPriority = { champion:0, runnerUp:1, podium:2, prize:3, finalist:4, semifinalist:5, quarterfinalist:6, top16:7, placement:8, representative:9, recommended:10 };
+  function achievementsFor(item){
+    if(!item)return [];
+    const achievements=[],add=(key,label,icon,tier=key)=>{if(!achievements.some(entry=>entry.key===key))achievements.push({key,label,icon,tier,priority:achievementPriority[tier]??99});};
+    const resultId=String(item.result||''),resultText=lookupValue('tournamentResults',item.result)||'',normalized=String(resultText).toLowerCase(),resultRanks={'TP-002':1,'TP-003':2,'TP-004':3,'TP-005':4,'TP-006':5,'TP-007':6,'TP-008':7,'TP-009':8},rank=Number(item.rank)||resultRanks[resultId]||0;
+    if(rank===1)add('champion',t('champion'),'🏆');
+    else if(rank===2)add('runnerUp',t('runnerUp'),'🥈');
+    else if(rank===3)add('thirdPlace',t('thirdPlace'),'🥉','podium');
+    else if(rank>3&&rank<=8)add(`placement-${rank}`,resultLabel(rank),'🏅','placement');
+    if(!rank){
+      if(resultId==='TP-020'||normalized.includes('prize')||normalized.includes('award')||normalized.includes('入賞'))add('prizeWinner',t('prizeWinner'),'🏅','prize');
+      else if(resultId==='TP-011'||normalized.includes('top 16')||normalized.includes('ベスト16'))add('top16',t('top16'),'⭐');
+      else if(normalized.includes('quarter')||normalized.includes('準々決勝')||normalized.includes('ベスト8'))add('quarterfinalist',t('quarterfinalist'),'🎖️');
+      else if(normalized.includes('semi')||normalized.includes('準決勝')||normalized.includes('ベスト4'))add('semifinalist',t('semifinalist'),'🥉');
+      else if(normalized.includes('final')||normalized.includes('決勝'))add('finalist',t('finalist'),'🥈');
+      else if(normalized.includes('champion')||normalized.includes('winner')||normalized==='優勝')add('champion',t('champion'),'🏆');
+      else if(normalized.includes('runner-up')||normalized.includes('準優勝'))add('runnerUp',t('runnerUp'),'🥈');
+    }
+    if(item.qualified)add('representative',t('representativeAchievement'),'★');
+    if(item.recommended)add('recommended',t('recommendedAchievement'),'◆');
+    return achievements.sort((left,right)=>left.priority-right.priority);
+  }
+  const achievementBadgesHtml=item=>achievementsFor(item).map(achievement=>`<span class="tournament-achievement-badge ${achievement.tier}"><i aria-hidden="true">${achievement.icon}</i><b>${escapeHtml(achievement.label)}</b></span>`).join('');
   const divisionForMatch = (match,tProgress) => {
     const first=tProgress.find(item=>item.playerId===match.player1Id)?.division, second=tProgress.find(item=>item.playerId===match.player2Id)?.division;
     return first===second ? first || '' : first || second || '';
@@ -425,15 +451,24 @@
     return {wins,losses,setsWon:sets.won,setsLost:sets.lost,setDiff:sets.won-sets.lost,close,opponents:opponents.size,participations:participations.length};
   }
   const eventKpisHtml=(tProgress,divisions,lkPlayers,tournamentMatches)=>{const summary=eventSummary(tournamentMatches,lkPlayers);return `<div class="detail-scoreboard tournament-intelligence-kpis"><div><small>${t('field')}</small><b>${tProgress.length}</b></div><div><small>${t('divisions')}</small><b>${divisions.length}</b></div><div><small>${t('qualifiers')}</small><b>${tProgress.filter(item=>item.qualified).length}</b></div><div><small>${t('documentedMatches')}</small><b>${tournamentMatches.length}</b></div><div><small>${t('lkRecord')}</small><b>${summary.wins}-${summary.losses}</b></div><div><small>${t('setDifference')}</small><b>${summary.setDiff>0?'+':''}${summary.setDiff}</b></div></div>`;};
+  function renderAchievementSection(lkPlayers){
+    const pMap=playerMap(),achieved=lkPlayers.map(item=>({item,achievements:achievementsFor(item)})).filter(entry=>entry.achievements.length).sort((left,right)=>left.achievements[0].priority-right.achievements[0].priority);
+    if(!achieved.length)return '';
+    const cards=achieved.map(({item,achievements})=>{const person=pMap.get(item.playerId),name=fullName(person)||item.playerName||item.playerId,primary=achievements[0];return `<a class="tournament-achievement-card ${primary.tier}" href="player.html?id=${encodeURIComponent(item.playerId)}"><span class="tournament-achievement-icon" aria-hidden="true">${primary.icon}</span><span class="tournament-achievement-person"><small>${escapeHtml(item.division||'')}</small><b>${escapeHtml(name)}</b></span><span class="tournament-achievement-badges">${achievementBadgesHtml(item)}</span></a>`;}).join('');
+    return `<section class="tournament-achievements"><header><div><p class="eyebrow">${t('achievements')}</p><h2>${t('achievements')}</h2></div><span>${t('achievementNote')}</span></header><div>${cards}</div></section>`;
+  }
 
   function renderOverviewView(tournament,tProgress,divisions,lkPlayers,tournamentMatches){
     const summary=eventSummary(tournamentMatches,lkPlayers),divisionCards=divisions.map(division=>{const entries=tProgress.filter(item=>item.division===division);return `<button type="button" data-open-view="field"><small>${t('division')}</small><b>${escapeHtml(division)}</b><span>${entries.length} ${participantLabel(entries.length)} · ${entries.filter(item=>item.qualified).length} ${t('qualifiers')}</span></button>`;}).join(''),recent=tournamentMatches.slice(-4).reverse().map(match=>renderTournamentMatchCard(match,tournament,tProgress)).join('');
-    return `${eventKpisHtml(tProgress,divisions,lkPlayers,tournamentMatches)}${tournamentGuide('detail')}<section class="tournament-coverage-note"><div><p class="eyebrow">${t('dataCoverage')}</p><h2>${t('recordedEvidence')}</h2></div><p>${t('coverageNote')}</p></section><section class="tournament-overview-analysis"><article><small>${t('lkRecord')}</small><b>${summary.wins}-${summary.losses}</b><span>${summary.participations} ${t('documentedMatches')}</span></article><article><small>${t('sets')}</small><b>${summary.setsWon}-${summary.setsLost}</b><span>${summary.setDiff>0?'+':''}${summary.setDiff} ${t('setDifference')}</span></article><article><small>${t('closeMatches')}</small><b>${summary.close}</b><span>${t('evidenceOnly')}</span></article><article><small>${t('uniqueOpponents')}</small><b>${summary.opponents}</b><span>${t('evidenceOnly')}</span></article></section>${tournament.notes?`<div class="detail-notes"><h3>${t('notes')}</h3><p>${escapeHtml(tournament.notes)}</p></div>`:''}<section class="tournament-overview-divisions"><header><p class="eyebrow">${t('divisions')}</p><h2>${t('field')}</h2></header><div>${divisionCards}</div></section>${recent?`<section class="tournament-overview-recent"><header><div><p class="eyebrow">${t('documentedMatches')}</p><h2>${t('recordedEvidence')}</h2></div><button type="button" data-open-view="matches">${t('openMatches')} →</button></header><div class="match-list tournament-match-list">${recent}</div></section>`:''}`;
+    return `${eventKpisHtml(tProgress,divisions,lkPlayers,tournamentMatches)}${tournamentGuide('detail')}${renderAchievementSection(lkPlayers)}<section class="tournament-coverage-note"><div><p class="eyebrow">${t('dataCoverage')}</p><h2>${t('recordedEvidence')}</h2></div><p>${t('coverageNote')}</p></section><section class="tournament-overview-analysis"><article><small>${t('lkRecord')}</small><b>${summary.wins}-${summary.losses}</b><span>${summary.participations} ${t('documentedMatches')}</span></article><article><small>${t('sets')}</small><b>${summary.setsWon}-${summary.setsLost}</b><span>${summary.setDiff>0?'+':''}${summary.setDiff} ${t('setDifference')}</span></article><article><small>${t('closeMatches')}</small><b>${summary.close}</b><span>${t('evidenceOnly')}</span></article><article><small>${t('uniqueOpponents')}</small><b>${summary.opponents}</b><span>${t('evidenceOnly')}</span></article></section>${tournament.notes?`<div class="detail-notes"><h3>${t('notes')}</h3><p>${escapeHtml(tournament.notes)}</p></div>`:''}<section class="tournament-overview-divisions"><header><p class="eyebrow">${t('divisions')}</p><h2>${t('field')}</h2></header><div>${divisionCards}</div></section>${recent?`<section class="tournament-overview-recent"><header><div><p class="eyebrow">${t('documentedMatches')}</p><h2>${t('recordedEvidence')}</h2></div><button type="button" data-open-view="matches">${t('openMatches')} →</button></header><div class="match-list tournament-match-list">${recent}</div></section>`:''}`;
   }
 
   function renderLittleKingsView(tournament,tProgress,lkPlayers,tournamentMatches){
     if(!lkPlayers.length)return `<p class="tp-empty">${t('noLKPlayers')}</p>`;
-    const pMap=playerMap(),cards=lkPlayers.map(item=>{const person=pMap.get(item.playerId),name=fullName(person)||item.playerName,records=matchesForPlayer(tournamentMatches,item.playerId),stats=summarizeMatches(records,item.playerId),scorelines=scorelineCounts(records,item.playerId).filter(entry=>entry.count),opponents=[...new Set(records.map(match=>match.player1Id===item.playerId?match.player2Id:match.player1Id))];return `<article class="tournament-lk-intel-card"><header><img src="${profileImage(item.playerId)}" alt="${escapeHtml(name)}"><div><p>${escapeHtml(item.division||'')}</p><h2>${escapeHtml(name)}</h2><span>${escapeHtml(progressStatus(item))}${item.qualified?` · ${t('representative')}`:''}</span></div><a href="player.html?id=${escapeHtml(item.playerId)}">${t('playerProfile')} →</a></header><div class="tournament-lk-stat-grid"><span><small>${t('eventRecord')}</small><b>${stats.wins}-${stats.losses}</b></span><span><small>${t('sets')}</small><b>${stats.setsWon}-${stats.setsLost}</b></span><span><small>${t('setDifference')}</small><b>${stats.setDiff>0?'+':''}${stats.setDiff}</b></span><span><small>${t('closeMatches')}</small><b>${stats.close?`${stats.closeWins}-${stats.close-stats.closeWins}`:'—'}</b></span></div><div class="tournament-lk-scorelines"><small>${t('scorelines')}</small>${scorelines.map(entry=>`<span class="${entry.scoreline.startsWith('3-')?'win':'loss'}"><b>${entry.scoreline}</b>${entry.count}</span>`).join('')||`<em>${t('noDocumentedMatches')}</em>`}</div><section><h3>${t('opponentsFaced')}</h3><div class="tournament-lk-opponents">${opponents.map(opponentId=>{const opponent=participantFor(opponentId),meeting=meetingsFor(item.playerId,opponentId),eventMeeting=meeting.filter(record=>record.evidenceSource==='tournament'&&record.tournamentId===tournament.tournamentId),label=fullName(opponent)||opponentId;return `<button type="button" ${opponentId.startsWith('EXT-')?`data-h2h-lk="${escapeHtml(item.playerId)}" data-h2h-opponent="${escapeHtml(opponentId)}"`:''}><b>${escapeHtml(label)}</b><span>${eventMeeting.map(match=>{const score=scoreFor(match,item.playerId);return `${score.own}-${score.other}`;}).join(', ')||t('noDocumentedMatches')}</span></button>`;}).join('')||`<p>${t('noDocumentedMatches')}</p>`}</div></section></article>`;}).join('');
+    const pMap=playerMap(),cards=lkPlayers.map(item=>{
+      const person=pMap.get(item.playerId),name=fullName(person)||item.playerName,records=matchesForPlayer(tournamentMatches,item.playerId),stats=summarizeMatches(records,item.playerId),scorelines=scorelineCounts(records,item.playerId).filter(entry=>entry.count),opponents=[...new Set(records.map(match=>match.player1Id===item.playerId?match.player2Id:match.player1Id))],achievementHtml=achievementBadgesHtml(item);
+      return `<article class="tournament-lk-intel-card ${achievementHtml?'has-achievement':''}"><header><img src="${profileImage(item.playerId)}" alt="${escapeHtml(name)}"><div><p>${escapeHtml(item.division||'')}</p><h2>${escapeHtml(name)}</h2>${achievementHtml?'':`<span>${escapeHtml(progressStatus(item))}</span>`}</div><a href="player.html?id=${escapeHtml(item.playerId)}">${t('playerProfile')} →</a></header>${achievementHtml?`<div class="tournament-lk-achievements"><small>${t('achievements')}</small><div>${achievementHtml}</div></div>`:''}<div class="tournament-lk-stat-grid"><span><small>${t('eventRecord')}</small><b>${stats.wins}-${stats.losses}</b></span><span><small>${t('sets')}</small><b>${stats.setsWon}-${stats.setsLost}</b></span><span><small>${t('setDifference')}</small><b>${stats.setDiff>0?'+':''}${stats.setDiff}</b></span><span><small>${t('closeMatches')}</small><b>${stats.close?`${stats.closeWins}-${stats.close-stats.closeWins}`:'—'}</b></span></div><div class="tournament-lk-scorelines"><small>${t('scorelines')}</small>${scorelines.map(entry=>`<span class="${entry.scoreline.startsWith('3-')?'win':'loss'}"><b>${entry.scoreline}</b>${entry.count}</span>`).join('')||`<em>${t('noDocumentedMatches')}</em>`}</div><section><h3>${t('opponentsFaced')}</h3><div class="tournament-lk-opponents">${opponents.map(opponentId=>{const opponent=participantFor(opponentId),meeting=meetingsFor(item.playerId,opponentId),eventMeeting=meeting.filter(record=>record.evidenceSource==='tournament'&&record.tournamentId===tournament.tournamentId),label=fullName(opponent)||opponentId;return `<button type="button" ${opponentId.startsWith('EXT-')?`data-h2h-lk="${escapeHtml(item.playerId)}" data-h2h-opponent="${escapeHtml(opponentId)}"`:''}><b>${escapeHtml(label)}</b><span>${eventMeeting.map(match=>{const score=scoreFor(match,item.playerId);return `${score.own}-${score.other}`;}).join(', ')||t('noDocumentedMatches')}</span></button>`;}).join('')||`<p>${t('noDocumentedMatches')}</p>`}</div></section></article>`;
+    }).join('');
     return `<section class="tournament-view-heading"><p class="eyebrow">${t('littleKingsView')}</p><h2>${lkClubLabel(clubMap())}</h2><p>${t('coverageNote')}</p></section><div class="tournament-lk-intel-grid">${cards}</div>`;
   }
 
