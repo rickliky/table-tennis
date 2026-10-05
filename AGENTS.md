@@ -206,6 +206,14 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Tournament Achievement Highlights (2026-10-05) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commit `8a60657` adds prominent bilingual achievement treatment to the Tournament hub, event Overview, and Little Kings view. Achievement cards/badges cover recorded Champion, Runner-up, 3rd place, 4th–8th placement, Prize winner, Finalist, Semifinalist, Quarterfinalist, Top 16, Representative, and Recommended-entry outcomes.
+- Highlights use only explicit tournament-progress fields (`rank`, `result`, `qualified`, and `recommended`). They never infer an achievement from match count, wins, an incomplete bracket, or a round sequence. The event How-to-Read guide states this evidence rule.
+- Added canonical selectable tournament-result lookups `TP-017` Best 8 / Quarterfinal, `TP-018` Best 4 / Semifinal, `TP-019` Finalist, and `TP-020` Prize winner, then regenerated `static-data.js`. No existing progress record was rewritten.
+- Existing UAT evidence now renders 3 achievement cards / 4 badges in `TOURNAMENT-0001`, 2 Top-16 cards in `TOURNAMENT-0002`, and 1 Representative card for LK-0064 in `TOURNAMENT-0003`. Players without an achievement retain their ordinary recorded result without special emphasis.
+- GitHub Actions run `37253488140` passed the syntax gate and UAT deployment. Live UAT validation covered Japanese and English, the hub and Little Kings view, all three real events, and 320, 390, and 1440 px; it found zero horizontal overflow, failed requests, or new page errors. Synthetic bilingual checks also verified all four new selectable outcomes.
+- No Worker code or Upstash data changed. Production remains unchanged pending explicit approval.
+
 ### Tournament Intelligence Workspace (2026-10-05) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commit `62c247c` replaces the event-detail page with four task-led views: Overview, Little Kings, Field & Scouting, and Matches. URL state uses `?event=<ID>&view=<view>`, browser Back/Forward works, and the event overview states that saved records may not represent a complete draw or every event match.
 - Overview now summarizes recorded field/division/representative/match coverage plus LK event W-L, sets, set differential, close matches, and unique opponents. Little Kings provides player-specific event W-L, sets, scoreline mix, close-match record, opponent evidence, and profile links. Matches adds player, round, result, and text filters without changing source records.
