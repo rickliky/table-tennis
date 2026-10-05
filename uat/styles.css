@@ -1054,7 +1054,7 @@ html[lang="ja"] .how-to-read::before { content:"▣ 見方・使い方"; }
 @media (max-width:760px) { .reflection-kpis,.player-reflection-kpis { grid-template-columns:1fr 1fr; } .player-reflection-list { grid-template-columns:1fr; } }
 @media (max-width:560px) { .feedback-page { padding-left:12px; padding-right:12px; } .feedback-selectors,.feedback-rating-grid { grid-template-columns:1fr; } .feedback-card header { grid-template-columns:minmax(0,1fr) auto auto; } }
 .insights-chip-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
-.insights-chip-list a,.insights-chip-list > span { background:rgba(246,240,226,.05); border:1px solid var(--line); color:var(--cream); display:grid; font:700 10px "Noto Sans JP",sans-serif; padding:7px 9px; text-decoration:none; }
+.insights-chip-list a,.insights-chip-list > span,.insights-chip-list > button { background:rgba(246,240,226,.05); border:1px solid var(--line); color:var(--cream); display:grid; font:700 10px "Noto Sans JP",sans-serif; padding:7px 9px; text-align:left; text-decoration:none; }
 .insights-chip-list small { color:var(--gold); display:block; font-size:8px; margin-top:2px; }
 .insights-match-details { padding:0; }
 .insights-match-details > summary { color:var(--cream); cursor:pointer; font:800 20px "Barlow Condensed","Noto Sans JP",sans-serif; list-style:none; padding:20px 22px; }
@@ -1108,7 +1108,8 @@ html[lang="ja"] .how-to-read::before { content:"▣ 見方・使い方"; }
 .readiness-workspace-metrics b { color:var(--cream); font:800 24px "Barlow Condensed","Noto Sans JP",sans-serif; margin-top:5px; }
 .readiness-workspace-card h3 { color:var(--cream); font-size:18px; }
 .readiness-workspace-card section + section { border-top:1px solid var(--line); margin-top:14px; padding-top:14px; }
-.readiness-known a { background:rgba(214,165,22,.06); border-color:rgba(214,165,22,.35); }
+.readiness-known a,.readiness-known button { background:rgba(214,165,22,.06); border-color:rgba(214,165,22,.35); cursor:pointer; }
+.readiness-known button:hover,.readiness-known button:focus-visible { border-color:var(--gold); outline:none; }
 @media (max-width:900px) {
   .insights-session-grid,.readiness-workspace { grid-template-columns:1fr; }
   .insights-pairings { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -1294,3 +1295,138 @@ body.data-load-failed { overflow:hidden; }
 .data-load-failure-actions a:hover,.data-load-failure-actions a:focus-visible { border-color:var(--gold); color:var(--gold); }
 @media (max-width:560px) { .data-load-failure { align-items:flex-start; padding:10px; }.data-load-failure-card { margin:auto; padding:70px 20px 28px; }.data-load-failure-language { right:12px; top:12px; }.data-load-failure h1 { font-size:34px; }.data-load-failure-actions { align-items:stretch; display:grid; }.data-load-failure-actions .gold-button,.data-load-failure-actions a { align-items:center; display:flex; justify-content:center; width:100%; } }
 @media print { .data-load-failure { display:none !important; } }
+
+/* Tournament Intelligence workspace */
+.tournament-detail-tabs { background:rgba(9,10,11,.94); border:1px solid var(--line); border-radius:12px; display:grid; gap:4px; grid-template-columns:repeat(4,minmax(0,1fr)); margin:-8px 0 24px; padding:5px; position:sticky; top:88px; z-index:3; }
+.tournament-detail-tabs button { background:transparent; border:1px solid transparent; border-radius:8px; color:var(--muted); cursor:pointer; font:700 12px "Noto Sans JP",sans-serif; min-height:46px; padding:9px 12px; }
+.tournament-detail-tabs button:hover,.tournament-detail-tabs button:focus-visible { border-color:rgba(214,165,22,.45); color:var(--cream); outline:none; }
+.tournament-detail-tabs button.active { background:var(--gold); color:var(--black); }
+.tournament-detail-view { min-width:0; }
+.tournament-intelligence-kpis { grid-template-columns:repeat(6,minmax(0,1fr)); }
+.tournament-intelligence-kpis > div:nth-child(2),.tournament-intelligence-kpis > div:nth-child(4) { border-right:1px solid var(--line); }
+.tournament-view-heading { margin:0 0 22px; }
+.tournament-view-heading .eyebrow { margin:0 0 5px; }
+.tournament-view-heading h2,.tournament-overview-divisions h2,.tournament-overview-recent h2 { color:var(--cream); font:800 clamp(26px,4vw,40px)/1.05 "Barlow Condensed","Noto Sans JP",sans-serif; margin:0; }
+.tournament-view-heading > p:last-child { color:var(--muted); font:500 12px/1.7 "Noto Sans JP",sans-serif; margin:10px 0 0; max-width:840px; }
+.tournament-coverage-note { align-items:center; background:linear-gradient(115deg,rgba(214,165,22,.11),rgba(20,22,24,.85)); border:1px solid rgba(214,165,22,.3); border-radius:12px; display:grid; gap:20px; grid-template-columns:minmax(180px,.55fr) minmax(0,1.45fr); margin:18px 0; padding:18px 20px; }
+.tournament-coverage-note .eyebrow { margin:0 0 3px; }
+.tournament-coverage-note h2 { color:var(--cream); font:800 24px "Barlow Condensed","Noto Sans JP",sans-serif; margin:0; }
+.tournament-coverage-note > p { color:#d5cdbd; font:500 12px/1.7 "Noto Sans JP",sans-serif; margin:0; }
+.tournament-overview-analysis,.tournament-field-kpis { display:grid; gap:10px; grid-template-columns:repeat(4,minmax(0,1fr)); margin:18px 0 28px; }
+.tournament-overview-analysis article,.tournament-field-kpis span { background:linear-gradient(135deg,rgba(25,27,29,.95),rgba(15,16,18,.9)); border:1px solid var(--line); border-radius:10px; display:flex; flex-direction:column; min-width:0; padding:16px; }
+.tournament-overview-analysis small,.tournament-field-kpis small { color:var(--muted); font:700 9px "Noto Sans JP",sans-serif; letter-spacing:.07em; text-transform:uppercase; }
+.tournament-overview-analysis b,.tournament-field-kpis b { color:var(--gold); font:800 30px/1 "Barlow Condensed",sans-serif; margin:7px 0 5px; }
+.tournament-overview-analysis span { color:var(--muted); font:600 10px "Noto Sans JP",sans-serif; }
+.tournament-overview-divisions,.tournament-overview-recent { margin:30px 0; }
+.tournament-overview-divisions > header,.tournament-overview-recent > header { align-items:end; display:flex; justify-content:space-between; margin-bottom:14px; }
+.tournament-overview-divisions > div { display:grid; gap:10px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+.tournament-overview-divisions button { background:var(--ink); border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:10px; color:var(--cream); cursor:pointer; display:flex; flex-direction:column; min-height:110px; padding:15px; text-align:left; }
+.tournament-overview-divisions button:hover { border-color:var(--gold); }
+.tournament-overview-divisions button small { color:var(--gold); font:800 9px "Noto Sans JP",sans-serif; }
+.tournament-overview-divisions button b { font:700 15px/1.4 "Noto Sans JP",sans-serif; margin:6px 0; }
+.tournament-overview-divisions button span { color:var(--muted); font:600 10px "Noto Sans JP",sans-serif; }
+.tournament-overview-recent > header button { background:transparent; border:1px solid var(--gold); color:var(--gold); cursor:pointer; min-height:44px; padding:9px 13px; }
+.tournament-overview-recent .tournament-match-list { display:grid; gap:10px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+
+.tournament-lk-intel-grid { display:grid; gap:18px; }
+.tournament-lk-intel-card { background:linear-gradient(135deg,rgba(27,29,31,.97),rgba(13,14,16,.95)); border:1px solid var(--line); border-radius:14px; overflow:hidden; padding:20px; }
+.tournament-lk-intel-card > header { align-items:center; border-bottom:1px solid var(--line); display:grid; gap:14px; grid-template-columns:auto minmax(0,1fr) auto; padding-bottom:16px; }
+.tournament-lk-intel-card > header img { border:1px solid var(--line); border-radius:10px; height:72px; object-fit:cover; width:72px; }
+.tournament-lk-intel-card > header p { color:var(--gold); font:800 9px "Noto Sans JP",sans-serif; margin:0; }
+.tournament-lk-intel-card > header h2 { color:var(--cream); font:800 25px "Barlow Condensed","Noto Sans JP",sans-serif; margin:2px 0; }
+.tournament-lk-intel-card > header span { color:var(--muted); font:600 10px "Noto Sans JP",sans-serif; }
+.tournament-lk-intel-card > header a { border:1px solid var(--gold); color:var(--gold); font:700 11px "Noto Sans JP",sans-serif; min-height:44px; padding:11px 14px; text-decoration:none; }
+.tournament-lk-stat-grid { display:grid; gap:8px; grid-template-columns:repeat(4,minmax(0,1fr)); margin:16px 0; }
+.tournament-lk-stat-grid span { background:rgba(255,255,255,.035); display:flex; flex-direction:column; padding:12px; }
+.tournament-lk-stat-grid small,.tournament-lk-scorelines > small { color:var(--muted); font:700 9px "Noto Sans JP",sans-serif; }
+.tournament-lk-stat-grid b { color:var(--cream); font:800 25px "Barlow Condensed",sans-serif; }
+.tournament-lk-scorelines { align-items:center; display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px; }
+.tournament-lk-scorelines > small { margin-right:6px; }
+.tournament-lk-scorelines span { border:1px solid var(--line); color:var(--muted); display:flex; font:700 10px "Noto Sans JP",sans-serif; gap:6px; padding:6px 8px; }
+.tournament-lk-scorelines span.win b { color:#81c784; }.tournament-lk-scorelines span.loss b { color:#e09288; }
+.tournament-lk-scorelines em,.tournament-lk-opponents p { color:var(--muted); font:500 11px "Noto Sans JP",sans-serif; }
+.tournament-lk-intel-card section h3 { color:var(--gold); font:800 10px "Noto Sans JP",sans-serif; letter-spacing:.08em; text-transform:uppercase; }
+.tournament-lk-opponents { display:grid; gap:7px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
+.tournament-lk-opponents button { background:rgba(255,255,255,.035); border:1px solid var(--line); color:var(--cream); cursor:pointer; display:flex; flex-direction:column; min-height:58px; padding:9px 11px; text-align:left; }
+.tournament-lk-opponents button[data-h2h-lk]:hover { border-color:var(--gold); }
+.tournament-lk-opponents b { font:700 11px "Noto Sans JP",sans-serif; }.tournament-lk-opponents span { color:var(--muted); font:600 9px "Noto Sans JP",sans-serif; }
+
+.tournament-field-controls,.tournament-match-filters { align-items:end; background:var(--ink); border:1px solid var(--line); border-radius:12px; display:grid; gap:10px; grid-template-columns:1.3fr repeat(3,minmax(135px,.75fr)) auto; margin:0 0 18px; padding:14px; }
+.tournament-field-controls label,.tournament-match-filters label { display:flex; flex-direction:column; gap:5px; min-width:0; }
+.tournament-field-controls label > span,.tournament-match-filters label > span { color:var(--muted); font:700 9px "Noto Sans JP",sans-serif; }
+.tournament-field-controls input,.tournament-field-controls select,.tournament-match-filters input,.tournament-match-filters select { background:#090a0b; border:1px solid var(--line); color:var(--cream); font:600 11px "Noto Sans JP",sans-serif; min-height:44px; min-width:0; padding:8px 10px; width:100%; }
+.tournament-field-controls input:focus,.tournament-field-controls select:focus,.tournament-match-filters input:focus,.tournament-match-filters select:focus { border-color:var(--gold); outline:none; }
+.tournament-field-controls > span,.tournament-match-filters > span { color:var(--gold); font:800 10px "Noto Sans JP",sans-serif; padding:10px 0; white-space:nowrap; }
+.tournament-match-filters { grid-template-columns:1.3fr repeat(3,minmax(130px,.7fr)) auto auto; }
+.tournament-match-filters > button { background:transparent; border:1px solid var(--line); color:var(--muted); cursor:pointer; min-height:44px; padding:8px 11px; }
+.tournament-match-filters > button:hover { border-color:var(--gold); color:var(--gold); }
+.tournament-opponent-grid { display:grid; gap:9px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+.tournament-opponent-card { align-items:center; background:linear-gradient(120deg,rgba(24,26,28,.96),rgba(14,15,17,.92)); border:1px solid var(--line); border-radius:11px; color:var(--cream); cursor:pointer; display:grid; gap:11px; grid-template-columns:auto minmax(0,1fr) auto; min-height:88px; padding:12px; text-align:left; }
+.tournament-opponent-card:hover,.tournament-opponent-card:focus-visible { border-color:var(--gold); outline:none; transform:translateY(-1px); }
+.opponent-monogram { align-items:center; background:linear-gradient(145deg,rgba(214,165,22,.25),rgba(214,165,22,.06)); border:1px solid rgba(214,165,22,.4); border-radius:50%; color:var(--gold); display:flex; flex:0 0 auto; font:800 18px "Barlow Condensed","Noto Sans JP",sans-serif; height:48px; justify-content:center; width:48px; }
+.tournament-opponent-main { display:flex; flex-direction:column; min-width:0; }
+.tournament-opponent-main small,.tournament-opponent-main em,.tournament-opponent-evidence small { color:var(--muted); font:600 9px "Noto Sans JP",sans-serif; font-style:normal; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tournament-opponent-main b { font:700 13px "Noto Sans JP",sans-serif; margin:3px 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tournament-opponent-evidence { align-items:flex-end; display:flex; flex-direction:column; min-width:0; }
+.tournament-opponent-evidence b { color:var(--gold); font:800 10px "Noto Sans JP",sans-serif; }
+.tournament-filter-empty { color:var(--muted); font:600 12px "Noto Sans JP",sans-serif; padding:28px; text-align:center; }
+.tournament-field-matrix { background:var(--ink); border:1px solid var(--line); border-radius:12px; margin-top:24px; padding:0 16px; }
+.tournament-field-matrix summary { cursor:pointer; list-style:none; min-height:68px; padding:14px 0; }
+.tournament-field-matrix summary span { display:flex; flex-direction:column; }.tournament-field-matrix summary b { color:var(--cream); font:800 17px "Noto Sans JP",sans-serif; }.tournament-field-matrix summary small { color:var(--muted); font:500 10px/1.5 "Noto Sans JP",sans-serif; margin-top:4px; }
+.tournament-field-matrix > div { max-height:620px; overflow:auto; padding-bottom:16px; }
+.tournament-field-matrix table { border-collapse:collapse; min-width:620px; width:100%; }
+.tournament-field-matrix th { background:#101214; color:var(--muted); font:800 9px "Noto Sans JP",sans-serif; padding:8px; position:sticky; text-align:center; top:0; z-index:1; }
+.tournament-field-matrix th:first-child { left:0; min-width:180px; text-align:left; z-index:2; }
+.tournament-field-matrix tbody th { border-bottom:1px solid rgba(246,240,226,.06); }
+.tournament-field-matrix tbody th button,.tournament-field-matrix td button { background:transparent; border:0; color:var(--cream); cursor:pointer; min-height:44px; width:100%; }
+.tournament-field-matrix tbody th button { display:flex; flex-direction:column; text-align:left; }.tournament-field-matrix tbody th small { color:var(--muted); }
+.tournament-field-matrix td { border-bottom:1px solid rgba(246,240,226,.06); border-left:1px solid rgba(246,240,226,.06); min-width:88px; text-align:center; }
+.tournament-field-matrix td button:hover { background:rgba(214,165,22,.1); }.tournament-field-matrix td button b { color:var(--gold); display:block; }.tournament-field-matrix td button small { color:var(--muted); }.tournament-field-matrix td.empty { color:#555; }
+
+.tournament-intelligence-results { background:transparent; border:0; margin:0; padding:0; }
+.tournament-intelligence-results .tournament-match-list { gap:12px; }
+.tournament-match-card .match-player button { background:transparent; border:0; color:inherit; cursor:pointer; font:inherit; padding:0; text-align:inherit; }
+.tournament-match-card .match-player button:hover { color:var(--gold); text-decoration:underline; }
+.tournament-h2h-open { background:transparent; border:1px solid rgba(214,165,22,.4); color:var(--gold); cursor:pointer; font:700 10px "Noto Sans JP",sans-serif; margin-top:8px; min-height:40px; padding:8px 10px; width:100%; }
+.tournament-h2h-open:hover { background:rgba(214,165,22,.1); }
+
+.tournament-intelligence-dialog { background:#0f1113; border:1px solid var(--gold); color:var(--cream); max-height:min(880px,92vh); max-width:760px; overflow:auto; padding:0; width:min(760px,calc(100vw - 24px)); }
+.tournament-intelligence-dialog::backdrop { background:rgba(0,0,0,.82); backdrop-filter:blur(6px); }
+.tournament-intelligence-dialog > .modal-close { background:#090a0b; border:1px solid var(--line); color:var(--cream); cursor:pointer; font-size:22px; height:44px; position:sticky; right:10px; top:10px; width:44px; z-index:3; float:right; }
+.tournament-intelligence-dialog > div { clear:both; padding:0 clamp(18px,4vw,34px) 30px; }
+.opponent-profile-card > header { align-items:center; border-bottom:1px solid var(--line); display:grid; gap:15px; grid-template-columns:auto minmax(0,1fr) auto; padding-bottom:18px; }
+.opponent-profile-card > header .opponent-monogram { height:66px; width:66px; }
+.opponent-profile-card > header .eyebrow { margin:0; }.opponent-profile-card > header h2 { color:var(--cream); font:800 30px "Barlow Condensed","Noto Sans JP",sans-serif; margin:3px 0; }.opponent-profile-card > header div > span { color:var(--muted); font:600 11px "Noto Sans JP",sans-serif; }
+.opponent-profile-kpis { display:grid; gap:7px; grid-template-columns:repeat(4,minmax(0,1fr)); margin:16px 0; }
+.opponent-profile-kpis span { background:rgba(255,255,255,.04); display:flex; flex-direction:column; padding:10px; }.opponent-profile-kpis small { color:var(--muted); font:700 8px "Noto Sans JP",sans-serif; }.opponent-profile-kpis b { color:var(--gold); font:800 16px "Barlow Condensed","Noto Sans JP",sans-serif; margin-top:4px; overflow-wrap:anywhere; }
+.opponent-profile-card section { border-top:1px solid var(--line); margin-top:16px; padding-top:15px; }.opponent-profile-card section h3 { color:var(--gold); font:800 10px "Noto Sans JP",sans-serif; letter-spacing:.08em; text-transform:uppercase; }
+.opponent-profile-card dl { display:grid; gap:6px; grid-template-columns:repeat(2,minmax(0,1fr)); }.opponent-profile-card dl div { background:rgba(255,255,255,.035); padding:9px; }.opponent-profile-card dt { color:var(--muted); font:700 8px "Noto Sans JP",sans-serif; }.opponent-profile-card dd { color:var(--cream); font:600 10px/1.5 "Noto Sans JP",sans-serif; margin:3px 0 0; }
+.opponent-evidence-list { display:grid; gap:6px; list-style:none; margin:0; padding:0; }.opponent-evidence-list li { background:rgba(255,255,255,.03); color:var(--muted); font:600 10px "Noto Sans JP",sans-serif; }.opponent-evidence-list button { background:transparent; border:1px solid transparent; color:var(--cream); cursor:pointer; display:flex; flex-direction:column; min-height:54px; padding:9px 11px; text-align:left; width:100%; }.opponent-evidence-list button:hover { border-color:var(--gold); }.opponent-evidence-list span { color:var(--muted); font:600 9px "Noto Sans JP",sans-serif; margin-top:3px; }
+
+.tournament-h2h > header { align-items:end; display:flex; gap:16px; justify-content:space-between; }.tournament-h2h > header .eyebrow { margin:0; }.tournament-h2h > header label { display:flex; flex-direction:column; gap:4px; }.tournament-h2h > header label span { color:var(--muted); font:700 8px "Noto Sans JP",sans-serif; }.tournament-h2h > header select { background:#090a0b; border:1px solid var(--line); color:var(--cream); min-height:44px; padding:7px 10px; }
+.tournament-h2h-identity { align-items:center; display:grid; gap:14px; grid-template-columns:1fr auto 1fr; margin:25px 0; text-align:center; }.tournament-h2h-identity > span { color:var(--gold); font:800 23px "Barlow Condensed",sans-serif; }.tournament-h2h-identity figure { align-items:center; display:flex; flex-direction:column; gap:8px; margin:0; min-width:0; }.tournament-h2h-identity img,.tournament-h2h-identity .opponent-monogram { border-radius:50%; height:88px; object-fit:cover; width:88px; }.tournament-h2h-identity figcaption { color:var(--cream); font:700 13px "Noto Sans JP",sans-serif; overflow-wrap:anywhere; }
+.tournament-h2h-overall,.tournament-h2h-sources { display:grid; gap:7px; grid-template-columns:repeat(4,minmax(0,1fr)); }.tournament-h2h-overall span,.tournament-h2h-sources article { background:rgba(255,255,255,.04); display:flex; flex-direction:column; padding:10px; }.tournament-h2h-overall small,.tournament-h2h-sources small { color:var(--muted); font:700 8px "Noto Sans JP",sans-serif; }.tournament-h2h-overall b,.tournament-h2h-sources b { color:var(--gold); font:800 25px "Barlow Condensed",sans-serif; }.tournament-h2h-sources { grid-template-columns:repeat(2,minmax(0,1fr)); margin-top:8px; }.tournament-h2h-sources span,.tournament-h2h-sources em { color:var(--muted); font:600 9px "Noto Sans JP",sans-serif; font-style:normal; }
+.tournament-h2h-history { border-top:1px solid var(--line); margin-top:20px; padding-top:16px; }.tournament-h2h-history > header { align-items:baseline; display:flex; justify-content:space-between; }.tournament-h2h-history h3 { color:var(--cream); font:800 18px "Noto Sans JP",sans-serif; margin:0; }.tournament-h2h-history header small { color:var(--muted); }.tournament-h2h-history ol { display:grid; gap:5px; list-style:none; margin:12px 0 0; padding:0; }.tournament-h2h-history li { align-items:center; border-left:3px solid var(--line); display:flex; justify-content:space-between; padding:8px 10px; }.tournament-h2h-history li.win { border-left-color:#81c784; }.tournament-h2h-history li.loss { border-left-color:#c66a61; }.tournament-h2h-history li span { display:flex; flex-direction:column; }.tournament-h2h-history li b { color:var(--cream); }.tournament-h2h-history li small { color:var(--muted); font:600 8px "Noto Sans JP",sans-serif; }.tournament-h2h-history li strong { color:var(--cream); font:800 16px "Barlow Condensed",sans-serif; }
+
+@media (max-width:1000px) {
+  .tournament-intelligence-kpis { grid-template-columns:repeat(3,minmax(0,1fr)); }.tournament-intelligence-kpis > div:nth-child(3) { border-right:0; }.tournament-intelligence-kpis > div:nth-child(-n+3) { border-bottom:1px solid var(--line); }
+  .tournament-field-controls,.tournament-match-filters { grid-template-columns:repeat(2,minmax(0,1fr)); }.tournament-field-controls > span,.tournament-match-filters > span { padding:4px; }
+}
+@media (max-width:700px) {
+  .tournament-detail-tabs { border-radius:0; margin-left:-12px; margin-right:-12px; overflow-x:auto; top:82px; }.tournament-detail-tabs button { min-width:130px; }
+  .tournament-intelligence-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }.tournament-intelligence-kpis > div { border-bottom:1px solid var(--line); }.tournament-intelligence-kpis > div:nth-child(2n) { border-right:0; }
+  .tournament-coverage-note { grid-template-columns:1fr; }.tournament-overview-analysis,.tournament-field-kpis,.tournament-lk-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .tournament-overview-recent .tournament-match-list,.tournament-opponent-grid { grid-template-columns:1fr; }
+  .tournament-lk-intel-card > header { align-items:start; grid-template-columns:auto minmax(0,1fr); }.tournament-lk-intel-card > header a { grid-column:1/-1; text-align:center; }
+  .tournament-field-controls,.tournament-match-filters { grid-template-columns:1fr; }
+  .tournament-opponent-evidence { align-items:flex-start; grid-column:2; }.tournament-opponent-card { grid-template-columns:auto minmax(0,1fr); }
+  .opponent-profile-kpis,.tournament-h2h-overall { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:480px) {
+  .tournament-detail-tabs { margin-left:-10px; margin-right:-10px; }.tournament-detail-tabs button { min-width:118px; }
+  .tournament-overview-analysis,.tournament-field-kpis { grid-template-columns:1fr 1fr; }
+  .tournament-lk-intel-card { padding:14px; }.tournament-lk-intel-card > header img { height:58px; width:58px; }.tournament-lk-intel-card > header h2 { font-size:20px; }
+  .opponent-profile-card > header { align-items:start; grid-template-columns:auto minmax(0,1fr); }.opponent-profile-card > header > .qual-badge { grid-column:1/-1; margin:0; }.opponent-profile-card dl { grid-template-columns:1fr; }
+  .tournament-h2h > header { align-items:stretch; flex-direction:column; }.tournament-h2h-identity img,.tournament-h2h-identity .opponent-monogram { height:68px; width:68px; }.tournament-h2h-sources { grid-template-columns:1fr; }
+}
+@media print { .tournament-detail-tabs,.tournament-field-controls,.tournament-match-filters,.tournament-intelligence-dialog { display:none !important; } }
