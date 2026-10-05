@@ -206,6 +206,14 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Japanese + Romanized Player Search (2026-10-05) — LIVE IN UAT, AWAITING PROD APPROVAL
+- UAT behavior commit `aadba88` centralizes player search in `data-client.js`. Every typed player search now indexes the Japanese display name and `englishName` Romanized name, plus canonical ID and existing aliases where available.
+- Matching is case-insensitive, normalizes half-width/full-width characters, ignores punctuation and spacing differences, and allows search words in either order. For example, `加藤(蒼)`, `加藤 蒼`, `Soya Kato`, `kato soya`, `Kato, Soya`, and `ＳＯＹＡ－ＫＡＴＯ` all resolve LK-0064.
+- The shared matcher is used by Home hero/directory search, Training Insights Player Growth, the profile directory, Tournament Field & Scouting and documented-match filters, Admin player lists, match lists, tournament progress, player comboboxes, and generic maintenance lists. Match searches supplement saved Japanese name snapshots with current Romanized player records.
+- Search labels/placeholders now explicitly mention Japanese and Romanized names in both languages. Cache-bust references were updated on every page loading the shared data client.
+- GitHub Actions run `37270928674` passed. Local validation used real UAT data in Japanese and English at 320, 390, and 1440 px with zero horizontal overflow or page errors. Live UAT verified Japanese, Romanized, reversed-word, punctuation, and full-width queries across Home, Training Insights, profile directory, Tournament field/matches, and Admin; there were zero failed requests or new page errors.
+- No Worker code or Upstash data changed. Production remains unchanged pending explicit approval.
+
 ### Tournament Achievement Highlights (2026-10-05) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commit `8a60657` adds prominent bilingual achievement treatment to the Tournament hub, event Overview, and Little Kings view. Achievement cards/badges cover recorded Champion, Runner-up, 3rd place, 4th–8th placement, Prize winner, Finalist, Semifinalist, Quarterfinalist, Top 16, Representative, and Recommended-entry outcomes.
 - Highlights use only explicit tournament-progress fields (`rank`, `result`, `qualified`, and `recommended`). They never infer an achievement from match count, wins, an incomplete bracket, or a round sequence. The event How-to-Read guide states this evidence rule.
