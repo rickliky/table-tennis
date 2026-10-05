@@ -14,5 +14,9 @@
   { "id": "TP-013", "name": "2\u56de\u6226 / Round 2", "nameJa": "2\u56de\u6226", "nameEn": "Round 2" },
   { "id": "TP-014", "name": "3\u56de\u6226 / Round 3", "nameJa": "3\u56de\u6226", "nameEn": "Round 3" },
   { "id": "TP-015", "name": "4\u56de\u6226 / Round 4", "nameJa": "4\u56de\u6226", "nameEn": "Round 4" },
-  { "id": "TP-016", "name": "5\u56de\u6226 / Round 5", "nameJa": "5\u56de\u6226", "nameEn": "Round 5" }
+  { "id": "TP-016", "name": "5\u56de\u6226 / Round 5", "nameJa": "5\u56de\u6226", "nameEn": "Round 5" },
+  { "id": "TP-017", "name": "\u30d9\u30b9\u30c88 / Quarterfinal", "nameJa": "\u30d9\u30b9\u30c88", "nameEn": "Quarterfinal" },
+  { "id": "TP-018", "name": "\u30d9\u30b9\u30c84 / Semifinal", "nameJa": "\u30d9\u30b9\u30c84", "nameEn": "Semifinal" },
+  { "id": "TP-019", "name": "\u6c7a\u52dd\u9032\u51fa / Finalist", "nameJa": "\u6c7a\u52dd\u9032\u51fa", "nameEn": "Finalist" },
+  { "id": "TP-020", "name": "\u5165\u8cde / Prize winner", "nameJa": "\u5165\u8cde", "nameEn": "Prize winner" }
 ]

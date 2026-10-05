@@ -14,8 +14,8 @@
   const statusIsActive = value => ['ST-001', 'Active', '有効'].includes(value);
 
   const render = (players, rubbers) => {
-    const query = search.value.trim().toLowerCase();
-    const filtered = players.filter(player => `${player.playerId} ${player.displayName} ${player.englishName || ''}`.toLowerCase().includes(query));
+    const query = search.value.trim();
+    const filtered = players.filter(player => window.LKData.matchesPlayerSearch(player, query));
     const groups = new Map();
     filtered.forEach(player => {
       const category = lookupValue('schoolLevels', player.schoolLevel) || (language === 'en' ? 'Unassigned' : '未設定');
