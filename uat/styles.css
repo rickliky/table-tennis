@@ -371,6 +371,7 @@ html[lang="ja"] .matchup-axis::after { content:'この用具・利き手との�
   .tournament-match-card .match-player a,.tournament-match-card .match-player button { appearance:none; background:transparent; border:0; color:inherit; cursor:pointer; display:inline; font:inherit; line-height:inherit; margin:0; padding:0; text-align:inherit; text-decoration:none; vertical-align:baseline; }
   .tournament-match-card .match-player a:hover,.tournament-match-card .match-player button:hover { color:var(--gold); text-decoration:underline; }
   .tournament-match-card .match-player a:focus-visible,.tournament-match-card .match-player button:focus-visible { outline:1px solid var(--gold); outline-offset:3px; }
+  .tournament-match-card .match-player,.tournament-match-card .match-player:last-child { font:900 12px/normal "Noto Sans JP",sans-serif; letter-spacing:.02em; text-align:center; }
   .tournament-match-results .match-context { min-height:20px; }
   @media (max-width:760px) { .tournament-match-results .tournament-match-list { grid-template-columns:1fr; } }
 
