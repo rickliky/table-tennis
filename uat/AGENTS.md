@@ -206,6 +206,14 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Tournament Experience Upgrade (2026-10-05) — PROPOSED
+- Recommended next UAT package is a task-led Tournament Intelligence redesign that preserves the current event hub, event scoreboard, LK outcome cards, documented match cards, searchable division field, preparation brief, and evidence-limitation guides.
+- Event detail should use four views: Overview, Little Kings, Field & Scouting, and Matches. The Overview summarizes data coverage and recorded event facts; Little Kings shows event-only W-L, sets, scoreline mix, close matches, and progress; Field & Scouting provides filters, opponent cards, and an LK-versus-field evidence matrix; Matches contains searchable documented evidence.
+- Every external opponent should open a reusable scouting card/drawer showing identity, club, category/grade, event result or representative status, reported setup, tournament history, and documented LK meetings. Missing fields must be labeled unknown rather than inferred; use initials/club identity instead of expecting profile photos.
+- Build a shared Head-to-Head component usable from Tournament, Player, and Training Insights. It should select an LK player and opponent, separate Training and Tournament records, and show W-L, set differential, close-match record, scorelines, recent meetings, and the underlying evidence. Combined totals may be optional, but source separation must remain visible.
+- High-value event analysis from current data: LK event record, sets won/lost, scoreline distribution, close matches, unique opponents, documented-match count, known-versus-unknown field opponents, and qualifiers/recommended opponents. Do not introduce composite strength scores, predictions, or bracket diagrams from incomplete records.
+- A later data-foundation phase should add tournament/progress `sourceUrl`, `verifiedAt`, and `coverageLevel`, plus tournament-match `division`, `roundOrder`, and optional bracket linkage before claiming full-field coverage or rendering a true bracket. No code or data changes were made for this proposal.
+
 ### LK-0064 Junior Qualifier Results (2026-10-05) — SUBMITTED TO UAT, AWAITING APPROVAL
 - Submitted pending UAT batch `BATCH-TOURNAMENT-0003-LK-0064-20260926` for 加藤蒼也 / `LK-0064` in `TOURNAMENT-0003`. It contains five completed tournament-match creates (`TM-0012`–`TM-0016`) and one update to existing progress record `TP-0249`; all six changes were verified pending together and the approved collections remain unchanged until review.
 - Match sequence is Round 1 `3-1` 石橋悠人 / `EXT-0250`, Round 2 `3-0` 永井元気 / `EXT-0247`, Round 3 `3-2` 押田清敬 / `EXT-0207`, Round 4 `3-2` 鈴木晴大 / `EXT-0230`, and Round 5 `3-0` 柏木芳仁 / `EXT-0229`. The user explicitly confirmed that the ambiguous 鈴木 is 鈴木晴大.
