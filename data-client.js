@@ -7,6 +7,39 @@
   const endpoint = `${configuredBase.replace(/\/$/, '')}/api/public-data?environment=${environment}`;
   const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 
+  const normalizeSearch = value => String(value ?? '')
+    .normalize('NFKC')
+    .toLocaleLowerCase()
+    .replace(/[\p{P}\p{S}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const compactSearch = value => normalizeSearch(value).replace(/\s+/g, '');
+  const searchText = (...values) => {
+    const normalized = normalizeSearch(values.flat(Infinity).filter(value => value !== null && value !== undefined).join(' '));
+    const compact = compactSearch(normalized);
+    return compact && compact !== normalized ? `${normalized} ${compact}` : normalized;
+  };
+  const matchesSearch = (haystack, query) => {
+    const normalizedQuery = normalizeSearch(query);
+    if (!normalizedQuery) return true;
+    const searchable = searchText(haystack);
+    return normalizedQuery.split(' ').filter(Boolean).every(token => searchable.includes(token) || searchable.includes(compactSearch(token)));
+  };
+  const playerSearchText = (player, ...extra) => searchText(
+    player?.playerId,
+    player?.externalOpponentId,
+    player?.displayName,
+    player?.englishName,
+    player?.nameJa,
+    player?.nameEn,
+    player?.kanjiName,
+    player?.romanizedName,
+    player?.fullName,
+    player?.notebookName,
+    extra
+  );
+  const matchesPlayerSearch = (player, query, ...extra) => matchesSearch(playerSearchText(player, ...extra), query);
+
   const failureCopy = {
     en: {
       eyebrow: 'CONNECTION ISSUE',
@@ -132,5 +165,5 @@
     return result;
   }
 
-  window.LKData = Object.freeze({ environment, loadPublicData, request, showLoadError, clearLoadError });
+  window.LKData = Object.freeze({ environment, loadPublicData, request, showLoadError, clearLoadError, normalizeSearch, searchText, matchesSearch, playerSearchText, matchesPlayerSearch });
 })();

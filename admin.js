@@ -186,7 +186,16 @@
   const profileFields = ['gender', 'schoolLevel', 'playingHand', 'grip', 'playingStyle', 'forehandRubber', 'backhandRubber'];
   const profileCompleteness = player => Math.round(profileFields.filter(field => player[field]).length / profileFields.length * 100);
   const profileIsComplete = player => profileFields.every(field => player[field]);
-  const playerName = id => players.find(player => player.playerId === id)?.displayName || (entityData.externalOpponents || []).find(e => e.externalOpponentId === id)?.displayName || id || '';
+  const personById = id => players.find(player => player.playerId === id) || (entityData.externalOpponents || []).find(player => player.externalOpponentId === id);
+  const playerName = id => personById(id)?.displayName || id || '';
+  const matchPlayerSearchText = match => window.LKData.searchText(
+    match?.player1Name,
+    match?.player2Name,
+    window.LKData.playerSearchText(personById(match?.player1Id)),
+    window.LKData.playerSearchText(personById(match?.player2Id)),
+    match?.player1Id,
+    match?.player2Id
+  );
   const formSnapshot = form => JSON.stringify([...new FormData(form).entries()]);
   const trackDirtyForm = form => {
     activeFormDirty = false;
@@ -428,7 +437,7 @@
     const filters = el('div', { className: 'admin-match-filters' });
     // Row 1: Player search (prominent)
     const searchRow = el('div', { className: 'admin-match-filter-row' });
-    const playerSearch = el('input', { type: 'text', placeholder: '選手名で検索 / Search by player name...', ariaLabel: 'Search by player name' });
+    const playerSearch = el('input', { type: 'text', placeholder: '日本語名・ローマ字表記で検索 / Japanese or Romanized name...', ariaLabel: 'Search by Japanese or Romanized player name' });
     searchRow.append(text('span', '🔍', 'admin-filter-icon'), playerSearch);
     filters.append(searchRow);
     // Row 2: Date select + Status (+ Tournament for tournament tab)
@@ -476,17 +485,14 @@
     const updateList = () => {
       empty(list);
       const dateVal = dateSelect.value; const sf = statusFilter.value;
-      const pq = playerSearch.value.trim().toLowerCase();
+       const pq = playerSearch.value.trim();
       if (isTraining) {
         const results = trainingMatches.filter(match => {
           if (sf && resultStatusId(match.resultStatus) !== sf) return false;
           if (dateVal && match.matchDate !== dateVal) return false;
           if (activeMatchHealthFilter === 'short-completed' && !(resultStatusId(match.resultStatus) === completedStatusId && !matchIsComplete(match))) return false;
           if (activeMatchHealthFilter === 'complete-marked-incomplete' && !(isIncompleteStatus(match.resultStatus) && matchIsComplete(match))) return false;
-          if (pq) {
-            const hay = `${match.player1Name || ''} ${match.player2Name || ''} ${match.player1Id || ''} ${match.player2Id || ''}`.toLowerCase();
-            if (!hay.includes(pq)) return false;
-          }
+          if (pq && !window.LKData.matchesSearch(matchPlayerSearchText(match), pq)) return false;
           return true;
         });
         if (!results.length) { list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty')); return; }
@@ -518,10 +524,7 @@
           if (tq && m.tournamentId !== tq) return false;
           if (sf && resultStatusId(m.resultStatus) !== sf) return false;
           if (dateVal && m.matchDate !== dateVal) return false;
-          if (pq) {
-            const hay = `${m.player1Name || ''} ${m.player2Name || ''} ${m.player1Id || ''} ${m.player2Id || ''}`.toLowerCase();
-            if (!hay.includes(pq)) return false;
-          }
+          if (pq && !window.LKData.matchesSearch(matchPlayerSearchText(m), pq)) return false;
           return true;
         });
         if (!results.length) { list.append(text('p', '該当する試合がありません / No matches found.', 'admin-empty')); return; }
@@ -788,14 +791,14 @@
       tournFilter.querySelector('input').placeholder = '大会で絞り込み / Filter by tournament...';
       const playerFilter = playerSelect('playerFilter', '');
       playerFilter.querySelector('input').placeholder = '選手で絞り込み / Filter by player...';
-      const search = el('input', { type: 'search', className: 'admin-filter-search', placeholder: 'Search player, ID, tournament, division, club... / \u691c\u7d22' });
+      const search = el('input', { type: 'search', className: 'admin-filter-search', placeholder: '日本語名・ローマ字表記・ID・大会等 / Japanese or Romanized name, ID, tournament...' });
       filters.append(text('span', '大会:', 'admin-filter-label'), tournFilter, text('span', '選手:', 'admin-filter-label'), playerFilter, search);
       listPanel.insertBefore(filters, list);
       if (canEditMatches()) listPanel.insertBefore(button('+ ADD PROGRESS / 進捗追加', () => showTournamentProgressEditor(null), 'primary'), list);
       const tournName = tid => { const t = tourns.find(x => x.tournamentId === tid); return t ? t.name : tid; };
       const updateList = () => {
-        empty(list); const tq = tournFilter.value; const pq = playerFilter.value; const query = search.value.trim().toLowerCase();
-        const results = records.filter(r => { if (tq && r.tournamentId !== tq) return false; if (pq && r.playerId !== pq) return false; const haystack = `${r.playerName || ''} ${playerName(r.playerId)} ${r.playerId || ''} ${r.tournamentId || ''} ${tournName(r.tournamentId)} ${r.division || ''} ${r.clubName || ''}`.toLowerCase(); return !query || haystack.includes(query); });
+        empty(list); const tq = tournFilter.value; const pq = playerFilter.value; const query = search.value.trim();
+        const results = records.filter(r => { if (tq && r.tournamentId !== tq) return false; if (pq && r.playerId !== pq) return false; const haystack = window.LKData.searchText(window.LKData.playerSearchText(personById(r.playerId), r.playerName), r.playerId, r.tournamentId, tournName(r.tournamentId), r.division, r.clubName); return window.LKData.matchesSearch(haystack, query); });
         if (!results.length) { list.append(text('p', '該当する記録がありません / No records found.', 'admin-empty')); return; }
         results.forEach(r => {
           const row = el('button', { type: 'button', className: `admin-player-row${r.tournamentProgressId === selectedId ? ' selected' : ''}` });
@@ -873,7 +876,7 @@
     const playerLabel = p => { const parts = [preferredName(p), p.playerId || p.externalOpponentId]; const cn = clubName(p.clubId); if (cn) parts.push(cn); return parts.filter(Boolean).join(' · '); };
     const selected = allPlayers.find(p => (p.playerId || p.externalOpponentId) === value);
     const hidden = el('input', { name, type: 'hidden', value: value || '' });
-    const input = el('input', { type: 'text', className: 'player-combobox-input', value: selected ? playerLabel(selected) : '', autocomplete: 'off', placeholder: '選手名で検索 / Type to search players...' });
+    const input = el('input', { type: 'text', className: 'player-combobox-input', value: selected ? playerLabel(selected) : '', autocomplete: 'off', placeholder: '日本語名・ローマ字表記で検索 / Japanese or Romanized name...' });
     const dropdown = el('div', { className: 'player-combobox-dropdown' });
     dropdown.style.display = 'none';
     let highlighted = -1;
@@ -882,11 +885,8 @@
     let justSelected = false;
     const renderDropdown = (query) => {
       dropdown.replaceChildren();
-      const q = (query || '').toLowerCase();
-      const matches = q ? allPlayers.filter(p => {
-        const hay = `${p.displayName} ${p.englishName || ''} ${p.playerId || p.externalOpponentId || ''} ${clubName(p.clubId)}`.toLowerCase();
-        return hay.includes(q);
-      }) : allPlayers;
+      const q = query || '';
+      const matches = q ? allPlayers.filter(player => window.LKData.matchesPlayerSearch(player, q, clubName(player.clubId))) : allPlayers;
       if (!matches.length) { dropdown.style.display = 'none'; return; }
       highlighted = -1;
       matches.forEach((p) => {
@@ -1014,7 +1014,7 @@
     const listHeader = el('div', { className: 'admin-list-header' }); const heading = el('div');
     const extCount = (entityData.externalOpponents || []).length;
     heading.append(text('p', 'PLAYERS / 選手', 'eyebrow'), text('h2', isExtTab ? `${extCount} external / 外部選手` : `${players.length} players / 選手`));
-    const search = el('input', { type: 'search', placeholder: '名前・ID・カテゴリ等で検索 / Search by name, ID, category, equipment...', ariaLabel: 'Search players' }); listHeader.append(heading);
+    const search = el('input', { type: 'search', placeholder: '日本語名・ローマ字表記・ID・カテゴリ等 / Japanese or Romanized name, ID, category...', ariaLabel: 'Search players by Japanese or Romanized name' }); listHeader.append(heading);
     // Sub-tabs
     const subTabs = el('div', { className: 'admin-sub-tabs' });
     const subTab = (id, label) => { const node = button(label, () => { activePlayerSubTab = id; selectedId = ''; renderWorkspace(); }, `admin-sub-tab${activePlayerSubTab === id ? ' active' : ''}`); return node; };
@@ -1068,7 +1068,7 @@
     let visiblePlayers = [];
     const updateList = () => {
       empty(list);
-      const query = search.value.trim().toLowerCase(), catVal = catFilter.value, statusVal = statusFilter.value, completenessVal = completenessFilter.value;
+      const query = search.value.trim(), catVal = catFilter.value, statusVal = statusFilter.value, completenessVal = completenessFilter.value;
       visiblePlayers = allPlayers.filter(player => {
         if (catVal === 'unassigned' && player.schoolLevel) return false;
         if (catVal && catVal !== 'unassigned' && player.schoolLevel !== catVal) return false;
@@ -1077,7 +1077,7 @@
         if (!isExtTab && completenessVal === 'complete' && !profileIsComplete(player)) return false;
         if (!isExtTab && completenessVal === 'incomplete' && profileIsComplete(player)) return false;
         if (!isExtTab && completenessVal === 'missing-grade' && !(['SL-001', 'SL-002', 'SL-003'].includes(player.schoolLevel) && !player.grade)) return false;
-        return `${player.playerId || player.externalOpponentId || ''} ${player.displayName} ${player.englishName || ''} ${player.notebookName || ''} ${player.clubId || ''} ${player.gender || ''} ${player.schoolLevel || ''} ${player.grade || ''} ${player.playingHand || ''} ${player.grip || ''} ${player.playingStyle || ''} ${player.blade || ''} ${rubberName(player.forehandRubber)} ${rubberName(player.backhandRubber)} ${player.forehandRubberType || ''} ${player.backhandRubberType || ''} ${player.status || ''}`.toLowerCase().includes(query);
+        return window.LKData.matchesPlayerSearch(player, query, player.clubId, player.gender, player.schoolLevel, player.grade, player.playingHand, player.grip, player.playingStyle, player.blade, rubberName(player.forehandRubber), rubberName(player.backhandRubber), player.forehandRubberType, player.backhandRubberType, player.status);
       }).sort((a, b) => { const idA = a.playerId || a.externalOpponentId, idB = b.playerId || b.externalOpponentId; return (stats[idB]?.played || 0) - (stats[idA]?.played || 0) || idA.localeCompare(idB); });
       visiblePlayers.forEach(player => {
         const row = el('button', { type: 'button', className: `admin-player-row${(player.playerId || player.externalOpponentId) === selectedId ? ' selected' : ''}` });
@@ -1274,7 +1274,7 @@
     workspace.append(listPanel, editor); app.append(workspace);
     const updateList = () => {
       empty(list); const query = search.value.trim().toLowerCase();
-      const results = records.filter(record => `${record[idField] || ''} ${record.displayName || record.name || record.matchDate || ''}`.toLowerCase().includes(query));
+      const results = records.filter(record => window.LKData.matchesSearch(window.LKData.searchText(record[idField], record.displayName, record.englishName, record.name, record.nameJa, record.nameEn, record.matchDate), query));
       if (!results.length) list.append(text('p', '該当するレコードがありません / No records found.', 'admin-empty'));
       results.forEach(record => {
         const row = el('button', { type: 'button', className: `admin-player-row${record[idField] === selectedId ? ' selected' : ''}` });
