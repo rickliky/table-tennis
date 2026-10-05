@@ -206,6 +206,12 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### LK-0064 Junior Qualifier Results (2026-10-05) — SUBMITTED TO UAT, AWAITING APPROVAL
+- Submitted pending UAT batch `BATCH-TOURNAMENT-0003-LK-0064-20260926` for 加藤蒼也 / `LK-0064` in `TOURNAMENT-0003`. It contains five completed tournament-match creates (`TM-0012`–`TM-0016`) and one update to existing progress record `TP-0249`; all six changes were verified pending together and the approved collections remain unchanged until review.
+- Match sequence is Round 1 `3-1` 石橋悠人 / `EXT-0250`, Round 2 `3-0` 永井元気 / `EXT-0247`, Round 3 `3-2` 押田清敬 / `EXT-0207`, Round 4 `3-2` 鈴木晴大 / `EXT-0230`, and Round 5 `3-0` 柏木芳仁 / `EXT-0229`. The user explicitly confirmed that the ambiguous 鈴木 is 鈴木晴大.
+- The progress update records result `TP-016` (Round 5), 5 wins, 0 losses, 0 draws, `qualified: true`, `recommended: false`, and `eliminated: false`, as explicitly confirmed by the user.
+- Repeat-safe source/submission script is `scripts/add-lk-0064-junior-2026-results.js`; rerunning its preview while the batch is pending produces zero jobs. Production was not touched.
+
 ### Bilingual Data-Load Failure Screen (2026-10-05) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commit `815da7e` adds a shared full-page failure state through `data-client.js` for Home, Player, Training Insights, Tournament, Player Reflection, the profile directory, and Data Maintenance. A failed public-data request is retried once before the page is replaced by a clear service/connection message.
 - The failure screen follows the saved Japanese/English preference and includes its own language switch, `Try again / もう一度試す`, `Return home / ホームへ戻る`, accessible alert semantics, heading focus, and guidance to return later if the problem continues. It does not use stale local data or confuse a valid empty dataset/missing player with a network failure.
@@ -218,13 +224,13 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Follow-up UAT commit `7414790` adds both IDs to the explicit `profile-images.js` manifest and cache-busts that manifest on Home, Player, and Tournament pages. Without this registration, the optimized image loader deliberately selected `NoProfilePic.jpg` even though the JPEGs existed.
 - GitHub Actions run `37212684958` passed. Live UAT Player checks confirmed both pages now request their own 1254×1254 JPEG, the manifest recognizes each ID, the fallback is not active, and mobile horizontal overflow is zero. Production was not changed.
 
-### Corrected Training Match Import 2026-10-04 (2026-10-04) — SUBMITTED TO UAT, AWAITING APPROVAL
-- Final pending UAT batch is `IMP-53327F5D41CC992A` / `BATCH-IMP-53327F5D41CC992A`. The atomic batch contains one import-history record, session `LKS-20261004`, and 44 match changes; all 46 changes are pending approval together.
+### Corrected Training Match Import 2026-10-04 (2026-10-04) — LIVE IN UAT
+- Final UAT batch `IMP-53327F5D41CC992A` / `BATCH-IMP-53327F5D41CC992A` was accepted. The atomic batch contains one import-history record, session `LKS-20261004`, and 44 match changes; UAT now has 1,837 approved training matches, one approved session, and one approved import batch.
 - The user explicitly confirmed that the `井関2` participant in this session is 井関(月) / `LK-0065`. This event-specific confirmation overrides the current notebook alias on `LK-0156`. Other corrected mappings are `加藤2` → 加藤(蒼) / `LK-0064`, `加藤3` → 加藤(史) / `LK-0046`, and `長島2` → 長島(向) / `LK-0091`.
 - The corrected batch has 39 completed matches and 5 records retained as incomplete under the existing three-set rule: `萩谷 1-0 三田村(雛)`, `李 紫妤 ケイシ 2-0 長嵐`, `望月 2-0 李(母)`, `岡田 2-1 土屋`, and `長島(向) 2-0 萩谷`.
-- No 2026-10-04 import was approved. Superseded submissions remain only as rejected audit history: the original 42-match batch `IMP-E560F92947A58806`, an earlier submission of `IMP-53327F5D41CC992A`, and the LK-0156 identity variant `IMP-0F26B3C8361EFDFA`.
-- Durable corrected source and repeat-safe importer are `scripts/training-matches-2026-10-04.txt` and `scripts/import-training-matches-2026-10-04.js`. The importer now uses longer retries because the enlarged audit history caused intermittent Worker 503 responses; all 46 final changes were verified pending without duplicates.
-- The UAT approved collections remain unchanged until an Admin/Approver accepts the complete replacement batch. Production was not touched.
+- Superseded submissions remain only as rejected audit history: the original 42-match batch `IMP-E560F92947A58806`, an earlier submission of `IMP-53327F5D41CC992A`, and the LK-0156 identity variant `IMP-0F26B3C8361EFDFA`.
+- Durable corrected source and repeat-safe importer are `scripts/training-matches-2026-10-04.txt` and `scripts/import-training-matches-2026-10-04.js`. The importer uses longer retries because the enlarged audit history caused intermittent Worker 503 responses.
+- Production was not touched.
 
 ### Standardized How-to-Read Guides (2026-10-04) — LIVE IN UAT, AWAITING PROD APPROVAL
 - UAT behavior commit `1d347f7` standardizes every How to Read / 見方・使い方 guide across Home, Player, Training Insights, and Tournament. All entry buttons now share the same label and styling, and all guide content follows the same bilingual sequence: `Read the data / データの読み方`, `Use it for / 活用方法`, and `Do not conclude / 判断できないこと`.
