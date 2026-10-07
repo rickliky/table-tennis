@@ -4,7 +4,8 @@
   const configuredBase = window.LK_API_BASE || '';
   const environment = /\/uat(?:\/|$)/i.test(location.pathname) ? 'uat' : 'prod';
   const isMaintenancePage = /(?:^|\/)admin\.html$/i.test(location.pathname);
-  const endpoint = `${configuredBase.replace(/\/$/, '')}/api/public-data?environment=${environment}`;
+  const dataPath = isMaintenancePage ? '/api/admin-data' : '/api/public-data';
+  const endpoint = `${configuredBase.replace(/\/$/, '')}${dataPath}?environment=${environment}`;
   const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 
   const normalizeSearch = value => String(value ?? '')
@@ -107,13 +108,22 @@
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 12000);
       try {
-        const response = await fetch(endpoint, { cache: 'no-store', signal: controller.signal });
-        if (!response.ok) throw new Error(`Public API returned ${response.status}`);
+        const token = isMaintenancePage
+          ? localStorage.getItem('lk-admin-session')
+          : localStorage.getItem('lk-site-session') || localStorage.getItem('lk-admin-session');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await fetch(endpoint, { cache: 'no-store', headers, signal: controller.signal });
+        if (!response.ok) {
+          const error = new Error(`Data API returned ${response.status}`);
+          error.status = response.status;
+          throw error;
+        }
         const result = await response.json();
         if (!result.ok) throw new Error('Public API returned an invalid response');
         return result;
       } catch (error) {
         lastError = error;
+        if (error.status === 401 || error.status === 403) break;
         if (attempt < 2 && navigator.onLine !== false) await wait(750);
       } finally {
         clearTimeout(timeout);
@@ -130,7 +140,7 @@
       result = await fetchPublicData();
       clearLoadError();
     } catch (error) {
-      showLoadError(error);
+      if (!(isMaintenancePage && (error.status === 401 || error.status === 403))) showLoadError(error);
       throw error;
     }
     // Maintenance needs inactive records for editing, but public pages must
@@ -160,8 +170,12 @@
       : localStorage.getItem('lk-site-session') || localStorage.getItem('lk-admin-session');
     if (token) headers.Authorization = `Bearer ${token}`;
     const response = await fetch(`${configuredBase.replace(/\/$/, '')}${path}?environment=${environment}`, { ...options, headers });
-    const result = await response.json();
-    if (!response.ok || !result.ok) throw new Error(result.error || 'API request failed');
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.ok) {
+      const error = new Error(result.error || 'API request failed');
+      error.status = response.status;
+      throw error;
+    }
     return result;
   }
 

@@ -2,17 +2,17 @@
   'use strict';
 
   const apiUrl = `${(window.LK_API_BASE || '').replace(/\/$/, '')}/api/login`;
+  const sessionUrl = `${(window.LK_API_BASE || '').replace(/\/$/, '')}/api/session`;
   const accessKey = 'lk-internal-access-until';
   const accessUntil = Number(localStorage.getItem(accessKey));
   const language = localStorage.getItem('lk-language') || 'ja';
   const isAdminPage = /(?:^|\/)admin\.html$/i.test(location.pathname);
-  const alreadyAllowed = isAdminPage || accessUntil > Date.now();
+  const savedToken = localStorage.getItem('lk-site-session') || localStorage.getItem('lk-admin-session');
+  const locallyAllowed = Boolean(savedToken) && accessUntil > Date.now();
   let resolveAccess;
 
   document.documentElement.lang = language;
-  window.LK_ACCESS_READY = alreadyAllowed
-    ? Promise.resolve()
-    : new Promise(resolve => { resolveAccess = resolve; });
+  window.LK_ACCESS_READY = isAdminPage ? Promise.resolve() : new Promise(resolve => { resolveAccess = resolve; });
 
   const copy = language === 'en' ? {
     eyebrow: 'INTERNAL ACCESS',
@@ -44,67 +44,95 @@
     contact: 'お問い合わせ', phone: '電話', email: 'メール', password: 'パスワード', enter: '入室する', checking: '確認中…', error: 'パスワードが正しくないか、確認できませんでした。'
   };
 
-  if (!alreadyAllowed) {
-    localStorage.removeItem(accessKey);
+  if (!isAdminPage) {
     document.body.classList.add('access-locked');
-    document.body.insertAdjacentHTML('afterbegin', `
-      <section id="site-password-gate" class="site-password-gate" aria-labelledby="password-gate-title">
-        <form id="site-password-form">
-          <button id="gate-language-toggle" class="language-toggle" type="button">${language === 'en' ? '日本語' : 'ENGLISH'}</button>
-          <img src="little-kings-logo.jpg" alt="Little Kings" />
-          <p class="eyebrow">${copy.eyebrow}</p>
-          <h1 id="password-gate-title">${copy.title}</h1>
-          <p>${copy.protected}</p>
-          <p>${copy.consent}</p>
-          <p>${copy.share}</p>
-          <p>${copy.missing}</p>
-          <p class="access-duration">${copy.duration}</p>
-          <div class="access-login-controls">
-            <label>${copy.password}<input id="site-password" type="password" autocomplete="current-password" required /></label>
-            <button class="gold-button" type="submit">${copy.enter}</button>
-            <p id="site-password-status" role="status"></p>
-          </div>
-          <details class="access-club-intro">
-            <summary>${copy.welcome}</summary>
-            <p>${copy.intro}</p>
-            <h3>${copy.principle}</h3>
-            <p>${copy.growth}</p>
-            <p class="access-club-close">${copy.close}</p>
-            <aside><b>${copy.contact}</b><span>${copy.phone} <a href="tel:09015555060">090-1555-5060</a></span><span>${copy.email} <a href="mailto:mmr0518@icloud.com">mmr0518@icloud.com</a></span><a href="https://www.instagram.com/ritokin.ryumon/" target="_blank" rel="noreferrer">Instagram @ritokin.ryumon</a></aside>
-          </details>
-        </form>
-      </section>`);
+    const clearSavedAccess = () => {
+      localStorage.removeItem(accessKey);
+      localStorage.removeItem('lk-site-session');
+    };
+    const unlock = expires => {
+      localStorage.setItem(accessKey, String(expires || Date.now() + 7 * 24 * 60 * 60 * 1000));
+      document.body.classList.remove('access-locked');
+      document.querySelector('#site-password-gate')?.remove();
+      resolveAccess?.();
+      resolveAccess = null;
+    };
+    const showGate = () => {
+      if (document.querySelector('#site-password-gate')) return;
+      document.body.insertAdjacentHTML('afterbegin', `
+        <section id="site-password-gate" class="site-password-gate" aria-labelledby="password-gate-title">
+          <form id="site-password-form">
+            <button id="gate-language-toggle" class="language-toggle" type="button">${language === 'en' ? '日本語' : 'ENGLISH'}</button>
+            <img src="little-kings-logo.jpg" alt="Little Kings" />
+            <p class="eyebrow">${copy.eyebrow}</p>
+            <h1 id="password-gate-title">${copy.title}</h1>
+            <p>${copy.protected}</p>
+            <p>${copy.consent}</p>
+            <p>${copy.share}</p>
+            <p>${copy.missing}</p>
+            <p class="access-duration">${copy.duration}</p>
+            <div class="access-login-controls">
+              <label>${copy.password}<input id="site-password" type="password" autocomplete="current-password" required /></label>
+              <button class="gold-button" type="submit">${copy.enter}</button>
+              <p id="site-password-status" role="status"></p>
+            </div>
+            <details class="access-club-intro">
+              <summary>${copy.welcome}</summary>
+              <p>${copy.intro}</p>
+              <h3>${copy.principle}</h3>
+              <p>${copy.growth}</p>
+              <p class="access-club-close">${copy.close}</p>
+              <aside><b>${copy.contact}</b><span>${copy.phone} <a href="tel:09015555060">090-1555-5060</a></span><span>${copy.email} <a href="mailto:mmr0518@icloud.com">mmr0518@icloud.com</a></span><a href="https://www.instagram.com/ritokin.ryumon/" target="_blank" rel="noreferrer">Instagram @ritokin.ryumon</a></aside>
+            </details>
+          </form>
+        </section>`);
 
-    document.querySelector('#gate-language-toggle').onclick = () => {
-      localStorage.setItem('lk-language', language === 'en' ? 'ja' : 'en');
-      location.reload();
+      document.querySelector('#gate-language-toggle').onclick = () => {
+        localStorage.setItem('lk-language', language === 'en' ? 'ja' : 'en');
+        location.reload();
+      };
+
+      document.querySelector('#site-password-form').addEventListener('submit', async event => {
+        event.preventDefault();
+        const status = document.querySelector('#site-password-status');
+        const submit = event.currentTarget.querySelector('[type="submit"]');
+        status.textContent = copy.checking;
+        submit.disabled = true;
+        try {
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: 'site', password: document.querySelector('#site-password').value })
+          });
+          const result = await response.json();
+          if (!response.ok || !result.ok) throw new Error('Login failed');
+          localStorage.setItem('lk-site-session', result.token);
+          unlock();
+        } catch {
+          status.textContent = copy.error;
+          submit.disabled = false;
+          document.querySelector('#site-password').focus();
+        }
+      });
+      requestAnimationFrame(() => document.querySelector('#site-password')?.focus());
     };
 
-    document.querySelector('#site-password-form').addEventListener('submit', async event => {
-      event.preventDefault();
-      const status = document.querySelector('#site-password-status');
-      const submit = event.currentTarget.querySelector('[type="submit"]');
-      status.textContent = copy.checking;
-      submit.disabled = true;
-      try {
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ role: 'site', password: document.querySelector('#site-password').value })
-        });
-        const result = await response.json();
-        if (!response.ok || !result.ok) throw new Error('Login failed');
-        localStorage.setItem('lk-site-session', result.token);
-        localStorage.setItem(accessKey, String(Date.now() + 7 * 24 * 60 * 60 * 1000));
-        document.body.classList.remove('access-locked');
-        document.querySelector('#site-password-gate').remove();
-        resolveAccess();
-      } catch {
-        status.textContent = copy.error;
-        submit.disabled = false;
-        document.querySelector('#site-password').focus();
+    (async () => {
+      if (!locallyAllowed) {
+        clearSavedAccess();
+        showGate();
+        return;
       }
-    });
+      try {
+        const response = await fetch(sessionUrl, { headers: { Authorization: `Bearer ${savedToken}` }, cache: 'no-store' });
+        const result = await response.json();
+        if (!response.ok || !result.ok || !['site', 'admin', 'approver'].includes(result.role)) throw new Error('Invalid session');
+        unlock(result.expires);
+      } catch {
+        clearSavedAccess();
+        showGate();
+      }
+    })();
   }
 
   const environment = /\/uat(?:\/|$)/i.test(location.pathname) ? 'UAT' : 'PROD';
