@@ -20,6 +20,9 @@ jobs:
       - name: Syntax gate
         run: node scripts/check-syntax.js
 
+      - name: Worker security tests
+        run: npm --prefix worker test
+
       - name: Generate build info
         run: |
           BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")

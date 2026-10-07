@@ -179,7 +179,8 @@
     return box;
   }
   const empty = node => { node.replaceChildren(); return node; };
-  const canEditMatches = () => currentRole === 'admin' || currentRole === 'approver';
+  const canEditMatches = () => currentRole === 'admin';
+  const canReviewChanges = () => currentRole === 'admin' || currentRole === 'approver';
   const matchIsComplete = match => Number(match.player1Sets) >= 3 || Number(match.player2Sets) >= 3;
   const todayInTokyo = () => { const parts = Object.fromEntries(new Intl.DateTimeFormat('en', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date()).map(part => [part.type, part.value])); return `${parts.year}-${parts.month}-${parts.day}`; };
   const sessionIdForDate = date => date ? `LKS-${String(date).replace(/-/g, '')}` : '';
@@ -213,45 +214,54 @@
   window.addEventListener('beforeunload', event => { if (!activeFormDirty) return; event.preventDefault(); event.returnValue = ''; });
 
   async function shell() {
-    currentRole = 'admin';
+    currentRole = '';
     const savedSession = localStorage.getItem('lk-admin-session');
     let savedPayload = null;
     try { savedPayload = savedSession ? JSON.parse(atob(savedSession.split('.')[0])) : null; } catch { savedPayload = null; }
     if (savedSession && savedPayload?.expires > Date.now() && ['admin','approver'].includes(savedPayload.role)) {
       try {
         const restored = await window.LKData.request('/api/session');
-        if (restored.role === 'approver' || restored.role === 'admin') currentRole = restored.role;
-        else localStorage.removeItem('lk-admin-session');
+        if (restored.role === 'approver' || restored.role === 'admin') {
+          currentRole = restored.role;
+          await loadWorkspace();
+          return;
+        }
       } catch { localStorage.removeItem('lk-admin-session'); }
     } else if (savedSession) localStorage.removeItem('lk-admin-session');
-    loadWorkspace();
+    renderAdminLogin();
   }
 
-  function showApproverLogin() {
-    const loginOverlay = el('div', { className: 'admin-login-overlay', role: 'dialog', ariaModal: 'true', ariaLabel: 'Approver sign-in' });
-    const login = el('section', { className: 'admin-login admin-panel' });
-    login.append(text('p', 'APPROVER SIGN-IN / 承認者ログイン', 'eyebrow'), text('h2', '承認者アクセス / Approver Access'), text('p', '承認待ちの変更を確認・承認できます。このブラウザでは7日間ログイン状態を保持します。\nYou can review and approve pending changes. This browser stays signed in for 7 days.', 'admin-login-desc'));
+  function signOut() {
+    localStorage.removeItem('lk-admin-session');
+    window.LKData.clearLoadError();
+    currentRole = '';
+    players = []; trainingMatches = []; sessions = []; entityData = {}; pendingChanges = []; allChanges = [];
+    renderAdminLogin();
+  }
+
+  function renderAdminLogin() {
+    empty(app);
+    const login = el('section', { className: 'admin-login admin-panel admin-auth-screen' });
+    login.append(text('p', 'SECURE DATA ACCESS / 安全なデータアクセス', 'eyebrow'), text('h1', language === 'en' ? 'Data Maintenance Sign-In' : 'データメンテナンス ログイン'), text('p', language === 'en' ? 'An Admin login is required to edit or submit data. Approvers can review and publish pending requests. This browser stays signed in for seven days.' : 'データの編集・申請には管理者ログインが必要です。承認者は承認待ちの申請確認と公開ができます。このブラウザでは7日間ログイン状態を保持します。', 'admin-login-desc'));
     const form = el('form', { className: 'admin-login-form' });
+    const role = el('select', { name: 'role', ariaLabel: language === 'en' ? 'Access role' : 'アクセス権限' });
+    role.append(el('option', { value: 'admin', textContent: language === 'en' ? 'Admin — edit and submit' : '管理者 — 編集・申請' }), el('option', { value: 'approver', textContent: language === 'en' ? 'Approver — review and publish' : '承認者 — 承認・公開' }));
     const password = el('input', { name: 'password', type: 'password', required: true, autocomplete: 'current-password', placeholder: 'Password / パスワード' });
     const actions = el('div', { className: 'admin-login-actions' });
     const submit = el('button', { type: 'submit', className: 'admin-button primary', textContent: 'SIGN IN / ログイン' });
-    const cancelBtn = el('button', { type: 'button', className: 'admin-button secondary', textContent: 'CANCEL / キャンセル' });
-    actions.append(submit, cancelBtn);
+    const home = el('a', { className: 'admin-button secondary', href: 'index.html', textContent: 'HOME / ホーム' });
+    actions.append(submit, home);
     const status = el('p', { className: 'admin-status', role: 'status' });
-    form.append(password, actions); login.append(form, status); loginOverlay.append(login); app.append(loginOverlay);
-    document.body.classList.add('modal-open');
-    const closeLogin = () => { loginOverlay.remove(); document.body.classList.remove('modal-open'); document.removeEventListener('keydown', onKeydown); };
-    const onKeydown = event => { if (event.key === 'Escape') closeLogin(); };
-    document.addEventListener('keydown', onKeydown);
-    loginOverlay.addEventListener('click', e => { if (e.target === loginOverlay) closeLogin(); });
-    cancelBtn.onclick = closeLogin;
+    form.append(role, password, actions); login.append(form, status); app.append(login);
     password.focus();
     form.addEventListener('submit', async event => {
-      event.preventDefault(); status.textContent = 'Verifying... / 確認中...';
+      event.preventDefault(); status.textContent = 'Verifying... / 確認中...'; submit.disabled = true;
       try {
-        const result = await window.LKData.request('/api/login', { method: 'POST', body: JSON.stringify({ role: 'approver', password: password.value }) });
-        localStorage.setItem('lk-admin-session', result.token); currentRole = result.role; activeTab = 'manage'; closeLogin(); renderWorkspace();
-      } catch { status.textContent = 'Sign-in failed. / パスワードを確認してください。'; }
+        const result = await window.LKData.request('/api/login', { method: 'POST', body: JSON.stringify({ role: role.value, password: password.value }) });
+        localStorage.setItem('lk-admin-session', result.token); currentRole = result.role;
+        if (currentRole === 'approver') activeTab = 'manage';
+        await loadWorkspace();
+      } catch { status.textContent = 'Sign-in failed. / パスワードを確認してください。'; submit.disabled = false; password.focus(); }
     });
   }
 
@@ -263,7 +273,10 @@
       entityData = { clubs: data.clubs || [], externalOpponents: data.externalOpponents || [], tournaments: data.tournaments || [], tournamentMatches: data.tournamentMatches || [], tournamentProgress: data.tournamentProgress || [], importBatches: data.importBatches || [] };
       await loadPendingChanges();
       renderWorkspace();
-    } catch (error) { window.LKData.showLoadError(error); empty(app).append(text('p', 'Could not load admin data. / 管理データを読み込めませんでした。', 'admin-load-error')); }
+    } catch (error) {
+      if (error.status === 401 || error.status === 403) { signOut(); return; }
+      window.LKData.showLoadError(error); empty(app).append(text('p', 'Could not load admin data. / 管理データを読み込めませんでした。', 'admin-load-error'));
+    }
   }
 
   async function refreshWorkspace(stayId = selectedId) {
@@ -284,12 +297,8 @@
     const nav = el('nav', { 'aria-label': 'Main navigation' });
     nav.append(el('a', { href: 'index.html', textContent: language === 'en' ? 'Home' : 'ホーム' }), el('a', { href: 'index.html#players', textContent: language === 'en' ? 'Players' : '選手' }), el('a', { href: 'index.html#stats', textContent: language === 'en' ? 'Statistics' : '統計' }));
     const headerActions = el('div', { className: 'header-actions' });
-    if (currentRole === 'approver') {
-      headerActions.append(text('span', '承認者 / Approver', 'admin-role-badge'));
-      headerActions.append(button('SIGN OUT / ログアウト', () => { localStorage.removeItem('lk-admin-session'); currentRole = 'admin'; renderWorkspace(); }, 'language-toggle'));
-    } else {
-      headerActions.append(button('APPROVER LOGIN / 承認者ログイン', () => showApproverLogin(), 'language-toggle'));
-    }
+    headerActions.append(text('span', currentRole === 'approver' ? '承認者 / Approver' : '管理者 / Admin', 'admin-role-badge'));
+    headerActions.append(button('SIGN OUT / ログアウト', signOut, 'language-toggle'));
     header.append(text('h1', language === 'en' ? 'Data Maintenance' : 'データメンテナンス', 'visually-hidden'), brand, nav, headerActions);
     const tabs = el('nav', { className: 'admin-tabs', ariaLabel: 'Data maintenance sections' });
     if (currentRole === 'approver') tabs.append(tab('manage', 'REVIEW / 承認'));
@@ -1431,7 +1440,7 @@
       panel.append(text('p', summaryParts.join(' · '), 'admin-pending-summary'));
       const batchGroups = [...changes.reduce((groups,change)=>{if(!change.batchId)return groups;if(!groups.has(change.batchId))groups.set(change.batchId,[]);groups.get(change.batchId).push(change);return groups;},new Map()).entries()].filter(([,items])=>items.length>1);
       const bulkChanges = changes.filter(change => !isReflectionChange(change));
-      if (currentRole === 'approver' && bulkChanges.length) {
+      if (canReviewChanges() && bulkChanges.length) {
         const bulkActions = el('div', { className: 'admin-pending-bulk-actions' });
         const bulkStatus = text('span', '', 'admin-pending-action-status');
         const handleBulk = async (decision) => {
@@ -1455,12 +1464,6 @@
           const batchSection=el('section',{className:'admin-batch-review'});batchSection.append(text('h3',language==='en'?'Grouped session batches':'セッション一括申請'));
           batchGroups.forEach(([batchId,items])=>{const card=el('article'),main=el('div'),actions=el('div'),status=text('span','','admin-pending-action-status'),sessionChange=items.find(item=>item.entityType==='session'),date=sessionChange?.after?.sessionDate||items.find(item=>item.after?.matchDate)?.after?.matchDate||'';main.innerHTML=`<b>${escapeHtml(date||batchId)}</b><span>${items.length} ${language==='en'?'changes':'件'} · ${items.filter(item=>item.entityType==='match').length} ${language==='en'?'matches':'試合'}</span><small>${escapeHtml(batchId)}</small>`;const decide=async decision=>{if(!confirm(`${decision==='accept'?(language==='en'?'Approve':'承認'):(language==='en'?'Reject':'却下')} ${items.length} ${language==='en'?'changes as one reviewed batch?':'件を一括処理しますか？'}`))return;actions.querySelectorAll('button').forEach(node=>node.disabled=true);status.textContent=language==='en'?'Processing...':'処理中…';try{await window.LKData.request('/api/approve-batch',{method:'POST',body:JSON.stringify({batchId,decision})});await loadWorkspace();}catch(error){status.textContent=error.message;actions.querySelectorAll('button').forEach(node=>node.disabled=false);}};actions.append(button(language==='en'?'APPROVE BATCH':'一括承認',()=>decide('accept'),'primary'),button(language==='en'?'REJECT BATCH':'一括却下',()=>decide('reject'),'danger'),status);card.append(main,actions);batchSection.append(card);});panel.append(batchSection);
         }
-      }
-      if (currentRole !== 'approver') {
-        const loginHint = el('div', { className: 'admin-pending-login-hint' });
-        loginHint.append(text('p', 'Sign in as approver to accept or reject changes. / 承認者としてログインすると変更の承認・却下ができます。'));
-        loginHint.append(button('APPROVER LOGIN / 承認者ログイン', () => showApproverLogin(), 'primary'));
-        panel.append(loginHint);
       }
       [...changes].sort((a,b)=>(a.batchId||a.changeId).localeCompare(b.batchId||b.changeId)||(a.entityType==='session'?-1:b.entityType==='session'?1:0)).forEach(change => {
         const card = el('article', { className: 'admin-pending-card' });
@@ -1505,7 +1508,7 @@
             card.append(text('p', 'No changes detected. / 変更は検出されませんでした。', 'admin-empty'));
           }
         }
-        if (currentRole === 'approver') {
+        if (canReviewChanges()) {
           const actions = el('div', { className: 'admin-pending-actions' });
           const status = text('span', '', 'admin-pending-action-status');
           const handleDecision = async (decision, btnA, btnB) => {
@@ -1546,7 +1549,7 @@
       typeFilter.append(el('option', { value: 'all', textContent: 'ALL TYPES / すべての種類' }));
       entityTypes.forEach(t => typeFilter.append(el('option', { value: t, textContent: t })));
       controls.append(search, statusFilter, typeFilter); panel.append(controls);
-      if (currentRole === 'approver') {
+      if (canReviewChanges()) {
         const clearHistory = button('CLEAR PROCESSED HISTORY / 処理済み履歴を削除', async () => {
           if (!confirm('Delete all accepted and rejected UAT history records? Pending changes will be kept. / UATの承認・却下済み履歴をすべて削除しますか？承認待ちの変更は保持されます。')) return;
           try {
