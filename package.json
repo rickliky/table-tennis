@@ -1,0 +1,38 @@
+{
+  "name": "table-tennis",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static bilingual club statistics site powered by Upstash Redis via Cloudflare Worker API.",
+  "scripts": {
+    "check:syntax": "node scripts/check-syntax.js",
+    "test:worker": "npm --prefix worker test",
+    "test:e2e": "playwright test --config=playwright.config.js",
+    "test:uat": "playwright test --config=playwright.uat.config.js",
+    "verify": "npm run check:syntax && npm run test:worker && npm run test:e2e",
+    "test": "npm run verify",
+    "setup:dev": "npm ci && playwright install chromium && husky",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rickliky/table-tennis.git"
+  },
+  "keywords": [
+    "table-tennis",
+    "static-site"
+  ],
+  "author": "Little Kings",
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/rickliky/table-tennis/issues"
+  },
+  "homepage": "https://github.com/rickliky/table-tennis#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "husky": "^9.1.7"
+  }
+}

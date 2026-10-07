@@ -16,12 +16,21 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      # Blocks the deploy below if any tracked JS/JSON file is broken.
-      - name: Syntax gate
-        run: node scripts/check-syntax.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
 
-      - name: Worker security tests
-        run: npm --prefix worker test
+      - name: Install test tooling
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      # The same command is enforced locally by the Husky pre-commit hook.
+      - name: Pre-deploy verification
+        run: npm run verify
 
       - name: Generate build info
         run: |
@@ -42,6 +51,7 @@ jobs:
           publish_dir: ./
           destination_dir: .
           keep_files: true
+          exclude_assets: '.github,node_modules,tests,playwright-report,test-results'
 
       - name: Deploy UAT
         if: github.ref == 'refs/heads/uat'
@@ -52,3 +62,12 @@ jobs:
           publish_dir: ./
           destination_dir: uat
           keep_files: true
+          exclude_assets: '.github,node_modules,tests,playwright-report,test-results'
+
+      - name: Smoke-test deployed UAT
+        if: github.ref == 'refs/heads/uat'
+        run: npm run test:uat
+        env:
+          UAT_BASE_URL: https://rickliky.github.io/table-tennis/uat/
+          WORKER_BASE_URL: https://little-kings-api.little-kings.workers.dev
+          EXPECTED_COMMIT: ${{ github.sha }}
