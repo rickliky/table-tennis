@@ -206,6 +206,12 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### January 2027 Tournament Entries (2026-10-08) — LIVE IN UAT
+- Created and approved UAT tournaments `TOURNAMENT-0004` (第56回後藤杯卓球選手権大会（名古屋オープン）カデット・ホープス・カブ種目, 2027-01-09–10, スカイホール豊田) and `TOURNAMENT-0005` (令和8年度 第31回関東ホープス卓球大会, 2027-01-30–31, くまがやドーム体育館).
+- Both tournaments have the same three confirmed Little Kings entrants: `LK-0046` in ホープス男子シングルス, `LK-0003` in カブ女子シングルス, and `LK-0002` in ホープス女子シングルス. No result, rank, qualification, recommendation, or elimination outcome was inferred.
+- Approved progress IDs are `TP-0294`–`TP-0296` for the Goto Cup and `TP-0297`–`TP-0299` for Kanto Hopes. Repeat-safe Worker/API script: `scripts/add-january-2027-tournaments.js`.
+- The script uses authenticated Worker changes and approvals, was rerun successfully as a no-op, and verified both tournaments plus all six participation records. Production was not changed.
+
 ### Enforced Development Lifecycle (2026-10-07) — LIVE IN UAT
 - UAT commit `dcff2cf` adds repository-owned lifecycle tooling. Root `package.json` pins Playwright `1.63.0` and Husky `9.1.7`; Chromium is installed locally through `npm run setup:dev`. The durable workflow is documented in `docs/DEVELOPMENT-LIFECYCLE.md`.
 - Every commit now runs `npm run verify` through `.husky/pre-commit`. A failing syntax check, Worker authorization test, or browser test blocks the commit. The first real commit with the hook passed 53 tracked JavaScript checks, 18 JSON checks, the Worker security suite, and five Playwright browser tests.
