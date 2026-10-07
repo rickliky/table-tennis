@@ -211,6 +211,7 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 - Both tournaments have the same three confirmed Little Kings entrants: `LK-0046` in ホープス男子シングルス, `LK-0003` in カブ女子シングルス, and `LK-0002` in ホープス女子シングルス. No result, rank, qualification, recommendation, or elimination outcome was inferred.
 - Approved progress IDs are `TP-0294`–`TP-0296` for the Goto Cup and `TP-0297`–`TP-0299` for Kanto Hopes. Repeat-safe Worker/API script: `scripts/add-january-2027-tournaments.js`.
 - The script uses authenticated Worker changes and approvals, was rerun successfully as a no-op, and verified both tournaments plus all six participation records. Production was not changed.
+- UAT workflow run `37644379047` passed the full pre-deploy verification and pushed the UAT artifact to `gh-pages`, but its post-deploy smoke timed out because the separate GitHub Pages build for `gh-pages` commit `094d8ba` remained queued/stalled and the public `build-info.json` still returned the prior commit. This publication issue does not affect the already-live UAT API data.
 
 ### Enforced Development Lifecycle (2026-10-07) — LIVE IN UAT
 - UAT commit `dcff2cf` adds repository-owned lifecycle tooling. Root `package.json` pins Playwright `1.63.0` and Husky `9.1.7`; Chromium is installed locally through `npm run setup:dev`. The durable workflow is documented in `docs/DEVELOPMENT-LIFECYCLE.md`.
