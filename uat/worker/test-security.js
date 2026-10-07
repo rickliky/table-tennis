@@ -80,7 +80,9 @@ try {
   assert.equal((await call('/api/approve', { method: 'POST', token: approverToken, body: { changeId, decision: 'reject' } })).status, 200, 'approvers must review changes');
   assert.equal((await call('/api/bulk-rubbers', { method: 'POST', token: approverToken, body: { rubbers: [{ rubberId: 'RB-TEST' }] } })).status, 403, 'approvers must not bulk-write data');
 
-  assert.equal((await call('/api/public-data', { environment: 'prod' })).status, 200, 'production remains compatible until the secure-production switch is enabled');
+  const legacyProductionResponse = await call('/api/public-data', { environment: 'prod' });
+  assert.equal(legacyProductionResponse.status, 200, 'production remains compatible until the secure-production switch is enabled');
+  assert.equal((await legacyProductionResponse.json()).players.length, 2, 'legacy production payload must remain unchanged before cutover');
   assert.equal((await call('/api/public-data', { environment: 'prod', environmentValues: { SECURE_PROD: 'true' } })).status, 401, 'the production security switch must require authentication');
   assert.equal((await call('/api/session', { token: `${siteToken}tampered` })).status, 401, 'tampered sessions must be rejected');
 

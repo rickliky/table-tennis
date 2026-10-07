@@ -45,8 +45,9 @@ export default { async fetch(request, env) {
     if (url.pathname === '/api/login' && request.method === 'POST') { const body = await request.json(); const role = body.role || 'site'; return json({ ok: true, token: await login(role, body.password, env), role }); }
     if (url.pathname === '/api/session' && request.method === 'GET') { const actor = await session(request, env); return json({ ok: true, role: actor.role, expires: actor.expires }); }
     if (url.pathname === '/api/public-data' && request.method === 'GET') {
-      if (securityEnabled(environment, env)) await session(request, env);
-      return json(await readData(repo, environment, false));
+      const secured = securityEnabled(environment, env);
+      if (secured) await session(request, env);
+      return json(await readData(repo, environment, !secured));
     }
     if (url.pathname === '/api/admin-data' && request.method === 'GET') {
       await requireRole(request, env, ['admin', 'approver']);
