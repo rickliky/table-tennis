@@ -206,6 +206,11 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Training Match Import 2026-10-08 (2026-10-09) — LIVE IN UAT
+- UAT batch `IMP-F84D7686E69A7C5A` / `BATCH-IMP-F84D7686E69A7C5A` is approved: 57 training matches for session `LKS-20261008` (2026-10-08), 53 `RS-001` Completed and 4 `RS-002` Incomplete (`加藤ふ 2-2 坪内父`, `李母 2-1 ケイツ`, `長島2 2-0 岡田`, `岡崎 2-1 山本`). 30 distinct players. UAT now has 1,894 training matches.
+- Aliases confirmed by the user for this session: `長島2` = `LK-0091`, `加藤ふ` = `LK-0046` (加藤(史)), `加藤そ` = `LK-0064` (加藤(蒼)). All other notebook names resolved by exact match; `ケイツ` = `LK-0002`.
+- Durable source and repeat-safe importer: `scripts/training-matches-2026-10-08.txt` and `scripts/import-training-matches-2026-10-08.js` (`--submit-uat` queues, `--approve-uat` queues and approves; requires `ADMIN_PASSWORD` because UAT writes now need an Admin session). Re-running after approval reports `Already approved` and makes no changes.
+
 ### January 2027 Tournament Entries (2026-10-08) — LIVE IN UAT
 - Created and approved UAT tournaments `TOURNAMENT-0004` (第56回後藤杯卓球選手権大会（名古屋オープン）カデット・ホープス・カブ種目, 2027-01-09–10, スカイホール豊田) and `TOURNAMENT-0005` (令和8年度 第31回関東ホープス卓球大会, 2027-01-30–31, くまがやドーム体育館).
 - Both tournaments have the same three confirmed Little Kings entrants: `LK-0046` in ホープス男子シングルス, `LK-0003` in カブ女子シングルス, and `LK-0002` in ホープス女子シングルス. No result, rank, qualification, recommendation, or elimination outcome was inferred.
