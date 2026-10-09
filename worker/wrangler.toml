@@ -6,3 +6,6 @@ compatibility_date = "2026-09-16"
 # Set secrets with: wrangler secret put UPSTASH_REDIS_REST_URL
 # Required secrets: UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN,
 # SITE_PASSWORD, ADMIN_PASSWORD, APPROVER_PASSWORD, SESSION_SECRET
+# Prod security cutover (2026-10-09): SECURE_PROD=true is set as a Worker secret.
+# Remove it (wrangler secret delete SECURE_PROD) only to roll prod back to
+# anonymous reads; UAT is always secured regardless of this switch.
