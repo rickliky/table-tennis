@@ -8,6 +8,8 @@ data/*
 # Local tooling / build artifacts — never served, never committed.
 .playwright-mcp/
 node_modules/
+playwright-report/
+test-results/
 worker/.wrangler/
 worker/migration.json
 

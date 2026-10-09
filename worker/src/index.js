@@ -1,4 +1,4 @@
-import { login, session } from './auth.js';
+import { login, requireRole, session } from './auth.js';
 import { createDiff } from './diff.js';
 import { repository } from './repository.js';
 import { validateEntity, validateEnvironment } from './validation.js';
@@ -11,7 +11,15 @@ const collectionFor = entityType => ({ club: 'clubs', player: 'players', match: 
 const idFieldFor = entityType => ({ club: 'clubId', player: 'playerId', match: 'matchId', externalOpponent: 'externalOpponentId', tournament: 'tournamentId', tournamentMatch: 'tournamentMatchId', tournamentProgress: 'tournamentProgressId', rubber: 'rubberId', sessionFeedback: 'feedbackId', matchFeedback: 'matchFeedbackId', session: 'sessionId', importBatch: 'importBatchId' }[entityType]);
 
 const CORS_HEADERS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' };
-const JSON_HEADERS = { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' };
+const JSON_HEADERS = { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
+const activePlayerStatuses = new Set(['ST-001', 'Active', '有効']);
+const securityEnabled = (environment, env) => environment === 'uat' || env.SECURE_PROD === 'true';
+
+async function readData(repo, environment, includeInactivePlayers) {
+  const values = await Promise.all(publicTypes.map(type => repo.read(environment, type)));
+  const players = includeInactivePlayers ? values[1] : values[1].filter(player => activePlayerStatuses.has(player.status));
+  return { ok: true, club: values[0][0] || null, clubs: values[0], players, matches: values[2], externalOpponents: values[3], tournaments: values[4], tournamentMatches: values[5], tournamentProgress: values[6], rubbers: values[7], sessionFeedback: values[8], matchFeedback: values[9], sessions: values[10], importBatches: values[11], lastUpdated: new Date().toISOString() };
+}
 
 function buildSummary(entityType, record) {
   if (!record) return '';
@@ -37,21 +45,27 @@ export default { async fetch(request, env) {
     if (url.pathname === '/api/login' && request.method === 'POST') { const body = await request.json(); const role = body.role || 'site'; return json({ ok: true, token: await login(role, body.password, env), role }); }
     if (url.pathname === '/api/session' && request.method === 'GET') { const actor = await session(request, env); return json({ ok: true, role: actor.role, expires: actor.expires }); }
     if (url.pathname === '/api/public-data' && request.method === 'GET') {
-      const values = await Promise.all(publicTypes.map(type => repo.read(environment, type)));
-      return json({ ok: true, club: values[0][0] || null, clubs: values[0], players: values[1], matches: values[2], externalOpponents: values[3], tournaments: values[4], tournamentMatches: values[5], tournamentProgress: values[6], rubbers: values[7], sessionFeedback: values[8], matchFeedback: values[9], sessions: values[10], importBatches: values[11], lastUpdated: new Date().toISOString() });
+      const secured = securityEnabled(environment, env);
+      if (secured) await session(request, env);
+      return json(await readData(repo, environment, !secured));
     }
-    if (url.pathname === '/api/pending' && request.method === 'GET') return json({ ok: true, changes: await repo.read(environment, 'pending-changes') });
+    if (url.pathname === '/api/admin-data' && request.method === 'GET') {
+      await requireRole(request, env, ['admin', 'approver']);
+      return json(await readData(repo, environment, true));
+    }
+    if (url.pathname === '/api/pending' && request.method === 'GET') {
+      if (securityEnabled(environment, env)) await requireRole(request, env, ['admin', 'approver']);
+      return json({ ok: true, changes: await repo.read(environment, 'pending-changes') });
+    }
     if (url.pathname === '/api/clear-history' && request.method === 'POST') {
-      const actor = await session(request, env);
-      if (actor.role !== 'approver' && actor.role !== 'admin') throw new Error('Approver or admin role required');
+      await requireRole(request, env, ['approver', 'admin']);
       const changes = await repo.read(environment, 'pending-changes');
       const remaining = changes.filter(change => change.status === 'pending');
       await repo.write(environment, 'pending-changes', remaining);
       return json({ ok: true, deleted: changes.length - remaining.length, remaining: remaining.length });
     }
     if (url.pathname === '/api/clear-pending' && request.method === 'POST') {
-      const actor = await session(request, env);
-      if (actor.role !== 'admin') throw new Error('Admin role required');
+      await requireRole(request, env, ['admin']);
       const changes = await repo.read(environment, 'pending-changes');
       const pendingCount = changes.filter(c => c.status === 'pending').length;
       await repo.write(environment, 'pending-changes', []);
@@ -59,9 +73,13 @@ export default { async fetch(request, env) {
     }
     if (url.pathname === '/api/change' && request.method === 'POST') {
       const body = await request.json();
-      const actor = ['sessionFeedback', 'matchFeedback'].includes(body.entityType) ? await session(request, env) : null;
+      const reflection = ['sessionFeedback', 'matchFeedback'].includes(body.entityType);
+      const actor = securityEnabled(environment, env)
+        ? await requireRole(request, env, reflection ? ['site', 'admin', 'approver'] : ['admin'])
+        : reflection ? await session(request, env) : null;
       const records = {}; for (const type of publicTypes) records[type] = await repo.read(environment, type);
       const collection = collectionFor(body.entityType); if (!collection) throw new Error('Unsupported entity type');
+      if (!['create', 'update', 'delete'].includes(body.action)) throw new Error('Action must be create, update, or delete');
       if (body.action !== 'delete') validateEntity(body.entityType, body.after, { players: records.players, matches: records.matches, tournamentMatches: records['tournament-matches'], tournaments: records.tournaments, externalOpponents: records['external-opponents'], sessions: records.sessions }, body.targetId);
       const idField = idFieldFor(body.entityType);
       const before = records[collection].find(item => item[idField] === body.targetId) || null;
@@ -85,16 +103,16 @@ export default { async fetch(request, env) {
     if (url.pathname === '/api/approve' && request.method === 'POST') {
       const body = await request.json();
       if (!['accept', 'reject'].includes(body.decision)) throw new Error('Decision must be accept or reject');
+      const actor = securityEnabled(environment, env) || body.decision === 'accept'
+        ? await requireRole(request, env, ['approver', 'admin'])
+        : null;
       if (body.decision === 'reject') {
         const changes = await repo.read(environment, 'pending-changes');
         const change = changes.find(item => item.changeId === body.changeId && item.status === 'pending');
         if (!change) throw new Error('Pending change not found');
-        await repo.write(environment, 'pending-changes', changes.map(item => item.changeId === change.changeId ? { ...item, status: 'rejected', reviewedAt: new Date().toISOString(), reviewedBy: 'submitter' } : item));
+        await repo.write(environment, 'pending-changes', changes.map(item => item.changeId === change.changeId ? { ...item, status: 'rejected', reviewedAt: new Date().toISOString(), reviewedBy: actor?.role || 'submitter' } : item));
         return json({ ok: true });
       }
-      const actor = await session(request, env);
-      if (actor.role === 'site') throw new Error('Admin or approver role required');
-      if (actor.role !== 'approver' && actor.role !== 'admin') throw new Error('Approver or admin role required');
       return json(await repo.withLock(environment, async () => {
         const changes = await repo.read(environment, 'pending-changes');
         const change = changes.find(item => item.changeId === body.changeId && item.status === 'pending');
@@ -111,8 +129,7 @@ export default { async fetch(request, env) {
       }));
     }
     if (url.pathname === '/api/approve-batch' && request.method === 'POST') {
-      const actor = await session(request, env);
-      if (actor.role !== 'approver' && actor.role !== 'admin') throw new Error('Approver or admin role required');
+      const actor = await requireRole(request, env, ['approver', 'admin']);
       const body = await request.json();
       if (!body.batchId || !['accept', 'reject'].includes(body.decision)) throw new Error('A batch ID and valid decision are required');
       return json(await repo.withLock(environment, async () => {
@@ -153,8 +170,7 @@ export default { async fetch(request, env) {
       }));
     }
     if (url.pathname === '/api/bulk-rubbers' && request.method === 'POST') {
-      const actor = await session(request, env);
-      if (actor.role !== 'admin' && actor.role !== 'approver') throw new Error('Admin or approver role required');
+      await requireRole(request, env, ['admin']);
       const body = await request.json();
       const { rubbers, environment: envParam } = body;
       if (!Array.isArray(rubbers) || rubbers.length === 0) throw new Error('rubbers array is required');
@@ -163,8 +179,7 @@ export default { async fetch(request, env) {
       return json({ ok: true, count: rubbers.length, environment: targetEnv });
     }
     if (url.pathname === '/api/bulk-write' && request.method === 'POST') {
-      const actor = await session(request, env);
-      if (actor.role !== 'admin') throw new Error('Admin role required for bulk write');
+      await requireRole(request, env, ['admin']);
       const body = await request.json();
       const { entityType, records, environment: envParam } = body;
       const collection = collectionFor(entityType);
@@ -175,5 +190,5 @@ export default { async fetch(request, env) {
       return json({ ok: true, entityType, count: records.length, environment: targetEnv });
     }
     throw new Error('Not found');
-  } catch (error) { const status = error.message === 'Authentication required' ? 401 : 400; return new Response(JSON.stringify({ ok: false, error: error.message }), { status, headers: JSON_HEADERS }); }
+  } catch (error) { const status = error.status || (error.message === 'Authentication required' ? 401 : 400); return new Response(JSON.stringify({ ok: false, error: error.message }), { status, headers: JSON_HEADERS }); }
 } };
