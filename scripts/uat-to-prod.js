@@ -5,8 +5,12 @@
  * Uses the /api/bulk-write endpoint (admin auth required).
  * PROD-only records are preserved. UAT records replace matching IDs only.
  *
+ * Both sides are read through /api/admin-data so inactive players and every
+ * other full record are included; UAT's member-facing /api/public-data now
+ * requires a session and filters inactive players, which would hide drift.
+ *
  * Usage: node scripts/uat-to-prod.js [--apply] [--clear-history]
- * Requires: ADMIN_PASSWORD env var or interactive prompt
+ * Requires: ADMIN_PASSWORD env var (admin login is needed for every run now)
  */
 const WORKER_URL = 'https://little-kings-api.little-kings.workers.dev';
 const apply = process.argv.includes('--apply');
@@ -53,26 +57,31 @@ async function login(adminPassword) {
 async function main() {
   // Get admin password
   const adminPassword = process.env.ADMIN_PASSWORD;
-  if (apply && !adminPassword) {
-    console.error('Set ADMIN_PASSWORD environment variable:');
-    console.error('  $env:ADMIN_PASSWORD="your-password"; node scripts/uat-to-prod.js --apply');
+  if (!adminPassword) {
+    console.error('Set ADMIN_PASSWORD environment variable (admin login is required to read either environment):');
+    console.error('  $env:ADMIN_PASSWORD="your-password"; node scripts/uat-to-prod.js [--apply]');
     process.exit(1);
   }
 
-  console.log('1. Fetching UAT data...');
-  const uatRes = await fetch(`${WORKER_URL}/api/public-data?environment=uat`);
+  console.log('1. Logging in as admin...');
+  const token = await login(adminPassword);
+  const authed = path => fetch(`${WORKER_URL}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+  console.log('   Login OK');
+
+  console.log('\n2. Fetching UAT data...');
+  const uatRes = await authed('/api/admin-data?environment=uat');
   if (!uatRes.ok) throw new Error(`UAT API returned ${uatRes.status}`);
   const uatData = await uatRes.json();
   if (!uatData.ok) throw new Error('UAT API returned invalid response');
   console.log(`   UAT: ${uatData.players?.length || 0} players, ${uatData.matches?.length || 0} matches, ${uatData.externalOpponents?.length || 0} ext opponents, ${uatData.tournaments?.length || 0} tournaments, ${uatData.tournamentProgress?.length || 0} progress, ${uatData.rubbers?.length || 0} rubbers`);
 
-  console.log('\n2. Fetching current PROD data (for comparison)...');
-  const prodRes = await fetch(`${WORKER_URL}/api/public-data?environment=prod`);
+  console.log('\n3. Fetching current PROD data (for comparison)...');
+  const prodRes = await authed('/api/admin-data?environment=prod');
   if (!prodRes.ok) throw new Error(`PROD API returned ${prodRes.status}`);
   const prodData = await prodRes.json();
   console.log(`   PROD: ${prodData.players?.length || 0} players, ${prodData.matches?.length || 0} matches, ${prodData.externalOpponents?.length || 0} ext opponents, ${prodData.tournaments?.length || 0} tournaments, ${prodData.tournamentProgress?.length || 0} progress, ${prodData.rubbers?.length || 0} rubbers`);
 
-  console.log('\n3. Comparing collections (UAT values override matching PROD IDs; PROD-only IDs are retained)...');
+  console.log('\n4. Comparing collections (UAT values override matching PROD IDs; PROD-only IDs are retained)...');
   const plans = ENTITIES.map(entity => ({ entity, ...compareAndMerge(entity, uatData[entity.collection] || [], prodData[entity.collection] || []) }));
   for (const plan of plans) {
     console.log(`   ${plan.entity.collection}: ${plan.uatOnly.length} UAT-only, ${plan.changed.length} changed, ${plan.prodOnly.length} PROD-only preserved`);
@@ -82,10 +91,6 @@ async function main() {
     console.log('\nPreview only. Review the differences, then rerun with --apply to write the merged collections.');
     return;
   }
-
-  console.log('\n4. Logging in as admin...');
-  const token = await login(adminPassword);
-  console.log('   Login OK');
 
   console.log('\n5. Pushing merged UAT + preserved PROD data to PROD...');
   let total = 0, failed = 0;
