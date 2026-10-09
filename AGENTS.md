@@ -206,6 +206,13 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### UAT → Production Promotion (2026-10-09) — LIVE
+- With the user's explicit approval to push all UAT code and data to PROD, `main` was fast-forwarded from `f9fb040` to `8b1aa32` (10 commits: security hardening `28c73e1`/`72e0165`, enforced development lifecycle `dcff2cf`/`ef5e88e`, January 2027 tournaments `e9a5f73`, the 2026-10-08 import `b9ebf11`, and the promotion-script fix `8b1aa32`). GitHub Actions run `37897062471` passed the pre-deploy suite (syntax, Worker security, 5 Playwright E2E) and production deployment; live `build-info.json` confirms commit `8b1aa32`.
+- Data was promoted through `scripts/uat-to-prod.js --apply`: 2,844 records written, 0 failures, PROD history preserved, no `--clear-history`. The overlay was pure additions — 57 matches, 2 tournaments, 6 progress records, 1 session, 1 import batch — with 0 changed records and 0 PROD-only conflicts. PROD now matches UAT exactly across all 12 collections (87 players, 1,894 matches, 5 tournaments, 299 progress, 2 sessions, 2 import batches) with 0 pending changes.
+- `scripts/uat-to-prod.js` now reads both sides through authenticated `/api/admin-data` and requires `ADMIN_PASSWORD` for every run. The old `/api/public-data?environment=uat` read would fail with HTTP 401 and, even with a token, filters inactive players — which could hide drift on inactive records.
+- Live production verification: build `8b1aa32` served; Tournament hub shows all 5 events with the three entrants on each new event; Training Insights `?session=2026-10-08` shows 57 registered / 53 completed / 4 incomplete / 30 participants / 53 pairings / 19% close; zero console errors and zero horizontal overflow.
+- **Worker `SECURE_PROD` remains OFF** — this promotion covered repository code and Upstash data only. Prod API still allows anonymous reads; the security cutover (set `SECURE_PROD=true`, then verify member/Admin/Approver flows and confirm anonymous endpoints return 401) still requires separate explicit approval.
+
 ### Training Match Import 2026-10-08 (2026-10-09) — LIVE IN UAT
 - UAT batch `IMP-F84D7686E69A7C5A` / `BATCH-IMP-F84D7686E69A7C5A` is approved: 57 training matches for session `LKS-20261008` (2026-10-08), 53 `RS-001` Completed and 4 `RS-002` Incomplete (`加藤ふ 2-2 坪内父`, `李母 2-1 ケイツ`, `長島2 2-0 岡田`, `岡崎 2-1 山本`). 30 distinct players. UAT now has 1,894 training matches.
 - Aliases confirmed by the user for this session: `長島2` = `LK-0091`, `加藤ふ` = `LK-0046` (加藤(史)), `加藤そ` = `LK-0064` (加藤(蒼)). All other notebook names resolved by exact match; `ケイツ` = `LK-0002`.
