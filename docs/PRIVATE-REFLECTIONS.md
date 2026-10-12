@@ -1,5 +1,7 @@
 # Private player notebook — UAT implementation
 
+UAT behavior release `50a54f2` is live; deployment `38276792310` passed the complete verification suite (13 browser tests) and post-deploy smoke. Real account login/ownership/restoration/lock, JA/EN mobile/desktop layout, and revoked frozen-page reauthentication checks passed without writing any real notebook entries. Production behavior/data is unchanged and requires separate approval.
+
 External translation is on hold. No provider, API key, AI button, billing, or transmission of writing to a translator is enabled. Notebook examples are design references only, not imported data.
 
 ## Access and layout

@@ -1,4 +1,4 @@
-# Private Player Reflection — Draft for Review
+# Private Player Reflection — UAT Plan (Translation Deferred)
 
 Status: the user approved UAT implementation on 2026-10-13, with external translation explicitly on hold. Production rollout and historical sample imports are not authorized. Operational details: `docs/PRIVATE-REFLECTIONS.md`.
 
@@ -113,7 +113,7 @@ Official references checked:
 
 ## Delivery and Verification
 
-1. Obtain approval for this proposal and outstanding choices. Sample ownership is now confirmed, but a historical journal import still requires a separate request and review of uncertain match references. Original photos are optional unless needed to clarify handwriting.
+1. UAT non-translation implementation was approved and delivered on 2026-10-13. Historical journal import still requires a separate request and review of uncertain match references. Original photos are optional unless needed to clarify handwriting.
 2. Implement private Worker endpoints and storage with automated authorization, rate-limit, expiry/revocation, match-ownership, and atomic-save tests using synthetic credentials and private text.
 3. Implement bilingual directory/login and date-first notebook; remove member-visible reflection renderers and publishing workflow. Keep all unrelated match/player behavior intact.
 4. Add translation integration only after provider/privacy approval; test with mocked translation before live use.
@@ -123,10 +123,11 @@ Official references checked:
 8. Run the repository verification suite, push UAT, check deployment, and perform real authenticated UAT acceptance. Do not import the notebook photos as data unless separately requested.
 9. Report UAT results and wait for explicit production approval. At launch provision environment-specific accounts and private storage without overwriting production journal content.
 
-## Decisions Still Needed
+## Current Decisions / Future Approvals
 
-- Friday and atypical schedules: optional daily note plus actual recorded matches (recommended).
-- Translation provider/billing and consent to send selected private text to it.
+- Friday and atypical schedules: implemented with optional daily notes plus actual recorded matches, as communicated at implementation start.
+- Translation is explicitly on hold. Provider/billing/privacy consent and implementation need a separate approval before any external translation is enabled.
+- Production rollout, production account provisioning, and historical sample import are not authorized by the UAT implementation request.
 - Confirmed choices: sample headings were reversed, coach feedback is daily-only, and there is no separate “Things to improve” field. Typed examples suffice for layout planning; do not require reuploading all photos. No sample import is authorized yet.
 
 Defaults proposed for review: strict player-only application access (including no normal Admin/Approver content access), no publishing/approval step, a dedicated reflection login that restores for 56 days, and no private journal copying during normal dataset promotions.
