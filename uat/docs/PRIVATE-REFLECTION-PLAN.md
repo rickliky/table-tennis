@@ -39,13 +39,13 @@ The seven notebook photos could not be read because external-directory access wa
 
 ### Refinement from the typed notebook examples
 
-- There is an unresolved ownership mismatch: the sample headed Kaitlyn uses ジェスリン, while the sample headed Jacelyn uses ケイツ. Ask whether the headings were reversed before attributing any example to an account. No live data corrections or journal imports are authorized by providing these examples.
+- The user confirmed the sample headings were reversed: the sample using ジェスリン belongs to Jacelyn (`LK-0080`), and the sample using ケイツ belongs to Kaitlyn (`LK-0002`). No live data corrections or journal imports are authorized by providing these examples.
 - Organize each date as a single notebook page: date and optional private activity label, optional “Things to improve / 改善すること”, the daily reflection or recorded-match cards, then a daily coach-feedback block.
 - Activity labels can describe training, a private lesson, combined lesson/training, match practice, or a tournament. This is private diary context, not a change to club session metadata or a claim of attendance.
-- Keep “Things to improve” optional and collapsed until used, so non-match days still have one primary reflection input as originally requested. This is a player goal, separate from actual coach feedback. For the two bilingual accounts, optional goals can use English plus Japanese like reflection text; all other enabled accounts use Japanese directly. Confirm whether the user wants this extra optional section.
+- The earlier optional “Things to improve” proposal meant a player's own next focus, not coach advice. The user asked whose input it represents; do not infer the authorship of that heading in the samples. Revised recommendation: omit this extra field, let the player include next focus in the main reflection, and keep coach advice in the daily coach-feedback block. Await confirmation before adopting this simplification.
 - Non-match reflection remains a single multiline box (plus the Japanese version for the two bilingual accounts), with a hint to describe practice, observations, and next focus; no mandatory sub-question fields.
 - Match reflections remain one multiline box per recorded match (plus Japanese for the bilingual accounts). Allow paragraphs covering what worked, difficulties, and intended changes without forcing these into separate fields.
-- Replace the earlier recommendation of daily plus per-match coach comments with a simpler daily coach-feedback block, consistent with the supplied grouped feedback. Preserve paragraphs, numbering, and line breaks; comments can refer to a match in the text. Per-match coach fields can be added later only if requested.
+- The user confirmed coach comments do not need per-match fields. Use one daily coach-feedback block, preserving paragraphs, numbering, and line breaks; comments can refer to a match in the text.
 - Coach feedback spanning multiple notebook pages belongs in the same date's block, not separate unrelated entries. Do not infer who wrote “Things to improve” from headings alone.
 - Populate all actual recorded matches, even if the example discusses only a subset. Allow unwritten cards to stay collapsed and empty; never generate reflections for them. Without recorded timestamps, display ordering/numbering must not claim to be the true play order.
 - A sample contains a visually uncertain opponent and transcription artifacts; another opponent label differs from the previously imported 2026-10-11 source. Use approved IDs/results as the app's match context, and ask before any later historical import or record correction. Do not guess identities or silently rewrite match data from prose examples.
@@ -57,7 +57,7 @@ The seven notebook photos could not be read because external-directory access wa
 | Reflection (per day or per match) | English original + editable Japanese version | Japanese original only |
 | Coach comments | Japanese original + English translation | Japanese original only |
 
-- Propose one daily coach-comments block based on the typed samples; per-match coach fields are not included by default. Await confirmation.
+- Use one daily coach-comments block as confirmed by the user; no per-match coach fields.
 - Label coach comments as “Coach comments — entered by the player”; never imply the coach authenticated or approved the entry.
 - Japanese and English original fields stay editable. Translation output is editable, separate, and clearly labeled AI-assisted until reviewed.
 
@@ -97,7 +97,7 @@ The seven notebook photos could not be read because external-directory access wa
 
 ## Delivery and Verification
 
-1. Obtain approval for this proposal and outstanding choices; confirm the ownership mismatch in the typed examples if historical attribution/import is requested. Original photos are optional unless needed to clarify handwriting.
+1. Obtain approval for this proposal and outstanding choices. Sample ownership is now confirmed, but a historical journal import still requires a separate request and review of uncertain match references. Original photos are optional unless needed to clarify handwriting.
 2. Implement private Worker endpoints and storage with automated authorization, rate-limit, expiry/revocation, match-ownership, and atomic-save tests using synthetic credentials and private text.
 3. Implement bilingual directory/login and date-first notebook; remove member-visible reflection renderers and publishing workflow. Keep all unrelated match/player behavior intact.
 4. Add translation integration only after provider/privacy approval; test with mocked translation before live use.
@@ -109,10 +109,9 @@ The seven notebook photos could not be read because external-directory access wa
 
 ## Decisions Still Needed
 
-- Coach comments: daily-only block (now recommended based on samples), per match, or both.
-- Optional expandable “Things to improve” section (recommended, not a required second reflection).
+- Whether to omit the separate “Things to improve” field (now recommended): player next focus stays in reflection, coach advice stays in daily coach feedback.
 - Friday and atypical schedules: optional daily note plus actual recorded matches (recommended).
 - Translation provider/billing and consent to send selected private text to it.
-- Confirm whether the Kaitlyn/Jacelyn sample headings are reversed before historical attribution/import. Typed examples suffice for layout planning; do not require reuploading all photos.
+- Sample headings being reversed and daily-only coach feedback are confirmed. Typed examples suffice for layout planning; do not require reuploading all photos. No sample import is authorized yet.
 
 Defaults proposed for review: strict player-only application access (including no normal Admin/Approver content access), no publishing/approval step, a dedicated reflection login that restores for 56 days, and no private journal copying during normal dataset promotions.
