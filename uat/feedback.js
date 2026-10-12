@@ -14,6 +14,7 @@
     en: {
       title: 'Private Player Notebook', eyebrow: 'YOUR PRIVATE REFLECTION', invitation: 'To use private reflections, please speak to Jacelyn and Kaitlyn’s daddy.',
       privacy: 'Only your player login can open this notebook. It is not published to club members or normal Admin/Approver accounts. Infrastructure operators can technically access stored data; this is not end-to-end encryption.',
+      privacyTitle: 'Who can read this?',
       password: 'Player password', login: 'Open my notebook', remember: 'Remember me on this browser for eight weeks', shared: 'Use only your own account. Do not remember access on a shared device.',
       invalid: 'Could not sign in. Check the password or try again later.', unavailable: 'The notebook service is unavailable. Please try again.', retry: 'Try again', lock: 'Lock / sign out',
       date: 'Notebook date', previous: 'Previous day', next: 'Next day', history: 'Your saved dates', choose: 'Choose a date', activity: 'Activity (optional)',
@@ -33,6 +34,7 @@
     ja: {
       title: '選手のプライベートノート', eyebrow: '自分だけの振り返り', invitation: 'この振り返り機能を使いたい選手は、ジェイスとケイツのお父さんに声をかけてください。',
       privacy: 'このノートは本人の選手ログインでのみ開けます。クラブメンバーや通常の管理者・承認者には公開されません。ただし、システム運営者は保存データへ技術的にアクセスできます。エンドツーエンド暗号化ではありません。',
+      privacyTitle: 'プライバシーについて',
       password: '選手パスワード', login: '自分のノートを開く', remember: 'このブラウザで8週間ログインを保持する', shared: '必ず自分のアカウントを使ってください。共用端末ではログインを保持しないでください。',
       invalid: 'ログインできませんでした。パスワードを確認するか、時間をおいて試してください。', unavailable: 'ノートサービスを利用できません。もう一度試してください。', retry: 'もう一度試す', lock: 'ロック・ログアウト',
       date: 'ノートの日付', previous: '前の日', next: '次の日', history: '自分の保存済み日付', choose: '日付を選ぶ', activity: '活動内容（任意）',
@@ -68,7 +70,7 @@
   }
 
   function header() {
-    return `<section class="feedback-hero"><div><p class="eyebrow">${t('eyebrow')}</p><h1>${t('title')}</h1></div><aside>${t('privacy')}</aside></section>`;
+    return `<section class="feedback-hero"><div><p class="eyebrow">${t('eyebrow')}</p><h1>${t('title')}</h1></div><details class="notebook-privacy"><summary>${t('privacyTitle')}</summary><p>${t('privacy')}</p></details></section>`;
   }
   function updateLanguage() {
     document.documentElement.lang = language;
@@ -124,7 +126,7 @@
       return `<details class="notebook-match" ${written || targeted ? 'open' : ''}><summary><span><small>${t(match.source)} · ${t(match.result)}</small><b>${escapeHtml(name(player))} <em>${escapeHtml(match.score)}</em> ${escapeHtml(match.opponentName)}</b><small>${escapeHtml([match.eventName, match.round].filter(Boolean).join(' · '))}</small></span></summary><div>${reflectionFields(prefix)}</div></details>`;
     }).join('');
     app.innerHTML = `${header()}<div class="notebook-identity"><strong>${escapeHtml(name(player))}</strong><button id="notebook-lock" type="button">${t('lock')}</button></div><p class="notebook-notice">${player.bilingual ? t('translation') : ''} ${t('retention')}</p>
-      <nav class="notebook-dates" aria-label="${t('date')}"><button type="button" data-step="-1" aria-label="${t('previous')}">←</button><label>${t('date')}<input id="notebook-date" type="date" min="2000-01-01" max="2100-12-31" value="${date}"></label><button type="button" data-step="1" aria-label="${t('next')}">→</button><label>${t('history')}<select id="notebook-history"><option value="">${t('choose')}</option>${dates.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}</select></label></nav>
+      <nav class="notebook-dates" ${requiresLogin ? 'hidden' : ''} aria-label="${t('date')}"><button type="button" data-step="-1" aria-label="${t('previous')}">←</button><label>${t('date')}<input id="notebook-date" type="date" min="2000-01-01" max="2100-12-31" value="${date}"></label><button type="button" data-step="1" aria-label="${t('next')}">→</button><label>${t('history')}<select id="notebook-history"><option value="">${t('choose')}</option>${dates.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}</select></label></nav>
       <div class="notebook-savebar"><p id="notebook-status" role="status" aria-live="polite"></p><button id="notebook-retry" type="button">${t('retry')}</button></div><section id="notebook-reauth">${requiresLogin ? loginForm(player, true) : ''}</section><section id="notebook-conflict"></section>
       <section class="notebook-day" ${requiresLogin ? 'hidden' : ''}><label class="notebook-field"><span>${t('activity')}</span><input data-field="activity" maxlength="160" value="${escapeHtml(activity)}"></label>
       ${matchDay && matches.length ? '' : `<section class="notebook-entry"><h2>${t('daily')}</h2>${matchDay ? `<p>${t('noMatches')}</p>` : ''}${reflectionFields('daily')}</section>`}
@@ -160,7 +162,7 @@
   }
   function renderConflict() {
     const target = app.querySelector('#notebook-conflict');
-    if (!target || !conflict) return;
+    if (!target || !conflict || requiresLogin) return;
     target.innerHTML = `<h2>${t('conflict')}</h2>${[...dirty].map(([key, value]) => `<article><strong>${escapeHtml(key)}</strong><div class="notebook-bilingual"><section><small>${t('server')}</small><pre>${escapeHtml(conflict.fields[key] || '')}</pre></section><section><small>${t('mine')}</small><pre>${escapeHtml(value)}</pre></section></div></article>`).join('')}<button id="notebook-use-server" type="button">${t('useServer')}</button><button id="notebook-use-mine" type="button">${t('useMine')}</button>`;
     target.querySelector('#notebook-use-server').onclick = () => { if (!confirm(t('discard'))) return; documentValue = conflict; conflict = null; dirty.clear(); statusKey = 'ready'; renderNotebook(); };
     target.querySelector('#notebook-use-mine').onclick = async () => { documentValue = conflict; conflict = null; await flush(); renderNotebook(); };
@@ -187,6 +189,7 @@
           requiresLogin = true; token = ''; localStorage.removeItem(storageKey);
           app.querySelector('#notebook-reauth').innerHTML = loginForm(player, true); bindLogins();
           app.querySelector('.notebook-day').hidden = true;
+          app.querySelector('.notebook-dates').hidden = true;
         }
         statusKey = navigator.onLine ? 'failed' : 'offline';
         return false;
@@ -224,6 +227,24 @@
   window.addEventListener('beforeunload', event => { if (dirty.size || saving) { event.preventDefault(); event.returnValue = ''; } });
   window.addEventListener('online', () => { if (dirty.size) flush(); });
   window.addEventListener('offline', () => { if (dirty.size) { statusKey = 'offline'; updateStatus(); } });
+  // Browser Back can restore a frozen page without re-running start(). Hide
+  // private DOM before caching and revalidate before displaying it again.
+  window.addEventListener('pagehide', () => { app.style.visibility = 'hidden'; app.inert = true; });
+  window.addEventListener('pageshow', async event => {
+    if (!event.persisted) return;
+    try {
+      if (player && token) {
+        const result = await request('/api/reflections/session');
+        if (result.player.playerId !== player.playerId) throw Object.assign(new Error('Identity changed'), { status: 401 });
+        renderNotebook();
+      } else if (player) renderNotebook();
+      else renderDirectory();
+    } catch (error) {
+      if (error.status === 401) { requiresLogin = true; token = ''; localStorage.removeItem(storageKey); }
+      else { requiresLogin = true; token = ''; statusKey = 'failed'; }
+      if (player) renderNotebook(); else renderDirectory();
+    } finally { app.style.visibility = ''; app.inert = false; }
+  });
   // Another tab locking or changing the remembered account must not leave text
   // visible under a different identity. In-memory non-remembered sessions stay local.
   window.addEventListener('storage', event => {
