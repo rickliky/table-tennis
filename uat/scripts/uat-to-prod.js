@@ -24,8 +24,8 @@ const ENTITIES = [
   { entityType: 'tournamentMatch', collection: 'tournamentMatches', idField: 'tournamentMatchId' },
   { entityType: 'tournamentProgress', collection: 'tournamentProgress', idField: 'tournamentProgressId' },
   { entityType: 'rubber', collection: 'rubbers', idField: 'rubberId' },
-  { entityType: 'sessionFeedback', collection: 'sessionFeedback', idField: 'feedbackId' },
-  { entityType: 'matchFeedback', collection: 'matchFeedback', idField: 'matchFeedbackId' },
+  // Journals, reflection accounts/sessions, and legacy reflection bodies must
+  // never be copied by an ordinary dataset promotion.
   { entityType: 'session', collection: 'sessions', idField: 'sessionId' },
   { entityType: 'importBatch', collection: 'importBatches', idField: 'importBatchId' },
 ];
