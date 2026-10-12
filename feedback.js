@@ -14,6 +14,7 @@
     en: {
       title: 'Private Player Notebook', eyebrow: 'YOUR PRIVATE REFLECTION', invitation: 'To use private reflections, please speak to Jacelyn and Kaitlyn’s daddy.',
       privacy: 'Only your player login can open this notebook. It is not published to club members or normal Admin/Approver accounts. Infrastructure operators can technically access stored data; this is not end-to-end encryption.',
+      privacyTitle: 'Who can read this?',
       password: 'Player password', login: 'Open my notebook', remember: 'Remember me on this browser for eight weeks', shared: 'Use only your own account. Do not remember access on a shared device.',
       invalid: 'Could not sign in. Check the password or try again later.', unavailable: 'The notebook service is unavailable. Please try again.', retry: 'Try again', lock: 'Lock / sign out',
       date: 'Notebook date', previous: 'Previous day', next: 'Next day', history: 'Your saved dates', choose: 'Choose a date', activity: 'Activity (optional)',
@@ -33,6 +34,7 @@
     ja: {
       title: '選手のプライベートノート', eyebrow: '自分だけの振り返り', invitation: 'この振り返り機能を使いたい選手は、ジェイスとケイツのお父さんに声をかけてください。',
       privacy: 'このノートは本人の選手ログインでのみ開けます。クラブメンバーや通常の管理者・承認者には公開されません。ただし、システム運営者は保存データへ技術的にアクセスできます。エンドツーエンド暗号化ではありません。',
+      privacyTitle: 'プライバシーについて',
       password: '選手パスワード', login: '自分のノートを開く', remember: 'このブラウザで8週間ログインを保持する', shared: '必ず自分のアカウントを使ってください。共用端末ではログインを保持しないでください。',
       invalid: 'ログインできませんでした。パスワードを確認するか、時間をおいて試してください。', unavailable: 'ノートサービスを利用できません。もう一度試してください。', retry: 'もう一度試す', lock: 'ロック・ログアウト',
       date: 'ノートの日付', previous: '前の日', next: '次の日', history: '自分の保存済み日付', choose: '日付を選ぶ', activity: '活動内容（任意）',
@@ -68,7 +70,7 @@
   }
 
   function header() {
-    return `<section class="feedback-hero"><div><p class="eyebrow">${t('eyebrow')}</p><h1>${t('title')}</h1></div><aside>${t('privacy')}</aside></section>`;
+    return `<section class="feedback-hero"><div><p class="eyebrow">${t('eyebrow')}</p><h1>${t('title')}</h1></div><details class="notebook-privacy"><summary>${t('privacyTitle')}</summary><p>${t('privacy')}</p></details></section>`;
   }
   function updateLanguage() {
     document.documentElement.lang = language;

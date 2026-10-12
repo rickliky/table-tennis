@@ -163,6 +163,7 @@ test('private login and notebook fit mobile and desktop in both languages', asyn
     await page.goto('/feedback.html?player=LK-0080');
     await expect(page.locator('.notebook-directory')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+    expect(await page.locator('.notebook-login[data-player="LK-0080"] input[type=password]').evaluate(element => element.getBoundingClientRect().bottom)).toBeLessThan(900);
     await login(page);
     for (let index = 0; index < 2; index++) {
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
