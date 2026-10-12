@@ -173,3 +173,19 @@ test('private login and notebook fit mobile and desktop in both languages', asyn
     await expect(page.locator('.notebook-directory')).toBeVisible();
   }
 });
+
+test('a frozen-page return revalidates access before revealing notebook text', async ({ page, context }) => {
+  const { state } = await mock(context); await login(page);
+  await page.locator('[data-field="coach.ja"]').fill('Synthetic frozen-page note');
+  await expect(page.locator('#notebook-status')).toContainText('保存済み');
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })));
+  await expect(page.locator('#feedback-app')).not.toBeVisible();
+  state.expire = true;
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })));
+  await expect(page.locator('#notebook-reauth input[type=password]')).toBeVisible();
+  await expect(page.locator('.notebook-day')).not.toBeVisible();
+  await expect(page.locator('.notebook-dates')).not.toBeVisible();
+  await page.locator('#notebook-reauth input[type=password]').fill('synthetic-only-password');
+  await page.locator('#notebook-reauth button').click();
+  await expect(page.locator('[data-field="coach.ja"]')).toHaveValue('Synthetic frozen-page note');
+});

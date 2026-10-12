@@ -124,7 +124,7 @@
       return `<details class="notebook-match" ${written || targeted ? 'open' : ''}><summary><span><small>${t(match.source)} · ${t(match.result)}</small><b>${escapeHtml(name(player))} <em>${escapeHtml(match.score)}</em> ${escapeHtml(match.opponentName)}</b><small>${escapeHtml([match.eventName, match.round].filter(Boolean).join(' · '))}</small></span></summary><div>${reflectionFields(prefix)}</div></details>`;
     }).join('');
     app.innerHTML = `${header()}<div class="notebook-identity"><strong>${escapeHtml(name(player))}</strong><button id="notebook-lock" type="button">${t('lock')}</button></div><p class="notebook-notice">${player.bilingual ? t('translation') : ''} ${t('retention')}</p>
-      <nav class="notebook-dates" aria-label="${t('date')}"><button type="button" data-step="-1" aria-label="${t('previous')}">←</button><label>${t('date')}<input id="notebook-date" type="date" min="2000-01-01" max="2100-12-31" value="${date}"></label><button type="button" data-step="1" aria-label="${t('next')}">→</button><label>${t('history')}<select id="notebook-history"><option value="">${t('choose')}</option>${dates.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}</select></label></nav>
+      <nav class="notebook-dates" ${requiresLogin ? 'hidden' : ''} aria-label="${t('date')}"><button type="button" data-step="-1" aria-label="${t('previous')}">←</button><label>${t('date')}<input id="notebook-date" type="date" min="2000-01-01" max="2100-12-31" value="${date}"></label><button type="button" data-step="1" aria-label="${t('next')}">→</button><label>${t('history')}<select id="notebook-history"><option value="">${t('choose')}</option>${dates.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}</select></label></nav>
       <div class="notebook-savebar"><p id="notebook-status" role="status" aria-live="polite"></p><button id="notebook-retry" type="button">${t('retry')}</button></div><section id="notebook-reauth">${requiresLogin ? loginForm(player, true) : ''}</section><section id="notebook-conflict"></section>
       <section class="notebook-day" ${requiresLogin ? 'hidden' : ''}><label class="notebook-field"><span>${t('activity')}</span><input data-field="activity" maxlength="160" value="${escapeHtml(activity)}"></label>
       ${matchDay && matches.length ? '' : `<section class="notebook-entry"><h2>${t('daily')}</h2>${matchDay ? `<p>${t('noMatches')}</p>` : ''}${reflectionFields('daily')}</section>`}
@@ -160,7 +160,7 @@
   }
   function renderConflict() {
     const target = app.querySelector('#notebook-conflict');
-    if (!target || !conflict) return;
+    if (!target || !conflict || requiresLogin) return;
     target.innerHTML = `<h2>${t('conflict')}</h2>${[...dirty].map(([key, value]) => `<article><strong>${escapeHtml(key)}</strong><div class="notebook-bilingual"><section><small>${t('server')}</small><pre>${escapeHtml(conflict.fields[key] || '')}</pre></section><section><small>${t('mine')}</small><pre>${escapeHtml(value)}</pre></section></div></article>`).join('')}<button id="notebook-use-server" type="button">${t('useServer')}</button><button id="notebook-use-mine" type="button">${t('useMine')}</button>`;
     target.querySelector('#notebook-use-server').onclick = () => { if (!confirm(t('discard'))) return; documentValue = conflict; conflict = null; dirty.clear(); statusKey = 'ready'; renderNotebook(); };
     target.querySelector('#notebook-use-mine').onclick = async () => { documentValue = conflict; conflict = null; await flush(); renderNotebook(); };
@@ -187,6 +187,7 @@
           requiresLogin = true; token = ''; localStorage.removeItem(storageKey);
           app.querySelector('#notebook-reauth').innerHTML = loginForm(player, true); bindLogins();
           app.querySelector('.notebook-day').hidden = true;
+          app.querySelector('.notebook-dates').hidden = true;
         }
         statusKey = navigator.onLine ? 'failed' : 'offline';
         return false;
@@ -224,6 +225,24 @@
   window.addEventListener('beforeunload', event => { if (dirty.size || saving) { event.preventDefault(); event.returnValue = ''; } });
   window.addEventListener('online', () => { if (dirty.size) flush(); });
   window.addEventListener('offline', () => { if (dirty.size) { statusKey = 'offline'; updateStatus(); } });
+  // Browser Back can restore a frozen page without re-running start(). Hide
+  // private DOM before caching and revalidate before displaying it again.
+  window.addEventListener('pagehide', () => { app.style.visibility = 'hidden'; app.inert = true; });
+  window.addEventListener('pageshow', async event => {
+    if (!event.persisted) return;
+    try {
+      if (player && token) {
+        const result = await request('/api/reflections/session');
+        if (result.player.playerId !== player.playerId) throw Object.assign(new Error('Identity changed'), { status: 401 });
+        renderNotebook();
+      } else if (player) renderNotebook();
+      else renderDirectory();
+    } catch (error) {
+      if (error.status === 401) { requiresLogin = true; token = ''; localStorage.removeItem(storageKey); }
+      else { requiresLogin = true; token = ''; statusKey = 'failed'; }
+      if (player) renderNotebook(); else renderDirectory();
+    } finally { app.style.visibility = ''; app.inert = false; }
+  });
   // Another tab locking or changing the remembered account must not leave text
   // visible under a different identity. In-memory non-remembered sessions stay local.
   window.addEventListener('storage', event => {

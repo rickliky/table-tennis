@@ -34,6 +34,8 @@ Autosave runs after one second of idle typing and on blur; requests serialize an
 
 Stale revisions produce 409 with the owner's saved version. The UI retains unsynced text and shows saved versus local changed fields; choosing the local fields is an explicit overwrite, not an automatic retry. Failed/offline saves block date changes and sign-out until synced; retry and reconnection can resume. Expired/revoked login retains text in memory and offers same-player reauthentication.
 
+Private notebook fields/date history stay hidden during reauthentication. A frozen browser Back/Forward return revalidates the player session before revealing the cached notebook; locking/resetting access must not be bypassed by browser page restoration.
+
 **No plaintext local draft** is stored. Unsynced text exists only in the current page; the unload warning is a safeguard, not guaranteed mobile recovery. Keep the page open until Saved. Persistent protected recovery and historical revision snapshots are not included in this release. Journals remain the server's golden source.
 
 ## Restricted account management
