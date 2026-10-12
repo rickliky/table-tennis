@@ -206,6 +206,13 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### UAT → Production Promotion (2026-10-12) — LIVE
+- With the user's explicit approval, `main` was fast-forwarded from `fe17fd6` to `1e79818` (the 2026-10-11 training import commit). GitHub Actions run `38199501593` passed the pre-deploy suite (syntax, Worker security, 5 Playwright E2E) and the production deployment; Pages build completed and a cache-busted read of `build-info.json` confirms production serves `1e79818`.
+- Data was promoted through `scripts/uat-to-prod.js --apply`: 2,908 records written, 0 failures, PROD history preserved, no `--clear-history`. The reviewed preview was a pure addition overlay — 2 players (`LK-0157`, `LK-0158`), 60 matches, 1 session (`LKS-20261011`), 1 import batch (`IMP-449FF34C85C786C8`) — with 0 changed records and 0 PROD-only conflicts. PROD now matches UAT exactly: 89 players, 1,954 training matches, 5 tournaments, 299 progress records, 3 sessions, 3 import batches, 0 pending changes.
+- The first preview attempt failed with a transient Worker HTTP 503 on `/api/admin-data?environment=prod` (the enlarged audit history makes long reads intermittently slow); a plain rerun succeeded. Expect to retry reads rather than assume the environment is broken.
+- Both branches remain in sync at `1e79818`. Production security is unchanged and still on (`SECURE_PROD=true`); the data promotion was written through the authenticated Worker `/api/bulk-write` endpoint, not through any anonymous path.
+- Reminder: `build-info.json` at the production URL is CDN-cached — verify a release with a cache-buster query string (for example `?nocache=...`), otherwise a just-finished deploy looks like the previous build.
+
 ### Training Match Import 2026-10-11 (2026-10-12) — LIVE IN UAT
 - UAT batch `IMP-449FF34C85C786C8` / `BATCH-IMP-449FF34C85C786C8` is approved: 60 singles for session `LKS-20261011` (2026-10-11), 54 `RS-001` Completed and 6 `RS-002` Incomplete (`井関て 2-0 大谷`, `岡田 1-1 加藤ふ`, `李母 1-0 繁田`, `本木 1-1 名古屋`, `向井 2-1 ケイツ`, `土屋 1-1 長島り`). 26 distinct players. UAT now has 1,954 training matches and 89 players.
 - The notebook doubles row (`加藤ふ・岡田 3-2 土屋・大谷`) was explicitly excluded by the user — 60 singles only. The notebook score `李母 11-6 繁田` was recorded as `1-0` Incomplete per user instruction, so it is kept as evidence but excluded from completed statistics.
