@@ -19,7 +19,7 @@ test('deployed UAT exposes only authenticated data boundaries', async ({ page, r
 
   const apiRequests = [];
   page.on('request', req => { if (req.url().startsWith(WORKER_BASE)) apiRequests.push(req.url()); });
-  const protectedRoutes = ['', 'player.html?id=LK-0001', 'insights.html', 'tournament.html', 'feedback.html', 'player-profile-supplements.html'];
+  const protectedRoutes = ['', 'player.html?id=LK-0001', 'insights.html', 'tournament.html', 'player-profile-supplements.html'];
   for (const route of protectedRoutes) {
     if (page.url().startsWith(baseURL)) await page.evaluate(() => localStorage.clear());
     apiRequests.length = 0;
@@ -34,4 +34,14 @@ test('deployed UAT exposes only authenticated data boundaries', async ({ page, r
   await expect(page.locator('.admin-auth-screen')).toBeVisible();
   await expect(page.locator('select[name=role] option')).toHaveCount(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+
+  const privateResponse = await request.get(`${WORKER_BASE}/api/reflections/day?environment=uat&date=2026-10-11`);
+  expect(privateResponse.status()).toBe(401);
+  const prodResponse = await request.get(`${WORKER_BASE}/api/reflections/directory?environment=prod`);
+  expect(prodResponse.status()).toBe(404);
+  apiRequests.length = 0;
+  await page.goto(new URL('feedback.html', baseURL).toString());
+  await expect(page.locator('.notebook-directory')).toBeVisible();
+  await expect(page.locator('#site-password-gate')).toHaveCount(0);
+  expect(apiRequests.some(url => /\/api\/(public-data|admin-data|reflections\/day)/.test(url))).toBe(false);
 });

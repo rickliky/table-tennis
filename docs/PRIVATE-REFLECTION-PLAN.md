@@ -1,6 +1,6 @@
 # Private Player Reflection — Draft for Review
 
-Status: proposed on 2026-10-13; no application, Worker, credentials, or live data changes authorized yet.
+Status: the user approved UAT implementation on 2026-10-13, with external translation explicitly on hold. Production rollout and historical sample imports are not authorized. Operational details: `docs/PRIVATE-REFLECTIONS.md`.
 
 ## Goal
 
@@ -33,7 +33,7 @@ The seven notebook photos could not be read because external-directory access wa
 - Monday, Tuesday, Wednesday, Saturday: one daily reflection entry.
 - Thursday, Sunday: a card for every recorded singles match involving the authenticated player on that date. Show opponent, player-perspective score, Win/Loss/Incomplete, and training/tournament source.
 - The normal week determines the default layout, not invented attendance or match records. Actual recorded matches on another weekday remain available. On a match day with no imported matches, explain that results are not yet available and allow a general daily note.
-- Friday: optional daily note by default; confirm with the user.
+- Friday: optional daily note by default; actual recorded matches on atypical weekdays remain available. This implementation default was communicated when UAT work started.
 - Keep recorded tournament-match support, separate from training matches. A player may reflect on an incomplete match without changing its result.
 - Remove mandatory effort/confidence ratings and multi-question forms in favor of the requested free-text notebook. Optional prompts may suggest serves, receive, placement, what worked, what was difficult, and next focus without creating extra required fields.
 
@@ -59,7 +59,7 @@ The seven notebook photos could not be read because external-directory access wa
 
 - Use one daily coach-comments block as confirmed by the user; no per-match coach fields.
 - Label coach comments as “Coach comments — entered by the player”; never imply the coach authenticated or approved the entry.
-- Japanese and English original fields stay editable. Translation output is editable, separate, and clearly labeled AI-assisted until reviewed.
+- Japanese and English fields stay editable. In the approved non-translation release, secondary language fields are labelled manual versions, not AI-assisted output. No translation provider or buttons are enabled.
 
 ## Private API and Authentication
 

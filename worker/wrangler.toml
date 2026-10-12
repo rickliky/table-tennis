@@ -9,3 +9,7 @@ compatibility_date = "2026-09-16"
 # Prod security cutover (2026-10-09): SECURE_PROD=true is set as a Worker secret.
 # Remove it (wrangler secret delete SECURE_PROD) only to roll prod back to
 # anonymous reads; UAT is always secured regardless of this switch.
+# Private notebook rollout is UAT-only by default. Do not set
+# PRIVATE_REFLECTION_PROD=true before an explicitly approved production release.
+# Optional PRIVATE_REFLECTION_ORIGINS is a comma-separated local-test allowlist;
+# the production Pages origin is allowed without exposing wildcard CORS.

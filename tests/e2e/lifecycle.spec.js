@@ -101,7 +101,6 @@ test('every data-backed public route stays behind the gate and loads only with a
     '/player.html?id=LK-0001',
     '/insights.html',
     '/tournament.html',
-    '/feedback.html',
     '/player-profile-supplements.html'
   ];
   const pageErrors = [];
