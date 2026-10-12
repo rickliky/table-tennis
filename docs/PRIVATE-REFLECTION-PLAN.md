@@ -6,7 +6,7 @@ Status: proposed on 2026-10-13; no application, Worker, credentials, or live dat
 
 Replace member-visible, administrator-published reflections with a private player journal. Initial enabled players are Jacelyn (`LK-0080`) and Kaitlyn (`LK-0002`). Passwords supplied in chat must be provisioned securely during approved implementation; never put plaintext passwords or password hashes in this document, browser code, public player records, fixtures, or published artifacts.
 
-The seven notebook photos could not be read because external-directory access was denied. Request attachments or copies within the repository before finalizing notebook-specific layout. Do not infer their contents or import handwritten entries as part of this redesign.
+The seven notebook photos could not be read because external-directory access was denied. The user subsequently supplied typed notebook examples, which are sufficient to refine the layout without requiring the photos. Do not claim to have reviewed the original handwriting. Treat the examples as design references only; do not import their content unless separately requested and ownership is confirmed. Do not commit the private sample bodies to the repository.
 
 ## Findings
 
@@ -37,6 +37,19 @@ The seven notebook photos could not be read because external-directory access wa
 - Keep recorded tournament-match support, separate from training matches. A player may reflect on an incomplete match without changing its result.
 - Remove mandatory effort/confidence ratings and multi-question forms in favor of the requested free-text notebook. Optional prompts may suggest serves, receive, placement, what worked, what was difficult, and next focus without creating extra required fields.
 
+### Refinement from the typed notebook examples
+
+- There is an unresolved ownership mismatch: the sample headed Kaitlyn uses ジェスリン, while the sample headed Jacelyn uses ケイツ. Ask whether the headings were reversed before attributing any example to an account. No live data corrections or journal imports are authorized by providing these examples.
+- Organize each date as a single notebook page: date and optional private activity label, optional “Things to improve / 改善すること”, the daily reflection or recorded-match cards, then a daily coach-feedback block.
+- Activity labels can describe training, a private lesson, combined lesson/training, match practice, or a tournament. This is private diary context, not a change to club session metadata or a claim of attendance.
+- Keep “Things to improve” optional and collapsed until used, so non-match days still have one primary reflection input as originally requested. This is a player goal, separate from actual coach feedback. For the two bilingual accounts, optional goals can use English plus Japanese like reflection text; all other enabled accounts use Japanese directly. Confirm whether the user wants this extra optional section.
+- Non-match reflection remains a single multiline box (plus the Japanese version for the two bilingual accounts), with a hint to describe practice, observations, and next focus; no mandatory sub-question fields.
+- Match reflections remain one multiline box per recorded match (plus Japanese for the bilingual accounts). Allow paragraphs covering what worked, difficulties, and intended changes without forcing these into separate fields.
+- Replace the earlier recommendation of daily plus per-match coach comments with a simpler daily coach-feedback block, consistent with the supplied grouped feedback. Preserve paragraphs, numbering, and line breaks; comments can refer to a match in the text. Per-match coach fields can be added later only if requested.
+- Coach feedback spanning multiple notebook pages belongs in the same date's block, not separate unrelated entries. Do not infer who wrote “Things to improve” from headings alone.
+- Populate all actual recorded matches, even if the example discusses only a subset. Allow unwritten cards to stay collapsed and empty; never generate reflections for them. Without recorded timestamps, display ordering/numbering must not claim to be the true play order.
+- A sample contains a visually uncertain opponent and transcription artifacts; another opponent label differs from the previously imported 2026-10-11 source. Use approved IDs/results as the app's match context, and ask before any later historical import or record correction. Do not guess identities or silently rewrite match data from prose examples.
+
 ### Writing fields
 
 | Entry | LK-0080 / LK-0002 | Future enabled players |
@@ -44,7 +57,7 @@ The seven notebook photos could not be read because external-directory access wa
 | Reflection (per day or per match) | English original + editable Japanese version | Japanese original only |
 | Coach comments | Japanese original + English translation | Japanese original only |
 
-- Propose one daily coach-comments block plus optional comments in each match card; confirm whether the user prefers daily-only or per-match-only.
+- Propose one daily coach-comments block based on the typed samples; per-match coach fields are not included by default. Await confirmation.
 - Label coach comments as “Coach comments — entered by the player”; never imply the coach authenticated or approved the entry.
 - Japanese and English original fields stay editable. Translation output is editable, separate, and clearly labeled AI-assisted until reviewed.
 
@@ -74,6 +87,7 @@ The seven notebook photos could not be read because external-directory access wa
 ## Translation
 
 - English reflection → lightly polished natural Japanese, preserving the player's meaning, voice, uncertainty, and table-tennis context. No invented tactics, achievements, coach advice, or outcomes.
+- Use clear, age-appropriate Japanese rather than an adult coaching report. Preserve distinctions such as an observation, a tentative explanation, an action already taken, and a next-match intention. Keep technical distinctions (for example drive vs smash, block vs counter, knuckle vs backspin) and paragraph structure. Translations must not change recorded scores/opponents or add reasons for wins/losses.
 - Japanese coach comments → natural English with accurate table-tennis terminology and preserved corrections/nuance. No new coaching advice.
 - Button-triggered only, never an AI request per keystroke. Suggest labels “Polish into Japanese” and “Translate coach comments into English”.
 - Execute through the Worker using a configured server-side AI provider. No provider is currently configured; select provider, billing, retention policy, and consent before enabling external requests.
@@ -83,7 +97,7 @@ The seven notebook photos could not be read because external-directory access wa
 
 ## Delivery and Verification
 
-1. Obtain approval for this proposal and outstanding choices; review uploaded notebook examples.
+1. Obtain approval for this proposal and outstanding choices; confirm the ownership mismatch in the typed examples if historical attribution/import is requested. Original photos are optional unless needed to clarify handwriting.
 2. Implement private Worker endpoints and storage with automated authorization, rate-limit, expiry/revocation, match-ownership, and atomic-save tests using synthetic credentials and private text.
 3. Implement bilingual directory/login and date-first notebook; remove member-visible reflection renderers and publishing workflow. Keep all unrelated match/player behavior intact.
 4. Add translation integration only after provider/privacy approval; test with mocked translation before live use.
@@ -95,9 +109,10 @@ The seven notebook photos could not be read because external-directory access wa
 
 ## Decisions Still Needed
 
-- Coach comments: daily, per match, or both (recommend both, optional).
+- Coach comments: daily-only block (now recommended based on samples), per match, or both.
+- Optional expandable “Things to improve” section (recommended, not a required second reflection).
 - Friday and atypical schedules: optional daily note plus actual recorded matches (recommended).
 - Translation provider/billing and consent to send selected private text to it.
-- Review the notebook photos once attachments/repository copies are available.
+- Confirm whether the Kaitlyn/Jacelyn sample headings are reversed before historical attribution/import. Typed examples suffice for layout planning; do not require reuploading all photos.
 
 Defaults proposed for review: strict player-only application access (including no normal Admin/Approver content access), no publishing/approval step, a dedicated reflection login that restores for 56 days, and no private journal copying during normal dataset promotions.
