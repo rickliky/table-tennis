@@ -95,6 +95,22 @@ The seven notebook photos could not be read because external-directory access wa
 - Preserve originals on every attempt. Show a candidate translation before replacing a manually edited output. Record a source hash/version; mark translations outdated after source edits. Reject stale AI results if source text changed while the request was running.
 - If AI is unavailable, autosave and manual writing continue normally. Translation is not required to save a reflection.
 
+### Provider recommendation (2026-10-13; not yet approved)
+
+- Recommend **DeepL's paid API** (currently API Growth for new subscriptions; legacy API Pro only if genuinely available to the account). This is a translation-first candidate for the requested limited polishing, not a general coaching chatbot. Use EN↔JA terminology glossaries, short generic table-tennis context, and local tone instructions to preserve the player's voice. Its documented `custom_instructions` support Japanese/English targets; verify account access and quality with synthetic samples before sending private writing.
+- DeepL's paid terms say content is kept temporarily to provide translation and not used for general model training. Do not promise absolute zero retention: exceptional encrypted debugging retention may last up to 72 hours. Avoid saved translations, translation memories, or uploading private notebooks as training/customization material. A terminology-only glossary is sufficient. Obtain the necessary guardian/coach-content authorizations and accept applicable data-processing terms before live use. Label unedited output as DeepL-assisted per API attribution terms.
+- Do **not** use free/Developer DeepL plans for this private content: current terms prohibit personal-data processing with API Developer and permit ongoing content retention. Do not confuse a paid API plan with an ordinary web-translator subscription.
+- Published US pricing reference for API Growth: USD 26/month billed annually, including 12 million characters per year, with additional-character fees. Japan checkout, monthly billing, taxes, and plan availability must be checked before purchase; no subscription or cost is authorized by requesting a recommendation. Set provider and application usage caps if approved.
+- Do **not** recommend the standard Gemini Developer API for this youth-facing feature: its current terms prohibit use in API clients directed toward or likely accessed by under-18s, regardless of selecting a paid tier. This finding concerns the Developer API terms, not every separately contracted Google Cloud product.
+- OpenAI is an alternative for flexible polishing only after suitable child-data safeguards are in place. Its under-18 guidance says not to process personal data of under-13s (or the applicable digital-consent age) without API Zero Data Retention. ZDR requires approval; `store:false` alone is not ZDR and does not remove default abuse-monitoring retention. Do not use this coding session's login as a website API credential.
+- If paid translation is not approved, implement the private journal with manual Japanese/English fields first and leave external translation disabled. Never fall back to an unapproved provider on errors.
+
+Official references checked:
+- [DeepL text API](https://developers.deepl.com/api-reference/translate) and [custom instructions](https://developers.deepl.com/docs/customize/custom-instructions)
+- [DeepL terms](https://www.deepl.com/en/pro-license), [privacy](https://www.deepl.com/en/privacy), and [pricing](https://www.deepl.com/en/pricing)
+- [Gemini Developer API terms](https://ai.google.dev/gemini-api/terms)
+- [OpenAI under-18 guidance](https://developers.openai.com/api/docs/guides/safety-checks/under-18-api-guidance) and [data controls](https://developers.openai.com/api/docs/guides/your-data)
+
 ## Delivery and Verification
 
 1. Obtain approval for this proposal and outstanding choices. Sample ownership is now confirmed, but a historical journal import still requires a separate request and review of uncertain match references. Original photos are optional unless needed to clarify handwriting.
