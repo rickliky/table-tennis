@@ -1,4 +1,16 @@
-# Private player notebook — UAT implementation
+# Private player notebook
+
+## Approved production rollout — prepared, not yet applied
+
+On 2026-10-13 the user approved promoting all code/data and explicitly selected **Migrate existing notebooks**: enable production, preserve the two players' passwords and saved writing, retain UAT originals, copy no browser sessions, and overwrite no production notebook. Production cutover is pending final UAT verification of the rollout preparation.
+
+- Ordinary approved collections were compared directly in Upstash without printing records: all ten are identical (89 players, 1,954 training matches); no ordinary collection rewrite is needed. Both environments have zero pending changes and zero legacy reflection bodies/audit records.
+- `scripts/promote-private-notebooks.js` is a separate, tightly scoped operator migration, not part of ordinary data promotion. It accepts only the two approved initial accounts and validates their complete day/index/account snapshot. Preview is read-only; apply requires both `--apply --confirm-production-notebooks`. An atomic Lua guard refuses a changed UAT snapshot or any existing production private namespace, then copies exact credential/document/index bytes. UAT is never mutated and sessions/rate counters are never copied. Repeating after a successful migration deliberately refuses; it is not a continuing environment sync.
+- Apply first creates an **AES-256-GCM encrypted local recovery snapshot** outside the repository, under `%LOCALAPPDATA%/Temp/opencode/private-notebooks-before-prod-<UUID>.encrypted.json`. Its random encryption key is wrapped with Windows DPAPI CurrentUser. Recovery requires this Windows user's DPAPI profile on the operator PC: unwrap `wrappedKey` with `ProtectedData.Unprotect(..., CurrentUser)`, decrypt `ciphertext` with AES-256-GCM using `iv` and `tag`, and validate the recovered snapshot. Do not print, commit, export plaintext, or restore over live production writing. A restore needs separate approval and a reviewed conflict-aware plan. Keep the operator's Windows profile protected; this is a rollout recovery snapshot, not an automated off-PC backup service.
+- `node scripts/test-private-notebook-promotion.js` validates synthetic snapshots; `--live` additionally tests actual Lua against isolated UUID-scoped synthetic Redis keys and, on Windows, an encrypted-backup recovery round-trip. Synthetic keys/files are removed afterward. No actual journals are used by tests.
+- Production Admin navigation is no longer UAT-gated; server authorization remains Admin-only/read-only. Production owner sessions remain separate from UAT and players must sign in again. The deployed Worker already supports this via the separately approved `PRIVATE_REFLECTION_PROD=true` switch; do not reset other security secrets.
+
+## Historical UAT verification
 
 UAT mobile/Admin-reading release `fb1c262` is live; deployment `38348611933` passed the complete verification suite (17 browser tests) and post-deploy smoke. Real authentication and read-only access checks passed. JA/EN phone/desktop usability checks used intercepted synthetic documents and writes, without modifying any real notebook entries or printing their content. Existing saved-day Admin reads were validated locally for document/owner/context shape without export. Production behavior/data is unchanged and requires separate approval.
 
@@ -61,7 +73,7 @@ Private notebook fields/date history stay hidden during reauthentication. A froz
 
 ## Restricted account management
 
-`scripts/manage-reflection-account.js` is intentionally UAT-only. Supply `ADMIN_PASSWORD` in the process environment. `--list` prints only player ID, enabled status, and credential version. For changes, set `REFLECTION_PLAYER_ID`, choose `--enable`, `--disable`, or `--reset`, and preview first. Add `--apply` to write. Set `REFLECTION_PASSWORD` only for initial enable or explicit reset; do not put passwords in script source or command-line arguments. Enabling an already-enabled account is a no-op, never an implicit password reset. Reenable/disable/reset preserves all journal text but revokes previous sessions.
+`scripts/manage-reflection-account.js` defaults to UAT. Approved production operations additionally require `--prod --confirm-production`. Supply `ADMIN_PASSWORD` in the process environment. `--list` prints only player ID, enabled status, and credential version. For changes, set `REFLECTION_PLAYER_ID`, choose `--enable`, `--disable`, or `--reset`, and preview first. Add `--apply` to write. Set `REFLECTION_PASSWORD` only for initial enable or explicit reset; do not put passwords in script source or command-line arguments. Enabling an already-enabled account is a no-op, never an implicit password reset. Reenable/disable/reset preserves all journal text but revokes previous sessions.
 
 The Worker `/api/reflections/accounts` GET/POST requires the Admin role. It is not a content-management endpoint. Data Maintenance has a separate read-only notebook viewer, never account passwords. Use the restricted script to manage feature access.
 

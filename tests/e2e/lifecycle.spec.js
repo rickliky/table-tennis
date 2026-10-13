@@ -138,7 +138,7 @@ test('Admin can edit, Approver is review-only, and sign-out clears the session',
   await page.locator('input[type=password]').fill('admin-password');
   await page.locator('button[type=submit]').click();
   await expect(page.locator('.admin-role-badge')).toContainText('Admin');
-  await expect(page.locator('.admin-tab')).toHaveCount(8);
+  await expect(page.locator('.admin-tab')).toHaveCount(9);
   expect(requests.find(request => request.path === '/api/admin-data').role).toBe('admin');
 
   await page.getByRole('button', { name: /SIGN OUT/ }).click();

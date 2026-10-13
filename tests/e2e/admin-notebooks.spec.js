@@ -125,3 +125,23 @@ test('leaving notebooks aborts pending reads; browser storage sign-out clears th
   await page.evaluate(() => { const oldValue = localStorage.getItem('lk-admin-session'); localStorage.removeItem('lk-admin-session'); window.dispatchEvent(new StorageEvent('storage', { key: 'lk-admin-session', oldValue, newValue: null })); });
   await expect(page.locator('.admin-auth-screen')).toBeVisible();
 });
+
+test('production Admin can read notebooks; production Approver remains excluded', async ({ page, context }) => {
+  const { requests } = await mock(context);
+  await context.route('https://notebook-prod.test/**', async route => {
+    const url = new URL(route.request().url());
+    const response = await route.fetch({ url: `http://127.0.0.1:4173${url.pathname}${url.search}` });
+    await route.fulfill({ response });
+  });
+  await page.goto('https://notebook-prod.test/admin.html?tab=notebooks');
+  await page.locator('select[name=role]').selectOption('admin');
+  await page.locator('input[type=password]').fill('synthetic-password'); await page.locator('button[type=submit]').click();
+  await expect(page.locator('#admin-notebook-content')).toContainText('Synthetic daily reflection');
+  expect(requests.filter(request => request.path.startsWith('/api/reflections/admin/')).every(request => request.environment === 'prod' && request.method === 'GET')).toBe(true);
+  await page.getByRole('button', { name: /SIGN OUT/ }).click();
+  await page.locator('select[name=role]').selectOption('approver');
+  await page.locator('input[type=password]').fill('synthetic-password'); await page.locator('button[type=submit]').click();
+  await expect(page.locator('.admin-role-badge')).toContainText('Approver');
+  await expect(page.getByRole('button', { name: /PLAYER NOTEBOOKS|選手ノート/ })).toHaveCount(0);
+  await expect(page.locator('#admin-notebook-content')).toHaveCount(0);
+});

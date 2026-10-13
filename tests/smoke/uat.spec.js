@@ -42,7 +42,12 @@ test('deployed UAT exposes only authenticated data boundaries', async ({ page, r
     expect((await request.get(url.toString())).status()).toBe(401);
   }
   const prodResponse = await request.get(`${WORKER_BASE}/api/reflections/directory?environment=prod`);
-  expect(prodResponse.status()).toBe(404);
+  // Production rollout is a separately approved Worker switch, not a UAT deploy.
+  expect([200, 404]).toContain(prodResponse.status());
+  if (prodResponse.ok()) {
+    expect((await request.get(`${WORKER_BASE}/api/reflections/day?environment=prod&date=2099-12-31`)).status()).toBe(401);
+    expect((await request.get(`${WORKER_BASE}/api/reflections/admin/players?environment=prod`)).status()).toBe(401);
+  }
   apiRequests.length = 0;
   await page.goto(new URL('feedback.html', baseURL).toString());
   await expect(page.locator('.notebook-directory')).toBeVisible();

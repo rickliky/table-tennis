@@ -135,6 +135,25 @@ try {
   assert.equal((await call('/api/approve-batch', { token: admin, body: { batchId: 'LEGACY', decision: 'accept' } })).status, 403);
   assert.equal((await call('/api/bulk-write?environment=prod', { token: admin, environment: 'prod', body: { environment: 'uat', entityType: 'matchFeedback', records: [] } })).status, 403);
   assert.ok(JSON.stringify((await call('/api/admin-data', { token: admin, environment: 'prod' })).value).includes('DO NOT EXPOSE'), 'production remains unchanged');
+  // Approved production rollout: preserved verifiers work, but UAT sessions do not.
+  for (const id of ['LK-0080', 'LK-0002']) hashFor('prod:private-reflection:accounts').set(id, hashFor('uat:private-reflection:accounts').get(id));
+  setJson('prod:private-reflection:day:LK-0080:2026-10-11', stored);
+  sorted.set('prod:private-reflection:dates:LK-0080', new Set(['2026-10-11']));
+  const prodOptions = { environment: 'prod', environmentValues: { PRIVATE_REFLECTION_PROD: 'true' } };
+  const prodLogin = await call('/api/reflections/login', { ...prodOptions, body: { playerId: 'LK-0080', password: 'synthetic-password-only' } });
+  assert.equal(prodLogin.status, 200);
+  assert.deepEqual((await call(day, { ...prodOptions, token: prodLogin.value.token })).value.document, stored);
+  assert.equal((await call(day, { ...prodOptions, token: a.token })).status, 401);
+  assert.equal((await call(day, { token: prodLogin.value.token })).status, 401);
+  for (const token of [undefined, site, approver, prodLogin.value.token]) assert.ok([401, 403].includes((await call(adminPaths[2], { ...prodOptions, token })).status));
+  assert.deepEqual((await call(adminPaths[2], { ...prodOptions, token: admin })).value.document, stored);
+  assert.equal((await call(adminPaths[2], { ...prodOptions, token: admin, method: 'POST', body: {} })).status, 405);
+  for (const path of ['/api/public-data', '/api/admin-data', '/api/pending']) {
+    const result = await call(path, { ...prodOptions, token: admin });
+    assert.equal(result.status, 200);
+    assert.ok(!JSON.stringify(result.value).includes('DO NOT EXPOSE'));
+    assert.ok(!JSON.stringify(result.value).includes('synthetic coach comment'));
+  }
   assert.equal((await call('/api/reflections/logout', { token: b.token, method: 'POST' })).status, 200);
   assert.equal((await call(day, { token: b.token })).status, 401);
   await call('/api/reflections/accounts', { token: admin, body: { playerId: 'LK-0080', enabled: true, password: 'changed-synthetic-password' } });
