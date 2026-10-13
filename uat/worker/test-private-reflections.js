@@ -105,6 +105,26 @@ try {
   assert.deepEqual((await call('/api/reflections/dates', { token: a.token })).value.dates, ['2026-10-11']);
   assert.deepEqual((await call('/api/reflections/dates', { token: b.token })).value.dates, []);
   assert.deepEqual((await call(day, { token: b.token })).value.document.fields, {});
+  const adminPaths = ['/api/reflections/admin/players', '/api/reflections/admin/dates?playerId=LK-0080', '/api/reflections/admin/day?playerId=LK-0080&date=2026-10-11'];
+  for (const path of adminPaths) {
+    for (const token of [undefined, site, approver, a.token, `${admin}tampered`]) {
+      assert.ok([401, 403].includes((await call(path, { token })).status), `${path} must reject non-Admin access`);
+    }
+    const result = await call(path, { token: admin });
+    assert.equal(result.status, 200); assert.equal(result.headers.get('cache-control'), 'no-store');
+    assert.ok(!JSON.stringify(result.value).includes('hash')); assert.ok(!JSON.stringify(result.value).includes('salt'));
+    assert.equal((await call(path, { token: admin, body: { patch: { 'coach.ja': 'must not write' } } })).status, 405);
+    assert.equal((await call(path, { token: admin, method: 'DELETE' })).status, 405);
+    assert.equal((await call(path, { token: admin, environment: 'prod' })).status, 404);
+    assert.equal((await call(path, { token: admin, origin: 'https://evil.example' })).status, 403);
+  }
+  assert.deepEqual((await call(adminPaths[1], { token: admin })).value.dates, ['2026-10-11']);
+  const adminDay = (await call(adminPaths[2], { token: admin })).value;
+  assert.equal(adminDay.player.playerId, 'LK-0080'); assert.deepEqual(adminDay.document, stored);
+  assert.equal(adminDay.matches.length, 2);
+  assert.equal((await call('/api/reflections/admin/day?playerId=LK-9999&date=2026-10-11', { token: admin })).status, 404);
+  assert.equal((await call('/api/reflections/admin/day?playerId=../../prod&date=2026-10-11', { token: admin })).status, 400);
+  assert.equal((await call('/api/reflections/admin/day?playerId=LK-0080&date=2026-02-30', { token: admin })).status, 400);
   for (const path of ['/api/public-data', '/api/admin-data', '/api/pending']) {
     const result = await call(path, { token: admin }); assert.equal(result.status, 200);
     assert.ok(!JSON.stringify(result.value).includes('DO NOT EXPOSE'), path);
@@ -124,6 +144,7 @@ try {
   await call('/api/reflections/accounts', { token: admin, body: { playerId: 'LK-0080', enabled: false } });
   assert.equal((await call(day, { token: resetLogin.value.token })).status, 401, 'disable invalidates sessions');
   assert.equal((await call('/api/reflections/directory')).value.players.length, 2);
+  assert.equal((await call(adminPaths[2], { token: admin })).value.document.fields['coach.ja'], 'synthetic coach comment', 'Admin may read a disabled account, without enabling it');
   const sessionEntry = [...store].find(([key, value]) => key.includes('session:') && JSON.parse(value).playerId === 'LK-0003');
   const expired = JSON.parse(sessionEntry[1]); expired.expires = Date.now() - 1; setJson(sessionEntry[0], expired);
   assert.equal((await call(day, { token: c.token })).status, 401);

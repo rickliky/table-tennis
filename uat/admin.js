@@ -121,7 +121,8 @@
   let currentRole = '';
   const launchParams = new URLSearchParams(location.search), launchPlayerId = launchParams.get('editPlayer') || launchParams.get('playerId') || '', launchEditPlayer = Boolean(launchParams.get('editPlayer')), launchNewMatch = launchParams.get('newMatch') === '1';
   const requestedTab = launchParams.get('tab');
-  let activeTab = ['overview', 'sessions', 'import', 'matches', 'players', 'tournaments', 'clubs', 'manage'].includes(requestedTab) ? requestedTab : 'overview';
+  let activeTab = ['overview', 'sessions', 'import', 'matches', 'players', 'tournaments', 'clubs', 'manage', 'notebooks'].includes(requestedTab) ? requestedTab : 'overview';
+  let disposeNotebooks = null;
   let activePlayerSubTab = 'ourPlayers';
   let activeManageSubTab = 'pending';
   let activeMatchHealthFilter = '';
@@ -240,6 +241,7 @@
   }
 
   function renderAdminLogin() {
+    disposeNotebooks?.(); disposeNotebooks = null;
     empty(app);
     const login = el('section', { className: 'admin-login admin-panel admin-auth-screen' });
     login.append(text('p', 'SECURE DATA ACCESS / 安全なデータアクセス', 'eyebrow'), text('h1', language === 'en' ? 'Data Maintenance Sign-In' : 'データメンテナンス ログイン'), text('p', language === 'en' ? 'An Admin login is required to edit or submit data. Approvers can review and publish pending requests. This browser stays signed in for seven days.' : 'データの編集・申請には管理者ログインが必要です。承認者は承認待ちの申請確認と公開ができます。このブラウザでは7日間ログイン状態を保持します。', 'admin-login-desc'));
@@ -287,8 +289,10 @@
   }
 
   function renderWorkspace() {
+    disposeNotebooks?.(); disposeNotebooks = null;
     empty(app);
     if (currentRole === 'approver') activeTab = 'manage';
+    if (activeTab === 'notebooks' && window.LKData.environment !== 'uat') activeTab = 'overview';
     const header = el('header', { className: 'site-header' });
     const brand = el('a', { className: 'brand', href: 'index.html', 'aria-label': 'Little Kings home' });
     const brandText = el('span');
@@ -311,9 +315,13 @@
       tabs.append(tab('tournaments', 'TOURNAMENTS / 大会'));
       tabs.append(tab('clubs', 'CLUBS / クラブ'));
       tabs.append(tab('manage', 'MANAGE / 管理'));
+      if (window.LKData.environment === 'uat') tabs.append(tab('notebooks', language === 'en' ? 'PLAYER NOTEBOOKS' : '選手ノート'));
     }
     app.append(header, tabs);
-    if (activeTab === 'overview') renderOverview(); else if (activeTab === 'sessions') renderSessions(); else if (activeTab === 'import') renderImportCenter(); else if (activeTab === 'matches') renderAllMatches(); else if (activeTab === 'players') renderPlayers(activePlayerSubTab); else if (activeTab === 'tournaments') renderTournaments(); else if (activeTab === 'clubs') renderEntity('clubs'); else if (activeTab === 'manage') renderManage(); else renderOverview();
+    if (activeTab === 'notebooks') {
+      const panel = el('section', { className: 'admin-panel admin-notebooks' }); app.append(panel);
+      disposeNotebooks = window.LKAdminNotebooks.mount({ panel, language, onUnauthorized: signOut });
+    } else if (activeTab === 'overview') renderOverview(); else if (activeTab === 'sessions') renderSessions(); else if (activeTab === 'import') renderImportCenter(); else if (activeTab === 'matches') renderAllMatches(); else if (activeTab === 'players') renderPlayers(activePlayerSubTab); else if (activeTab === 'tournaments') renderTournaments(); else if (activeTab === 'clubs') renderEntity('clubs'); else if (activeTab === 'manage') renderManage(); else renderOverview();
   }
   function button(label, onclick, className = '') { const node = el('button', { className: `admin-button ${className}`.trim(), type: 'button', textContent: label }); node.onclick = onclick; return node; }
   function tab(id, label) { const node = button(label, () => { activeTab = id; selectedId = ''; renderWorkspace(); }, `admin-tab${activeTab === id ? ' active' : ''}`); return node; }

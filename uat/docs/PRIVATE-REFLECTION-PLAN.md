@@ -1,6 +1,6 @@
 # Private Player Reflection — UAT Plan (Translation Deferred)
 
-Status: the user approved UAT implementation on 2026-10-13, with external translation explicitly on hold. Production rollout and historical sample imports are not authorized. Operational details: `docs/PRIVATE-REFLECTIONS.md`.
+Status: the user approved UAT implementation on 2026-10-13 and subsequently chose to keep translation manual, requested always-expanded mobile writing with auto-growing text boxes, and authorized Admin read-only access through Data Maintenance. This supersedes the original owner-only/no-Admin-reading design below. Production rollout and historical sample imports are not authorized. Operational details: `docs/PRIVATE-REFLECTIONS.md`.
 
 ## Goal
 
@@ -47,7 +47,7 @@ The seven notebook photos could not be read because external-directory access wa
 - Match reflections remain one multiline box per recorded match (plus Japanese for the bilingual accounts). Allow paragraphs covering what worked, difficulties, and intended changes without forcing these into separate fields.
 - The user confirmed coach comments do not need per-match fields. Use one daily coach-feedback block, preserving paragraphs, numbering, and line breaks; comments can refer to a match in the text.
 - Coach feedback spanning multiple notebook pages belongs in the same date's block, not separate unrelated entries. Do not infer who wrote “Things to improve” from headings alone.
-- Populate all actual recorded matches, even if the example discusses only a subset. Allow unwritten cards to stay collapsed and empty; never generate reflections for them. Without recorded timestamps, display ordering/numbering must not claim to be the true play order.
+- Populate all actual recorded matches, even if the example discusses only a subset. All writing blocks now stay expanded; unwritten fields remain empty, never generated. Auto-growing inputs show all paragraphs. Without recorded timestamps, display ordering/numbering must not claim to be the true play order.
 - A sample contains a visually uncertain opponent and transcription artifacts; another opponent label differs from the previously imported 2026-10-11 source. Use approved IDs/results as the app's match context, and ask before any later historical import or record correction. Do not guess identities or silently rewrite match data from prose examples.
 
 ### Writing fields
@@ -68,10 +68,10 @@ The seven notebook photos could not be read because external-directory access wa
 - Issue an opaque random reflection token with its hash stored server-side, bound to environment, player ID, credential version, and an absolute 56-day expiry. Validate enabled status and revocation on every private request. Sign-out revokes the current session; reset/disable revokes all that player's sessions.
 - Suggested routes: directory, player login, reflection session/sign-out, own journal dates, own journal day, revision-checked autosave, and translation. Exact route names can be finalized during implementation.
 - Never trust a client-supplied player ID as identity. Derive the owner from the session and verify match participation server-side. Opponents, dates, and results come from approved matches, not editable client snapshots.
-- General Site/Admin/Approver tokens do not grant private journal read or write access. Player sessions cannot call maintenance APIs or impersonate another player. Account administration manages feature access, not journal content.
+- General Site/Approver tokens do not grant private journal access. The user subsequently authorized Admin read-only notebook viewing through a dedicated Data Maintenance tab and protected read-only endpoints, not general datasets. Admins cannot edit notebooks; player sessions cannot call maintenance APIs or impersonate another player. Account administration remains separate from journal reading.
 - Remove reflection bodies from general public/admin data, pending/history APIs, bulk-write routes, and ordinary data exports. Close legacy generic reflection submissions in the redesigned environment. Recheck and privately archive any legacy content before cutover; do not delete user content automatically.
 - Return private responses with `Cache-Control: no-store`, no private logging, bounded request sizes, login rate limits, and restricted allowed site origins. Render all user/AI text as escaped text.
-- This is application-level access control, not end-to-end encryption: infrastructure operators with direct database access can technically read stored journals. Password sharing also permits access. Explain these limits rather than promising otherwise.
+- This is application-level access control, not end-to-end encryption. The user requested removal of the infrastructure/encryption sentence from the UI; do not replace it with a contrary encryption promise. The visible disclosure states that players and club administrators can read notebooks, while other members and Approvers cannot. Password sharing also permits access.
 
 ## Autosave and Storage
 
@@ -84,7 +84,9 @@ The seven notebook photos could not be read because external-directory access wa
 - Keep short bounded revisions for recovery if agreed. Changes to approved match scores refresh display context without rewriting journal text.
 - Private records, accounts, and sessions stay outside the normal UAT-to-PROD overlay. UAT sessions never authenticate in PROD. Provision PROD accounts separately at approved launch, preserve production diaries, and use a separate restricted backup/recovery process for journals.
 
-## Translation
+## Translation — Manual Only (User Decision)
+
+The user has chosen to keep manual translation. The following automated-translation ideas and provider research are reference only, not active implementation requirements. No provider configuration or private text transmission is authorized.
 
 - English reflection → lightly polished natural Japanese, preserving the player's meaning, voice, uncertainty, and table-tennis context. No invented tactics, achievements, coach advice, or outcomes.
 - Use clear, age-appropriate Japanese rather than an adult coaching report. Preserve distinctions such as an observation, a tentative explanation, an action already taken, and a next-match intention. Keep technical distinctions (for example drive vs smash, block vs counter, knuckle vs backspin) and paragraph structure. Translations must not change recorded scores/opponents or add reasons for wins/losses.
@@ -143,4 +145,4 @@ Official references checked:
 - Production rollout, production account provisioning, and historical sample import are not authorized by the UAT implementation request.
 - Confirmed choices: sample headings were reversed, coach feedback is daily-only, and there is no separate “Things to improve” field. Typed examples suffice for layout planning; do not require reuploading all photos. No sample import is authorized yet.
 
-Defaults proposed for review: strict player-only application access (including no normal Admin/Approver content access), no publishing/approval step, a dedicated reflection login that restores for 56 days, and no private journal copying during normal dataset promotions.
+Current access: player-owned writing plus expressly authorized Admin read-only browsing; no Approver/member reading, no publishing/approval step, a dedicated player login that restores for 56 days, and no private journal copying during normal dataset promotions.
