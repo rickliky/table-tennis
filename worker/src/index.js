@@ -1,4 +1,5 @@
 import { login, requireRole, session } from './auth.js';
+import { handlePrivateReflections, privateReflectionsEnabled, isLegacyReflection } from './private-reflections.js';
 import { createDiff } from './diff.js';
 import { repository } from './repository.js';
 import { validateEntity, validateEnvironment } from './validation.js';
@@ -15,8 +16,8 @@ const JSON_HEADERS = { ...CORS_HEADERS, 'Content-Type': 'application/json; chars
 const activePlayerStatuses = new Set(['ST-001', 'Active', '有効']);
 const securityEnabled = (environment, env) => environment === 'uat' || env.SECURE_PROD === 'true';
 
-async function readData(repo, environment, includeInactivePlayers) {
-  const values = await Promise.all(publicTypes.map(type => repo.read(environment, type)));
+async function readData(repo, environment, includeInactivePlayers, privateMode) {
+  const values = await Promise.all(publicTypes.map(type => privateMode && ['session-feedback', 'match-feedback'].includes(type) ? [] : repo.read(environment, type)));
   const players = includeInactivePlayers ? values[1] : values[1].filter(player => activePlayerStatuses.has(player.status));
   return { ok: true, club: values[0][0] || null, clubs: values[0], players, matches: values[2], externalOpponents: values[3], tournaments: values[4], tournamentMatches: values[5], tournamentProgress: values[6], rubbers: values[7], sessionFeedback: values[8], matchFeedback: values[9], sessions: values[10], importBatches: values[11], lastUpdated: new Date().toISOString() };
 }
@@ -39,23 +40,30 @@ function buildSummary(entityType, record) {
 }
 
 export default { async fetch(request, env) {
+  if (new URL(request.url).pathname.startsWith('/api/reflections/')) {
+    const environment = new URL(request.url).searchParams.get('environment') || 'prod';
+    if (!['uat', 'prod'].includes(environment)) return json({ ok: false, error: 'Invalid environment' }, 400);
+    return handlePrivateReflections(request, env, environment);
+  }
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS_HEADERS });
   try {
     const url = new URL(request.url); const repo = repository(env); const environment = validateEnvironment(url.searchParams.get('environment') || 'prod');
+    const privateMode = privateReflectionsEnabled(environment, env);
     if (url.pathname === '/api/login' && request.method === 'POST') { const body = await request.json(); const role = body.role || 'site'; return json({ ok: true, token: await login(role, body.password, env), role }); }
     if (url.pathname === '/api/session' && request.method === 'GET') { const actor = await session(request, env); return json({ ok: true, role: actor.role, expires: actor.expires }); }
     if (url.pathname === '/api/public-data' && request.method === 'GET') {
       const secured = securityEnabled(environment, env);
       if (secured) await session(request, env);
-      return json(await readData(repo, environment, !secured));
+      return json(await readData(repo, environment, !secured, privateMode));
     }
     if (url.pathname === '/api/admin-data' && request.method === 'GET') {
       await requireRole(request, env, ['admin', 'approver']);
-      return json(await readData(repo, environment, true));
+      return json(await readData(repo, environment, true, privateMode));
     }
     if (url.pathname === '/api/pending' && request.method === 'GET') {
       if (securityEnabled(environment, env)) await requireRole(request, env, ['admin', 'approver']);
-      return json({ ok: true, changes: await repo.read(environment, 'pending-changes') });
+      const changes = await repo.read(environment, 'pending-changes');
+      return json({ ok: true, changes: privateMode ? changes.filter(change => !isLegacyReflection(change.entityType)) : changes });
     }
     if (url.pathname === '/api/clear-history' && request.method === 'POST') {
       await requireRole(request, env, ['approver', 'admin']);
@@ -74,6 +82,7 @@ export default { async fetch(request, env) {
     if (url.pathname === '/api/change' && request.method === 'POST') {
       const body = await request.json();
       const reflection = ['sessionFeedback', 'matchFeedback'].includes(body.entityType);
+      if (privateMode && reflection) return json({ ok: false, error: 'Use the private notebook' }, 403);
       const actor = securityEnabled(environment, env)
         ? await requireRole(request, env, reflection ? ['site', 'admin', 'approver'] : ['admin'])
         : reflection ? await session(request, env) : null;
@@ -110,6 +119,7 @@ export default { async fetch(request, env) {
         const changes = await repo.read(environment, 'pending-changes');
         const change = changes.find(item => item.changeId === body.changeId && item.status === 'pending');
         if (!change) throw new Error('Pending change not found');
+        if (privateMode && isLegacyReflection(change.entityType)) return json({ ok: false, error: 'Legacy reflection review disabled' }, 403);
         await repo.write(environment, 'pending-changes', changes.map(item => item.changeId === change.changeId ? { ...item, status: 'rejected', reviewedAt: new Date().toISOString(), reviewedBy: actor?.role || 'submitter' } : item));
         return json({ ok: true });
       }
@@ -117,6 +127,7 @@ export default { async fetch(request, env) {
         const changes = await repo.read(environment, 'pending-changes');
         const change = changes.find(item => item.changeId === body.changeId && item.status === 'pending');
         if (!change) throw new Error('Pending change not found');
+        if (privateMode && isLegacyReflection(change.entityType)) throw Object.assign(new Error('Legacy reflection review disabled'), { status: 403 });
         const collection = collectionFor(change.entityType);
         const current = await repo.read(environment, collection);
         const idField = idFieldFor(change.entityType);
@@ -136,6 +147,7 @@ export default { async fetch(request, env) {
         const changes = await repo.read(environment, 'pending-changes');
         const batch = changes.filter(change => change.status === 'pending' && change.batchId === body.batchId);
         if (!batch.length) throw new Error('Pending batch not found');
+        if (privateMode && batch.some(change => isLegacyReflection(change.entityType))) throw Object.assign(new Error('Legacy reflection review disabled'), { status: 403 });
         const reviewedAt = new Date().toISOString();
         if (body.decision === 'reject') {
           await repo.write(environment, 'pending-changes', changes.map(change => batch.some(item => item.changeId === change.changeId) ? { ...change, status: 'rejected', reviewedAt, reviewedBy: actor.role } : change));
@@ -186,6 +198,7 @@ export default { async fetch(request, env) {
       if (!collection) throw new Error('Unsupported entity type');
       if (!Array.isArray(records)) throw new Error('records array is required');
       const targetEnv = validateEnvironment(envParam || url.searchParams.get('environment') || 'prod');
+      if (privateReflectionsEnabled(targetEnv, env) && isLegacyReflection(entityType)) return json({ ok: false, error: 'Reflection bulk writes disabled' }, 403);
       await repo.write(targetEnv, collection, records);
       return json({ ok: true, entityType, count: records.length, environment: targetEnv });
     }
