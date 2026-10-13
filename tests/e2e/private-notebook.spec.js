@@ -215,4 +215,9 @@ test('all writing is expanded and text areas fit long content on load, typing, r
   await page.reload(); await expect(field).toHaveValue(longText + '\n\nMore synthetic writing.'); await expect.poll(fits).toBe(true);
   await field.fill('Short note'); await expect.poll(() => field.evaluate(element => element.clientHeight)).toBeLessThan(200);
   await expect(page.locator('#notebook-status')).toContainText('Saved');
+  await page.locator('.notebook-jump a[href="#notebook-coach"]').click();
+  await expect.poll(() => page.evaluate(() => {
+    const header = document.querySelector('.site-header').getBoundingClientRect(), status = document.querySelector('.notebook-savebar').getBoundingClientRect(), coach = document.querySelector('#notebook-coach').getBoundingClientRect();
+    return status.top >= header.bottom - 1 && coach.top >= status.bottom - 1;
+  })).toBe(true);
 });

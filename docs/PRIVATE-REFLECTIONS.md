@@ -12,6 +12,7 @@ The user chose to keep translation manual. No provider, API key, AI button, bill
 - One daily coach-feedback block, entered by the player. No ratings, approval/publishing, per-match coach inputs, or separate “Things to improve” field.
 - Only the two initial IDs have English reflection originals and manual Japanese versions, plus Japanese coach originals and manual English versions. Other enabled players write Japanese only; enforced by the Worker.
 - Mobile usability update: all daily/match/orphan writing blocks are always expanded, with section jump links. Text areas grow and shrink to show complete text on input, saved-page load, language change, font load, and viewport width changes. Leading blank lines and paragraph structure are retained. Directory login forms and privacy help open by default.
+- The sticky save-status bar stays below the measured site-header height. Jump links account for both sticky bars so section headings remain visible, including after phone orientation or status-message changes.
 
 ## Privacy boundaries
 

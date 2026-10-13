@@ -141,6 +141,9 @@
       input.oninput = () => { resizeField(input); dirty.set(input.dataset.field, input.value); statusKey = 'unsaved'; updateStatus(); if (conflict) renderConflict(); clearTimeout(timer); timer = setTimeout(flush, 1000); };
       input.onblur = () => { if (dirty.size) flush(); };
     });
+    chromeObserver.disconnect();
+    chromeObserver.observe(document.querySelector('.site-header'));
+    chromeObserver.observe(app.querySelector('.notebook-savebar'));
     resizeFields();
     app.querySelector('#notebook-retry').onclick = () => { if (!conflict) flush(); };
     app.querySelector('#notebook-date').onchange = event => navigate(event.target.value);
@@ -170,6 +173,12 @@
     const width = entries[0].contentRect.width;
     if (width === lastWidth) return;
     lastWidth = width; cancelAnimationFrame(resizeFrame); resizeFrame = requestAnimationFrame(resizeFields);
+  });
+  const chromeObserver = new ResizeObserver(entries => {
+    for (const entry of entries) {
+      const key = entry.target.classList.contains('site-header') ? '--notebook-header-height' : '--notebook-savebar-height';
+      app.style.setProperty(key, `${Math.ceil(entry.target.getBoundingClientRect().height)}px`);
+    }
   });
   resizeObserver.observe(app);
   document.fonts.ready.then(resizeFields);
