@@ -6,6 +6,8 @@ Friday-rest/weekday update `f6d82a2` is live in UAT (Actions `38350379083`, all 
 
 Write/Read + history release `cba4b43` is live in UAT (Actions `38352136243`, all 24 browser tests and live smoke passed). Live JA/EN Read/Admin layouts passed at 320/390/1440 px with intercepted synthetic sessions/documents/autosave: complete paragraphs, no editable Read fields, safe mode switching, month/latest navigation, expired-session hiding, and refresh preserving an older Admin date. No real notebook content was read or changed for this release. Production remains unchanged.
 
+Landing cards + mock preview release `52032a7` is live in UAT (Actions `38355061345`, all 27 browser tests and live smoke passed). Live JA/EN landing/sample checks passed at 320/390/768/1440 px using 37 intercepted synthetic directory accounts: progressive cards/search, selected/direct sign-in, auto-height/full preview paragraphs, reset, Friday rest, no sample API/session reads or writing persistence, and zero overflow/page errors. Synthetic-only screenshots were visually reviewed. No real journals, accounts, Worker, or Upstash data changed; production remains unchanged.
+
 The user chose to keep translation manual. No provider, API key, AI button, billing, or transmission of writing to a translator is enabled. Notebook examples are design references only, not imported data.
 
 ## Access and layout
