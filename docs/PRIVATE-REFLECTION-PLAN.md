@@ -1,6 +1,6 @@
 # Private Player Reflection — UAT Plan (Manual Translation)
 
-Status: the user approved UAT implementation on 2026-10-13 and subsequently chose to keep translation manual, requested always-expanded mobile writing with auto-growing text boxes, and authorized Admin read-only access through Data Maintenance. This supersedes the original owner-only/no-Admin-reading design below. Production rollout and historical sample imports are not authorized. Operational details: `docs/PRIVATE-REFLECTIONS.md`.
+Status: **live in production** following explicit rollout and private-notebook migration approval on 2026-10-13 (release `87edfcb`). Both initial accounts and eight saved day documents were migrated, with existing passwords preserved and UAT originals retained; sessions were not copied. Translation stays manual, writing is expanded/auto-height, Friday is a rest day, and Admins have read-only access. The card directory and standalone fictional preview are also live. This historical plan's original owner-only/no-Admin-reading and earlier layout details are superseded by the implemented behavior documented in `docs/PRIVATE-REFLECTIONS.md`. Historical design-sample imports remain unauthorized.
 
 ## Goal
 
