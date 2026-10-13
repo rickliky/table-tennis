@@ -4,6 +4,8 @@ UAT mobile/Admin-reading release `fb1c262` is live; deployment `38348611933` pas
 
 Friday-rest/weekday update `f6d82a2` is live in UAT (Actions `38350379083`, all 19 browser tests and live smoke passed). Live player/Admin layouts passed JA/EN at 320/390/1440 px using only intercepted synthetic sessions/documents, including Friday-skipping navigation, rest state, historical-Friday access, and weekday labels. No real notebook content, credentials, Worker deployment, or Upstash data changed.
 
+Write/Read + history release `cba4b43` is live in UAT (Actions `38352136243`, all 24 browser tests and live smoke passed). Live JA/EN Read/Admin layouts passed at 320/390/1440 px with intercepted synthetic sessions/documents/autosave: complete paragraphs, no editable Read fields, safe mode switching, month/latest navigation, expired-session hiding, and refresh preserving an older Admin date. No real notebook content was read or changed for this release. Production remains unchanged.
+
 The user chose to keep translation manual. No provider, API key, AI button, billing, or transmission of writing to a translator is enabled. Notebook examples are design references only, not imported data.
 
 ## Access and layout
@@ -69,7 +71,7 @@ The Worker `/api/reflections/accounts` GET/POST requires the Admin role. It is n
 
 ## Usability roadmap
 
-The user approved starting with Write/Read modes and better history navigation on 2026-10-13; those two items are now implemented in UAT source as described above. The day-overview and reading-language/text-size controls below remain proposals, not authorized or implemented.
+The user approved starting with Write/Read modes and better history navigation on 2026-10-13; those two items are now live in UAT as described above. The day-overview and reading-language/text-size controls below remain proposals, not authorized or implemented.
 
 Prioritize writing/reading clarity over more statistics or mandatory fields:
 
