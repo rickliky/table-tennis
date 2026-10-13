@@ -1455,7 +1455,7 @@ body.data-load-failed { overflow:hidden; }
 }
 @media print { .tournament-detail-tabs,.tournament-field-controls,.tournament-match-filters,.tournament-intelligence-dialog { display:none !important; } }
 /* Player/Admin notebook. No journal text is placed in public cards. */
-.feedback-page { padding-top: 32px; }
+.feedback-page { padding-top: 32px; z-index: 3; }
 .feedback-hero { padding: 24px; align-items: start; grid-template-columns: minmax(0, 1fr) minmax(180px, .5fr); }
 .feedback-hero h1 { font-size: clamp(28px, 4vw, 44px); line-height: 1.25; margin: 0; overflow-wrap: anywhere; }
 .notebook-privacy { background: #090b0e; border-left: 2px solid var(--gold); padding: 12px; }

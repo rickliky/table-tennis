@@ -218,6 +218,6 @@ test('all writing is expanded and text areas fit long content on load, typing, r
   await page.locator('.notebook-jump a[href="#notebook-coach"]').click();
   await expect.poll(() => page.evaluate(() => {
     const header = document.querySelector('.site-header').getBoundingClientRect(), status = document.querySelector('.notebook-savebar').getBoundingClientRect(), coach = document.querySelector('#notebook-coach').getBoundingClientRect();
-    return status.top >= header.bottom - 1 && coach.top >= status.bottom - 1;
+    return status.top >= header.bottom - 1 && coach.top >= status.bottom - 1 && Boolean(document.elementFromPoint(40, header.bottom / 2)?.closest('.site-header'));
   })).toBe(true);
 });
