@@ -92,9 +92,69 @@ test('match/daily layout, manual bilingual coach block and autosave retain parag
   await page.locator('[data-field="daily.en"]').fill('Daily practice');
   await expect(page.locator('#notebook-status')).toContainText('Saved');
   await page.locator('#notebook-date').fill('2026-10-09'); await page.locator('#notebook-date').press('Tab');
-  await expect(page.locator('[data-field="daily.en"]')).toBeVisible(); // Friday
+  await expect(page.locator('.notebook-rest')).toContainText('Friday');
+  await expect(page.locator('[data-field]')).toHaveCount(0); // no Friday writing prompt
   await page.locator('#notebook-date').fill('2026-10-11'); await page.locator('#notebook-date').press('Tab');
   await expect(page.locator('[data-field="match.training:M-001.en"]')).toHaveValue('First paragraph.\n\nNext focus.');
+});
+
+test('Friday is skipped in both directions; explicit rest dates have no inputs and saved Friday notes stay accessible', async ({ page, context }) => {
+  const { documents, requests, state } = await mock(context);
+  documents.set('LK-0080|2026-10-02', { revision: 1, fields: { 'daily.en': 'Synthetic historical Friday note.' } });
+  await login(page);
+  await expect(page.locator('#notebook-date-label')).toHaveText('2026-10-11 (日曜日)');
+  await expect(page.locator('#notebook-history option[value="2026-10-02"]')).toHaveText('2026-10-02 (金曜日)');
+  await page.locator('#notebook-date').fill('2026-10-08'); await page.locator('#notebook-date').press('Tab');
+  await expect(page.locator('#notebook-date-label')).toHaveText('2026-10-08 (木曜日)');
+  state.failSave = true;
+  await page.locator('[data-field="daily.en"]').fill('Synthetic Thursday note before the rest day.');
+  await expect(page.locator('#notebook-status')).toContainText('保存できません');
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('[data-step="1"]').click();
+  await expect(page.locator('#notebook-date')).toHaveValue('2026-10-08');
+  state.failSave = false; await page.locator('#notebook-retry').click();
+  await expect(page.locator('#notebook-status')).toContainText('保存済み');
+  await page.locator('[data-step="1"]').click();
+  await expect(page.locator('#notebook-date')).toHaveValue('2026-10-10');
+  await page.locator('[data-step="-1"]').click();
+  await expect(page.locator('#notebook-date')).toHaveValue('2026-10-08');
+  await expect(page.locator('[data-field="daily.en"]')).toHaveValue('Synthetic Thursday note before the rest day.');
+  await page.locator('#notebook-date').fill('2026-10-09'); await page.locator('#notebook-date').press('Tab');
+  await expect(page.locator('.notebook-rest')).toContainText('お休み');
+  await expect(page.locator('[data-field]')).toHaveCount(0);
+  await page.reload(); await expect(page.locator('.notebook-rest')).toBeVisible();
+  await page.locator('#language-toggle').click();
+  await expect(page.locator('#notebook-date-label')).toHaveText('2026-10-09 (Friday)');
+  await expect(page.locator('.notebook-rest')).toContainText('no practice or reflection needed');
+  expect(requests.filter(request => request.body?.patch).length).toBeGreaterThan(0);
+  expect(documents.has('LK-0080|2026-10-09')).toBe(false);
+  await page.locator('#notebook-history').selectOption('2026-10-02');
+  await expect(page.locator('[data-field="daily.en"]')).toHaveValue('Synthetic historical Friday note.');
+  await expect(page.locator('.notebook-schedule')).toContainText(['Date arrows skip Fridays.', 'previously saved note']);
+  await expect(page.locator('#notebook-history option[value="2026-10-02"]')).toHaveText('2026-10-02 (Friday)');
+  await page.locator('[data-step="1"]').click(); await expect(page.locator('#notebook-date')).toHaveValue('2026-10-03');
+  await page.locator('#notebook-date').fill('2026-12-31'); await page.locator('#notebook-date').press('Tab');
+  await expect(page.locator('#notebook-date-label')).toHaveText('2026-12-31 (Thursday)');
+  await page.locator('[data-step="1"]').click(); await expect(page.locator('#notebook-date')).toHaveValue('2027-01-02');
+  await page.locator('[data-step="-1"]').click(); await expect(page.locator('#notebook-date')).toHaveValue('2026-12-31');
+});
+
+test.describe('notebook calendar outside Japan', () => {
+  test.use({ timezoneId: 'Pacific/Kiritimati' });
+  test('default notebook date uses Tokyo time and selects Thursday on a Friday', async ({ page, context }) => {
+    await context.addInitScript(() => localStorage.setItem('lk-language', 'en'));
+    await page.clock.setFixedTime(new Date('2026-10-09T01:00:00Z'));
+    await mock(context);
+    await page.goto('/feedback.html?player=LK-0080');
+    const form = page.locator('.notebook-login[data-player="LK-0080"]');
+    await form.locator('input[type=password]').fill('synthetic-only-password'); await form.locator('button').click();
+    await expect(page.locator('#notebook-date')).toHaveValue('2026-10-08');
+    await expect(page.locator('#notebook-date-label')).toHaveText('2026-10-08 (Thursday)');
+    await page.clock.setFixedTime(new Date('2026-10-09T23:00:00Z'));
+    await page.goto('/feedback.html');
+    await expect(page.locator('#notebook-date')).toHaveValue('2026-10-10');
+    await expect(page.locator('#notebook-date-label')).toHaveText('2026-10-10 (Saturday)');
+  });
 });
 
 test('failed autosave blocks date changes, retries, and reauthentication keeps unsynced writing', async ({ page, context }) => {

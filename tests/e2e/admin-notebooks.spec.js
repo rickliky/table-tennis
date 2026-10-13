@@ -47,6 +47,8 @@ test('Admin navigates saved player notebooks read-only; mobile text stays comple
   await page.evaluate(() => localStorage.setItem('lk-language', 'en')); await login(page);
   await expect(page.getByRole('button', { name: 'PLAYER NOTEBOOKS', exact: true })).toBeVisible();
   await expect(page.locator('#admin-notebook-content')).toContainText('Synthetic daily reflection');
+  await expect(page.locator('.admin-notebook-day-title')).toContainText('2026-10-11 (Sunday)');
+  await expect(page.locator('#admin-notebook-date option[value="2026-10-10"]')).toHaveText('2026-10-10 (Saturday)');
   await expect(page.locator('#admin-notebook-content img')).toHaveCount(0);
   await expect(page.locator('#admin-notebook-content')).toContainText('Synthetic orphan note');
   await expect(page.locator('#admin-notebook-content textarea,#admin-notebook-content input')).toHaveCount(0);
@@ -55,7 +57,7 @@ test('Admin navigates saved player notebooks read-only; mobile text stays comple
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
     expect(await page.locator('#admin-notebook-player').evaluate(element => element.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
   }
-  await page.locator('#admin-notebook-older').click(); await expect(page.locator('.admin-notebook-day-title')).toContainText('2026-10-10');
+  await page.locator('#admin-notebook-older').click(); await expect(page.locator('.admin-notebook-day-title')).toContainText('2026-10-10 (Saturday)');
   await page.locator('#admin-notebook-player').selectOption('LK-0002');
   await expect(page.locator('#admin-notebook-status')).toContainText('No saved notebook');
   await expect(page.locator('#admin-notebook-content')).toBeEmpty();
@@ -71,6 +73,8 @@ test('Approver cannot see notebooks; failed and expired requests clear private t
   expect(requests.some(request => request.path.startsWith('/api/reflections/admin/'))).toBe(false);
   await page.getByRole('button', { name: /SIGN OUT/ }).click(); await login(page);
   await expect(page.locator('#admin-notebook-content')).toContainText('Synthetic daily reflection');
+  await expect(page.locator('.admin-notebook-day-title')).toContainText('2026-10-11 (日曜日)');
+  await expect(page.locator('#admin-notebook-date option[value="2026-10-10"]')).toHaveText('2026-10-10 (土曜日)');
   state.fail = true; await page.locator('#admin-notebook-refresh').click();
   await expect(page.locator('#admin-notebook-status')).toContainText('読み込めません');
   await expect(page.locator('#admin-notebook-content')).not.toContainText('Synthetic daily reflection');
