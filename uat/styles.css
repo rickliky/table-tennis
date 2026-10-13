@@ -1479,6 +1479,19 @@ body.data-load-failed { overflow:hidden; }
 .notebook-dates button { flex-shrink: 0; }
 .notebook-date-label { color: var(--gold); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
 .notebook-schedule { color: #aeb4bd; font-size: 14px; line-height: 1.8; margin: 0 0 16px; }
+.notebook-tools { margin-bottom: 20px; min-width: 0; }
+.notebook-tools[hidden] { display: none; }
+.notebook-modes { display: flex; gap: 8px; flex-wrap: wrap; }
+.feedback-page .notebook-modes button[aria-pressed="true"] { border-color: var(--gold); background: rgba(214,165,22,.12); color: var(--gold); }
+.notebook-read-hint, #notebook-history-empty { color: #aeb4bd; font-size: 14px; line-height: 1.8; margin: 12px 0; }
+.notebook-history-tools { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+.notebook-history-tools label { display: grid; gap: 8px; flex: 1 1 200px; min-width: 0; font-size: 14px; }
+.notebook-history-tools select { width: 100%; max-width: 100%; min-height: 48px; padding: 12px; border: 1px solid #444950; border-radius: 8px; background: #090b0e; color: #f5f5f5; font: inherit; font-size: 16px; }
+.notebook-read-field { min-width: 0; margin: 12px 0; }
+.notebook-day > .notebook-read-field { margin-bottom: 24px; }
+.notebook-read-field h3 { color: var(--gold); font-size: 14px; line-height: 1.7; margin: 0 0 8px; }
+.notebook-read-field p { margin: 0; font-size: 16px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.notebook-read-field p.empty { color: #aeb4bd; }
 .notebook-day { margin-top: 20px; }
 .notebook-day > .notebook-field { margin-bottom: 24px; }
 .notebook-field span { font-weight: 700; }
@@ -1499,7 +1512,8 @@ body.data-load-failed { overflow:hidden; }
 .admin-notebook-controls { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; align-items: end; }
 .admin-notebook-controls label { display: grid; gap: 8px; flex: 1 1 220px; min-width: 0; font-size: 14px; }
 .admin-notebook-controls select { min-height: 48px; font-size: 16px; color: var(--cream); background: #090b0e; border: 1px solid #515760; border-radius: 8px; padding: 10px; width: 100%; }
-.admin-notebook-date-actions { display: flex; gap: 8px; }
+.admin-notebook-date-actions { display: flex; gap: 8px; flex-wrap: wrap; min-width: 0; max-width: 100%; }
+.admin-notebook-date-actions button { max-width: 100%; overflow-wrap: anywhere; }
 .admin-notebooks .admin-button { min-height: 48px; min-width: 48px; }
 .admin-notebook-day-title, .admin-notebook-field { min-width: 0; overflow-wrap: anywhere; }
 .admin-notebook-day-title { margin-bottom: 20px; }
@@ -1522,8 +1536,9 @@ body.data-load-failed { overflow:hidden; }
   .feedback-hero { grid-template-columns: 1fr; gap: 16px; padding: 18px; }
   .notebook-bilingual { grid-template-columns: 1fr; }
   .notebook-dates { display: grid; grid-template-columns: 48px minmax(0, 1fr) 48px; align-items: end; gap: 8px; }
-  .notebook-dates label:last-child { grid-column: 1 / -1; }
   .notebook-dates button { min-width: 48px; }
+  .notebook-history-tools { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .notebook-history-tools button { width: 100%; }
   .admin-notebooks .notebook-bilingual { grid-template-columns: 1fr; }
   .notebook-entry, .notebook-match, .notebook-directory details { padding: 14px; }
 }

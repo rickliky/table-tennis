@@ -7,7 +7,8 @@
       failed: 'Could not load the notebook. Try again.', retry: 'Try again', refresh: 'Refresh', previous: 'Older saved date', next: 'Newer saved date', disabled: 'Account disabled',
       activity: 'Activity', daily: 'Daily reflection', coach: 'Coach feedback — entered by the player', matches: 'Match reflections', missing: 'Current match record unavailable',
       enOriginal: 'English original', jaVersion: 'Japanese version (manual)', jaOriginal: 'Japanese original', enVersion: 'English version (manual)', blank: 'Not written',
-      updated: 'Last saved', training: 'Training', tournament: 'Tournament', win: 'Win', loss: 'Loss', incomplete: 'Incomplete'
+      updated: 'Last saved', training: 'Training', tournament: 'Tournament', win: 'Win', loss: 'Loss', incomplete: 'Incomplete',
+      month: 'Saved month', allMonths: 'All months', latest: 'Latest saved note'
     },
     ja: {
       title: '選手ノート', notice: '管理者専用・閲覧のみ。選手は自分のノートだけを読めます。他のメンバーや承認者は読めません。翻訳は手入力です。',
@@ -15,7 +16,8 @@
       failed: 'ノートを読み込めませんでした。再試行してください。', retry: 'もう一度試す', refresh: '更新', previous: '前の保存済み日付', next: '次の保存済み日付', disabled: 'アカウント停止中',
       activity: '活動内容', daily: '1日の振り返り', coach: 'コーチのアドバイス — 選手が入力', matches: '試合の振り返り', missing: '現在の試合記録を参照できません',
       enOriginal: '英語の原文', jaVersion: '日本語版（手入力）', jaOriginal: '日本語の原文', enVersion: '英語版（手入力）', blank: '未記入',
-      updated: '最終保存', training: '練習試合', tournament: '大会', win: '勝ち', loss: '負け', incomplete: '未完了'
+      updated: '最終保存', training: '練習試合', tournament: '大会', win: '勝ち', loss: '負け', incomplete: '未完了',
+      month: '保存済み月', allMonths: 'すべての月', latest: '最新の保存済みノート'
     }
   };
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
@@ -23,18 +25,32 @@
   function mount({ panel, language, onUnauthorized }) {
     const copy = words[language], token = localStorage.getItem('lk-admin-session');
     const listeners = new AbortController();
-    let controller, disposed = false, players = [], dates = [], playerId = '', date = '';
+    let controller, disposed = false, players = [], dates = [], playerId = '', date = '', month = '';
     const name = player => language === 'en' ? player.englishName || player.displayName : player.displayName;
     const dateLabel = value => `${value} (${new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'ja-JP', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`))})`;
-    panel.innerHTML = `<h2>${copy.title}</h2><p class="admin-notebook-notice">${copy.notice}</p><div class="admin-notebook-controls"><label>${copy.player}<select id="admin-notebook-player" disabled></select></label><label>${copy.date}<select id="admin-notebook-date" disabled><option value="">${copy.choose}</option></select></label><div class="admin-notebook-date-actions"><button type="button" class="admin-button" id="admin-notebook-older" aria-label="${copy.previous}">←</button><button type="button" class="admin-button" id="admin-notebook-newer" aria-label="${copy.next}">→</button><button type="button" class="admin-button" id="admin-notebook-refresh">${copy.refresh}</button></div></div><p id="admin-notebook-status" role="status"></p><div id="admin-notebook-content"></div>`;
+    const monthLabel = value => new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'ja-JP', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}-01T12:00:00Z`));
+    const visibleDates = () => dates.filter(value => !month || value.startsWith(`${month}-`));
+    panel.innerHTML = `<h2>${copy.title}</h2><p class="admin-notebook-notice">${copy.notice}</p><div class="admin-notebook-controls"><label>${copy.player}<select id="admin-notebook-player" disabled></select></label><label>${copy.month}<select id="admin-notebook-month" disabled></select></label><label>${copy.date}<select id="admin-notebook-date" disabled><option value="">${copy.choose}</option></select></label><div class="admin-notebook-date-actions"><button type="button" class="admin-button" id="admin-notebook-older" aria-label="${copy.previous}">←</button><button type="button" class="admin-button" id="admin-notebook-newer" aria-label="${copy.next}">→</button><button type="button" class="admin-button" id="admin-notebook-latest">${copy.latest}</button><button type="button" class="admin-button" id="admin-notebook-refresh">${copy.refresh}</button></div></div><p id="admin-notebook-status" role="status"></p><div id="admin-notebook-content"></div>`;
     const playerSelect = panel.querySelector('#admin-notebook-player'), dateSelect = panel.querySelector('#admin-notebook-date');
     const content = panel.querySelector('#admin-notebook-content'), status = panel.querySelector('#admin-notebook-status');
     const older = panel.querySelector('#admin-notebook-older'), newer = panel.querySelector('#admin-notebook-newer'), refresh = panel.querySelector('#admin-notebook-refresh');
+    const monthSelect = panel.querySelector('#admin-notebook-month'), latest = panel.querySelector('#admin-notebook-latest');
+    function renderDateControls() {
+      const months = [...new Set(dates.map(value => value.slice(0, 7)))];
+      if (!months.includes(month)) month = '';
+      monthSelect.replaceChildren(new Option(copy.allMonths, ''));
+      months.forEach(value => monthSelect.add(new Option(monthLabel(value), value))); monthSelect.value = month;
+      dateSelect.replaceChildren();
+      const visible = visibleDates();
+      if (!visible.length) dateSelect.add(new Option(copy.choose, ''));
+      visible.forEach(value => dateSelect.add(new Option(dateLabel(value), value))); dateSelect.value = date;
+    }
     function active() { return !disposed && panel.isConnected; }
     function lockControls(busy) {
-      playerSelect.disabled = busy || !players.length; dateSelect.disabled = busy || !dates.length;
-      const index = dates.indexOf(date);
-      older.disabled = busy || index < 0 || index >= dates.length - 1;
+      playerSelect.disabled = busy || !players.length; dateSelect.disabled = busy || !visibleDates().length;
+      monthSelect.disabled = busy || !dates.length; latest.disabled = busy || !dates.length;
+      const index = visibleDates().indexOf(date);
+      older.disabled = busy || index < 0 || index >= visibleDates().length - 1;
       newer.disabled = busy || index <= 0; refresh.disabled = busy;
     }
     async function request(path, params, signal) {
@@ -87,29 +103,34 @@
       const result = await request('/api/reflections/admin/day', { playerId, date }, signal);
       if (active() && !signal.aborted) renderDay(result);
     }
-    async function savedDates(signal) {
-      date = ''; dates = []; dateSelect.replaceChildren(new Option(copy.choose, ''));
+    async function savedDates(signal, preserve = false) {
+      const previousDate = preserve ? date : '', previousMonth = preserve ? month : '';
       const result = await request('/api/reflections/admin/dates', { playerId }, signal);
       if (!active() || signal.aborted) return;
-      dates = result.dates; date = dates[0] || '';
-      if (dates.length) dateSelect.replaceChildren();
-      dates.forEach(value => dateSelect.add(new Option(dateLabel(value), value))); dateSelect.value = date;
+      dates = result.dates;
+      month = dates.some(value => value.startsWith(`${previousMonth}-`)) ? previousMonth : '';
+      const visible = visibleDates(); date = visible.includes(previousDate) ? previousDate : visible[0] || '';
+      renderDateControls();
       await day(signal);
     }
     async function directory(signal) {
       const result = await request('/api/reflections/admin/players', {}, signal);
       if (!active() || signal.aborted) return;
       players = result.players;
+      const previousPlayer = playerId;
       if (!players.some(player => player.playerId === playerId)) playerId = players[0]?.playerId || '';
+      if (playerId !== previousPlayer) { date = ''; month = ''; dates = []; renderDateControls(); }
       playerSelect.replaceChildren();
       players.forEach(player => playerSelect.add(new Option(`${name(player)} · ${player.playerId}${player.enabled ? '' : ` · ${copy.disabled}`}`, player.playerId)));
       playerSelect.value = playerId;
-      if (playerId) await savedDates(signal); else { dates = []; date = ''; status.textContent = copy.noPlayers; }
+      if (playerId) await savedDates(signal, playerId === previousPlayer); else { dates = []; date = ''; month = ''; renderDateControls(); status.textContent = copy.noPlayers; }
     }
-    playerSelect.onchange = () => { playerId = playerSelect.value; load(savedDates); };
+    playerSelect.onchange = () => { playerId = playerSelect.value; date = ''; month = ''; dates = []; renderDateControls(); load(savedDates); };
     dateSelect.onchange = () => { date = dateSelect.value; load(day); };
-    older.onclick = () => { date = dates[dates.indexOf(date) + 1]; dateSelect.value = date; load(day); };
-    newer.onclick = () => { date = dates[dates.indexOf(date) - 1]; dateSelect.value = date; load(day); };
+    monthSelect.onchange = () => { month = monthSelect.value; date = visibleDates()[0] || ''; renderDateControls(); load(day); };
+    older.onclick = () => { const visible = visibleDates(); date = visible[visible.indexOf(date) + 1]; dateSelect.value = date; load(day); };
+    newer.onclick = () => { const visible = visibleDates(); date = visible[visible.indexOf(date) - 1]; dateSelect.value = date; load(day); };
+    latest.onclick = () => { month = ''; date = dates[0] || ''; renderDateControls(); load(day); };
     refresh.onclick = () => load(directory);
     // Hide cached text before a frozen-page return and revalidate Admin access
     // before fetching again. No journal text is kept in browser storage.
