@@ -1,16 +1,20 @@
 #!/usr/bin/env node
-// UAT-only account management. Never print credentials or journal contents.
+// UAT by default. PROD requires both --prod and --confirm-production.
+// Never print credentials or journal contents.
 // Credentials are process environment variables, not command-line arguments:
 // ADMIN_PASSWORD, REFLECTION_PLAYER_ID, REFLECTION_PASSWORD (new/reset only).
 // Preview by default; pass --apply with --enable, --disable, or --reset.
 const API = 'https://little-kings-api.little-kings.workers.dev';
 async function main() {
+  const production = process.argv.includes('--prod');
+  if (production && !process.argv.includes('--confirm-production')) throw new Error('PROD access requires explicit approval and --confirm-production');
+  const environment = production ? 'prod' : 'uat';
   if (!process.env.ADMIN_PASSWORD) throw new Error('ADMIN_PASSWORD is required');
   const loginResponse = await fetch(`${API}/api/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'admin', password: process.env.ADMIN_PASSWORD }) });
   if (!loginResponse.ok) throw new Error(`Admin login failed (${loginResponse.status})`);
   const { token } = await loginResponse.json();
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-  const endpoint = `${API}/api/reflections/accounts?environment=uat`;
+  const endpoint = `${API}/api/reflections/accounts?environment=${environment}`;
   const response = await fetch(endpoint, { headers });
   if (!response.ok) throw new Error(`Account list unavailable (${response.status})`);
   const { accounts } = await response.json();
@@ -27,7 +31,7 @@ async function main() {
     if (!process.env.REFLECTION_PASSWORD) throw new Error('REFLECTION_PASSWORD is required for initial enable/reset');
     body.password = process.env.REFLECTION_PASSWORD;
   }
-  console.log(`UAT ${action[0]}: ${playerId}. Existing sessions will be revoked; journal text will not be touched.`);
+  console.log(`${environment.toUpperCase()} ${action[0]}: ${playerId}. Existing sessions will be revoked; journal text will not be touched.`);
   if (!process.argv.includes('--apply')) { console.log('Preview only. Add --apply to perform this action.'); return; }
   const update = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(body) });
   if (!update.ok) throw new Error(`Account update failed (${update.status})`);

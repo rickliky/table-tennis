@@ -292,7 +292,6 @@
     disposeNotebooks?.(); disposeNotebooks = null;
     empty(app);
     if (currentRole === 'approver') activeTab = 'manage';
-    if (activeTab === 'notebooks' && window.LKData.environment !== 'uat') activeTab = 'overview';
     const header = el('header', { className: 'site-header' });
     const brand = el('a', { className: 'brand', href: 'index.html', 'aria-label': 'Little Kings home' });
     const brandText = el('span');
@@ -315,7 +314,7 @@
       tabs.append(tab('tournaments', 'TOURNAMENTS / 大会'));
       tabs.append(tab('clubs', 'CLUBS / クラブ'));
       tabs.append(tab('manage', 'MANAGE / 管理'));
-      if (window.LKData.environment === 'uat') tabs.append(tab('notebooks', language === 'en' ? 'PLAYER NOTEBOOKS' : '選手ノート'));
+      tabs.append(tab('notebooks', language === 'en' ? 'PLAYER NOTEBOOKS' : '選手ノート'));
     }
     app.append(header, tabs);
     if (activeTab === 'notebooks') {

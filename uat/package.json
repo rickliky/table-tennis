@@ -6,9 +6,10 @@
   "scripts": {
     "check:syntax": "node scripts/check-syntax.js",
     "test:worker": "npm --prefix worker test",
+    "test:operations": "node scripts/test-private-notebook-promotion.js",
     "test:e2e": "playwright test --config=playwright.config.js",
     "test:uat": "playwright test --config=playwright.uat.config.js",
-    "verify": "npm run check:syntax && npm run test:worker && npm run test:e2e",
+    "verify": "npm run check:syntax && npm run test:worker && npm run test:operations && npm run test:e2e",
     "test": "npm run verify",
     "setup:dev": "npm ci && playwright install chromium && husky",
     "prepare": "husky"
