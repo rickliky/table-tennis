@@ -48,4 +48,9 @@ test('deployed UAT exposes only authenticated data boundaries', async ({ page, r
   await expect(page.locator('.notebook-directory')).toBeVisible();
   await expect(page.locator('#site-password-gate')).toHaveCount(0);
   expect(apiRequests.some(url => /\/api\/(public-data|admin-data|reflections\/day)/.test(url))).toBe(false);
+  await expect(page.locator('a[href="notebook-sample.html"]').first()).toBeVisible();
+  apiRequests.length = 0;
+  await page.goto(new URL('notebook-sample.html', baseURL).toString());
+  await expect(page.locator('.notebook-demo-warning')).toBeVisible();
+  expect(apiRequests).toEqual([]);
 });

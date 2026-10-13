@@ -11,9 +11,11 @@
   let documentValue = { revision: 0, fields: {} }, matches = [], dirty = new Map(), timer, saving = null;
   let conflict = null, requiresLogin = false, busy = false, statusKey = 'ready', savedAt = '';
   let viewMode = 'write', historyMonth = '';
+  let directoryPlayerId = params.get('player') || '', directoryQuery = '', directoryLimit = 12;
   const words = {
     en: {
-      title: 'Private Player Notebook', eyebrow: 'YOUR PRIVATE REFLECTION', invitation: 'To use private reflections, please speak to Jacelyn and Kaitlyn’s daddy.',
+      title: 'Private Player Notebook', eyebrow: 'YOUR PRIVATE REFLECTION', invitation: 'Want to try private reflections? Setup is easy — just let Jacelyn and Kaitlyn’s daddy know.',
+      preview: 'See a sample notebook', previewHint: 'Mock examples only. No real player notes.', directoryTitle: 'Choose your notebook', directoryHint: 'Select your own player card, then sign in with your player password.', directorySearch: 'Find your player — Japanese name, Romanized name, or ID', directoryEnabled: 'Notebook enabled', signInTitle: 'Open your notebook', changePlayer: 'Choose another player', noPlayerMatch: 'No matching players. Try another name or clear your search.', clearSearch: 'Clear search', showMorePlayers: 'Show more players', playerCount: '{shown} of {total} players',
       privacy: 'You and club administrators can read your notebook. Other players, club members, and Approvers cannot read it. It is not published.',
       privacyTitle: 'Who can read this?',
       password: 'Player password', login: 'Open my notebook', remember: 'Remember me on this browser for eight weeks', shared: 'Use only your own account. Do not remember access on a shared device.',
@@ -36,7 +38,8 @@
       retention: 'Writing is saved to the server, not stored as a local draft. Unsynced text exists only on this open page; closing it can lose that text.'
     },
     ja: {
-      title: '選手のプライベートノート', eyebrow: '自分だけの振り返り', invitation: 'この振り返り機能を使いたい選手は、ジェイスとケイツのお父さんに声をかけてください。',
+      title: '選手のプライベートノート', eyebrow: '自分だけの振り返り', invitation: 'プライベートな振り返りを試してみませんか？設定は簡単です。ジェイスとケイツのお父さんに声をかけてください。',
+      preview: 'サンプルノートを見る', previewHint: '架空の例です。実際の選手のノートは使っていません。', directoryTitle: '自分のノートを選ぶ', directoryHint: '自分の選手カードを選び、選手パスワードでログインしてください。', directorySearch: '選手を検索 — 日本語名・ローマ字・ID', directoryEnabled: 'ノート利用可能', signInTitle: '自分のノートを開く', changePlayer: '別の選手を選ぶ', noPlayerMatch: '該当する選手がいません。別の名前で検索するか、検索をクリアしてください。', clearSearch: '検索をクリア', showMorePlayers: '選手をもっと表示', playerCount: '{total}人中{shown}人を表示',
       privacy: '本人とクラブ管理者がノートを読めます。他の選手、クラブメンバー、承認者は読めません。公開はされません。',
       privacyTitle: 'プライバシーについて',
       password: '選手パスワード', login: '自分のノートを開く', remember: 'このブラウザで8週間ログインを保持する', shared: '必ず自分のアカウントを使ってください。共用端末ではログインを保持しないでください。',
@@ -118,7 +121,7 @@
     for (const key of ['home', 'players', 'sessions']) document.querySelector(`#feedback-nav-${key}`).textContent = t(key);
   }
   function loginForm(person, reauth = false) {
-    return `<form class="notebook-login" data-player="${escapeHtml(person.playerId)}"><h2>${escapeHtml(name(person))}</h2><label>${t('password')}<input type="password" name="password" autocomplete="current-password" maxlength="128" required></label><label class="notebook-remember"><input type="checkbox" name="remember" ${!reauth || rememberSession ? 'checked' : ''}> ${t('remember')}</label><p>${t('shared')}</p><button class="gold-button" type="submit">${t('login')}</button><p class="notebook-login-status" role="status"></p></form>`;
+    return `<form class="notebook-login" data-player="${escapeHtml(person.playerId)}"><h2>${escapeHtml(name(person))}</h2><input type="hidden" name="username" autocomplete="username" value="${escapeHtml(person.playerId)}"><label>${t('password')}<input type="password" name="password" autocomplete="current-password" maxlength="128" required></label><label class="notebook-remember"><input type="checkbox" name="remember" ${!reauth || rememberSession ? 'checked' : ''}> ${t('remember')}</label><p>${t('shared')}</p><button class="gold-button" type="submit">${t('login')}</button><p class="notebook-login-status" role="status"></p></form>`;
   }
   function bindLogins() {
     app.querySelectorAll('.notebook-login').forEach(form => form.onsubmit = async event => {
@@ -145,9 +148,42 @@
   }
   function renderDirectory() {
     updateLanguage();
-    const selected = params.get('player'), people = [...directory].sort((a, b) => Number(b.playerId === selected) - Number(a.playerId === selected));
-    app.innerHTML = `${header()}<p class="notebook-invitation">${t('invitation')}</p><section class="notebook-directory">${people.map(person => `<details open><summary>${escapeHtml(name(person))}</summary>${loginForm(person)}</details>`).join('') || `<p>${t('emptyDirectory')}</p>`}</section>`;
+    app.classList.add('notebook-landing');
+    const selected = directory.find(person => person.playerId === directoryPlayerId);
+    app.innerHTML = `<header class="notebook-landing-hero"><p class="eyebrow">${t('eyebrow')}</p><h1>${t('title')}</h1><p class="notebook-invitation">${t('invitation')}</p><a class="notebook-preview-link" href="notebook-sample.html">${t('preview')} <span aria-hidden="true">→</span></a><p class="notebook-preview-note">${t('previewHint')}</p></header>
+      ${selected ? `<section id="notebook-signin" class="notebook-signin"><div class="notebook-signin-heading"><p class="eyebrow">${t('signInTitle')}</p><button id="notebook-change-player" type="button">${t('changePlayer')}</button></div><div class="notebook-signin-layout">${directoryPortrait(selected)}${loginForm(selected)}</div></section>` : ''}
+      <section class="notebook-directory-section" aria-labelledby="notebook-directory-title"><h2 id="notebook-directory-title">${t('directoryTitle')}</h2><p>${t('directoryHint')}</p><div class="notebook-directory-search"><label>${t('directorySearch')}<input id="notebook-player-search" type="search" value="${escapeHtml(directoryQuery)}" autocomplete="off"></label><button type="button" id="notebook-clear-search">${t('clearSearch')}</button></div><p id="notebook-directory-count" role="status"></p><div class="notebook-directory"></div><button id="notebook-more-players" type="button">${t('showMorePlayers')}</button></section>
+      <details open class="notebook-privacy"><summary>${t('privacyTitle')}</summary><p>${t('privacy')}</p></details>`;
+    app.querySelector('#notebook-player-search').oninput = event => { directoryQuery = event.target.value; directoryLimit = 12; renderDirectoryCards(); };
+    app.querySelector('#notebook-clear-search').onclick = () => { directoryQuery = ''; directoryLimit = 12; app.querySelector('#notebook-player-search').value = ''; renderDirectoryCards(); app.querySelector('#notebook-player-search').focus(); };
+    app.querySelector('#notebook-more-players').onclick = () => { directoryLimit += 12; renderDirectoryCards(); };
+    const change = app.querySelector('#notebook-change-player');
+    if (change) change.onclick = () => { directoryPlayerId = ''; params.delete('player'); renderDirectory(); app.querySelector('#notebook-player-search').focus({ preventScroll: true }); };
+    renderDirectoryCards();
     bindLogins();
+  }
+  function directoryPortrait(person) {
+    return `<img class="notebook-player-portrait" src="${escapeHtml(window.lkProfileImage(person.playerId))}" alt="" width="80" height="80" loading="lazy" decoding="async">`;
+  }
+  function renderDirectoryCards() {
+    const normalize = value => String(value || '').normalize('NFKC').toLocaleLowerCase().replace(/[\p{P}\p{S}]+/gu, ' ').replace(/\s+/g, ' ').trim();
+    const query = normalize(directoryQuery), compactQuery = query.replace(/\s/g, '');
+    const people = [...directory].sort((a, b) => name(a).localeCompare(name(b), language === 'en' ? 'en' : 'ja')).filter(person => {
+      const haystack = normalize([person.displayName, person.englishName, person.playerId].join(' '));
+      return !query || haystack.replace(/\s/g, '').includes(compactQuery) || query.split(' ').every(word => haystack.includes(word));
+    });
+    app.querySelector('.notebook-directory').innerHTML = people.slice(0, directoryLimit).map(person => {
+      const secondary = language === 'en' ? person.displayName : person.englishName;
+      return `<button type="button" class="notebook-player-card" data-notebook-player="${escapeHtml(person.playerId)}" aria-pressed="${person.playerId === directoryPlayerId}">${directoryPortrait(person)}<span class="notebook-player-card-text"><strong>${escapeHtml(name(person))}</strong>${secondary && secondary !== name(person) ? `<span>${escapeHtml(secondary)}</span>` : ''}<small>${escapeHtml(person.playerId)}</small><span class="notebook-player-enabled">${t('directoryEnabled')}</span></span><span class="notebook-player-arrow" aria-hidden="true">→</span></button>`;
+    }).join('') || `<p class="notebook-directory-empty">${t(directory.length ? 'noPlayerMatch' : 'emptyDirectory')}</p>`;
+    app.querySelector('#notebook-directory-count').textContent = t('playerCount').replace('{shown}', Math.min(people.length, directoryLimit)).replace('{total}', people.length);
+    app.querySelector('#notebook-more-players').hidden = people.length <= directoryLimit;
+    app.querySelector('#notebook-clear-search').disabled = !directoryQuery;
+    app.querySelectorAll('[data-notebook-player]').forEach(button => button.onclick = () => {
+      directoryPlayerId = button.dataset.notebookPlayer; params.set('player', directoryPlayerId); renderDirectory();
+      app.querySelector('.notebook-login input[type=password]').focus();
+    });
+    app.querySelectorAll('.notebook-player-portrait').forEach(image => { image.onerror = () => { image.onerror = null; image.src = 'img/NoProfilePic.jpg'; }; });
   }
   function field(key, label, hint = '') {
     const value = dirty.has(key) ? dirty.get(key) : documentValue.fields[key] || '';
@@ -162,6 +198,7 @@
   }
   function renderNotebook() {
     updateLanguage();
+    app.classList.remove('notebook-landing');
     const weekday = weekdayOf(date), matchDay = [0, 4].includes(weekday);
     const friday = weekday === 5, restDay = friday && !Object.values(documentValue.fields).some(value => value.trim()) && !dirty.size;
     const activity = dirty.has('activity') ? dirty.get('activity') : documentValue.fields.activity || '';
@@ -206,7 +243,7 @@
       try {
         if (!await flush()) { alert(t('leave')); return; }
         await request('/api/reflections/logout', { method: 'POST' });
-        localStorage.removeItem(storageKey); token = ''; player = null; dates = []; matches = []; dirty.clear(); documentValue = { revision: 0, fields: {} }; conflict = null; historyMonth = ''; viewMode = 'write';
+        localStorage.removeItem(storageKey); token = ''; player = null; dates = []; matches = []; dirty.clear(); documentValue = { revision: 0, fields: {} }; conflict = null; historyMonth = ''; viewMode = 'write'; directoryPlayerId = ''; directoryQuery = ''; directoryLimit = 12;
         history.replaceState(null, '', 'feedback.html'); params.delete('player'); params.delete('matchId'); renderDirectory();
       } catch { statusKey = 'failed'; updateStatus(); }
       finally { busy = false; updateControls(); const day = app.querySelector('.notebook-day'); if (day) day.inert = false; }
