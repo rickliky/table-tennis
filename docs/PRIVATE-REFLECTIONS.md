@@ -16,6 +16,9 @@ The user chose to keep translation manual. No provider, API key, AI button, bill
 - Only the two initial IDs have English reflection originals and manual Japanese versions, plus Japanese coach originals and manual English versions. Other enabled players write Japanese only; enforced by the Worker.
 - Mobile usability update: all daily/match/orphan writing blocks are always expanded, with section jump links. Text areas grow and shrink to show complete text on input, saved-page load, language change, font load, and viewport width changes. Leading blank lines and paragraph structure are retained. Directory login forms and privacy help open by default.
 - The sticky save-status bar stays below the measured site-header height. Jump links account for both sticky bars so section headings remain visible, including after phone orientation or status-message changes.
+- Player **Write / Read** buttons keep every entry expanded. Write is the initial mode and uses the existing autosaving inputs. Read displays escaped, full-text activity/reflection/manual-translation/coach/orphan paragraphs with explicit “Not written” states and no editable fields. Modes persist in memory across date/language changes, not as journal text in storage. Changing mode first blocks further input and waits for all pending edits to save; failure/offline/expiry/conflict keeps Write and its unsynced text. Read keeps the same owner authentication, frozen-page, and cross-tab clearing safeguards.
+- Player saved history has a month filter and **Latest saved note** shortcut. Filtering changes date options only, never the open date or unsaved writing. Opening a history date/latest note uses the normal save-before-navigation guard. The latest shortcut clears the month filter only after a successful load. Autosaving adds new saved dates/months to the selectors immediately. Friday history remains available.
+- Admin history adds localized month filtering and a latest-note shortcut. Previous/next moves through saved dates in the chosen month. Refresh (including retry) preserves player/month/date when still available; missing dates/months fall back to the latest available date in that month or globally. Changing player clears old date metadata before loading. Empty-account controls are disabled, and only one selected day's private text is fetched. No journal export, body search, new permissions, or Admin edits are added.
 
 ## Privacy boundaries
 
@@ -64,13 +67,15 @@ The Worker `/api/reflections/accounts` GET/POST requires the Admin role. It is n
 - Before deployment, recheck legacy collections/audit counts without printing bodies. If real legacy content appears, stop and plan a restricted archive/migration; do not delete it automatically.
 - A production release requires explicit user approval, separate PROD account provisioning, and private backup/recovery planning. Never set the production switch merely because UAT passed.
 
-## Suggested next usability package — not implemented or authorized
+## Usability roadmap
+
+The user approved starting with Write/Read modes and better history navigation on 2026-10-13; those two items are now implemented in UAT source as described above. The day-overview and reading-language/text-size controls below remain proposals, not authorized or implemented.
 
 Prioritize writing/reading clarity over more statistics or mandatory fields:
 
-1. **Player Write / Read modes**: keep all entries expanded and autosave in Write; Read presents the same paragraphs as clean text without editable boxes. Switch only after pending saves succeed, and retain the same access/session-clearing safeguards.
+1. **Player Write / Read modes — implemented**: keep all entries expanded and autosave in Write; Read presents the same paragraphs as clean text without editable boxes. Switch only after pending saves succeed, and retain the same access/session-clearing safeguards.
 2. **Small day overview**: selected date/weekday, daily-versus-match layout, recorded-match count, and clear saved/unsynced state. Distinguish “not written” from “no recorded match”; do not treat writing coverage as a player grade or attendance.
 3. **Reading-language controls**: original, manual translation, or both; default to both, remember only the preference (not text). This shortens mobile reading without automatic translation or collapsing entry sections. Optional readable-text size controls can follow.
-4. **Better history browsing**: month filter, latest saved-date shortcut, and preserve the selected date on Admin refresh. Continue loading only one private day at a time; do not add whole-history downloads/search or exports implicitly.
+4. **Better history browsing — implemented**: month filter, latest saved-date shortcut, and preserve the selected date on Admin refresh. Continue loading only one private day at a time; do not add whole-history downloads/search or exports implicitly.
 
 Protected recovery for accidental mobile closure and revision history are a separate reliability/privacy design, not a reason to store plaintext drafts locally. Avoid mandatory ratings, extra goal boxes, automatic rewriting, public sharing, or streak pressure.
