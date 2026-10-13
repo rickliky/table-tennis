@@ -1,4 +1,4 @@
-# Private Player Reflection — UAT Plan (Translation Deferred)
+# Private Player Reflection — UAT Plan (Manual Translation)
 
 Status: the user approved UAT implementation on 2026-10-13 and subsequently chose to keep translation manual, requested always-expanded mobile writing with auto-growing text boxes, and authorized Admin read-only access through Data Maintenance. This supersedes the original owner-only/no-Admin-reading design below. Production rollout and historical sample imports are not authorized. Operational details: `docs/PRIVATE-REFLECTIONS.md`.
 
@@ -141,7 +141,7 @@ Official references checked:
 ## Current Decisions / Future Approvals
 
 - Friday and atypical schedules: implemented with optional daily notes plus actual recorded matches, as communicated at implementation start.
-- Translation is explicitly on hold. Provider/billing/privacy consent and implementation need a separate approval before any external translation is enabled.
+- Translation will remain manual by user decision. Any future change to external translation requires a new request and provider/billing/privacy approval.
 - Production rollout, production account provisioning, and historical sample import are not authorized by the UAT implementation request.
 - Confirmed choices: sample headings were reversed, coach feedback is daily-only, and there is no separate “Things to improve” field. Typed examples suffice for layout planning; do not require reuploading all photos. No sample import is authorized yet.
 
