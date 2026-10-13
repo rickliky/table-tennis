@@ -2,7 +2,7 @@
 
 UAT behavior release `50a54f2` is live; deployment `38276792310` passed the complete verification suite (13 browser tests) and post-deploy smoke. Real account login/ownership/restoration/lock, JA/EN mobile/desktop layout, and revoked frozen-page reauthentication checks passed without writing any real notebook entries. Production behavior/data is unchanged and requires separate approval.
 
-External translation is on hold. No provider, API key, AI button, billing, or transmission of writing to a translator is enabled. Notebook examples are design references only, not imported data.
+The user chose to keep translation manual. No provider, API key, AI button, billing, or transmission of writing to a translator is enabled. Notebook examples are design references only, not imported data.
 
 ## Access and layout
 
@@ -11,6 +11,7 @@ External translation is on hold. No provider, API key, AI button, billing, or tr
 - Default Mon/Tue/Wed/Fri/Sat: one daily reflection. Thu/Sun: recorded-match cards (training and tournament clearly separated), plus an optional daily note. Actual matches remain available on any weekday; missing imports never generate invented results. Match cards use record-ID order, not a claimed play order.
 - One daily coach-feedback block, entered by the player. No ratings, approval/publishing, per-match coach inputs, or separate “Things to improve” field.
 - Only the two initial IDs have English reflection originals and manual Japanese versions, plus Japanese coach originals and manual English versions. Other enabled players write Japanese only; enforced by the Worker.
+- Mobile usability update: all daily/match/orphan writing blocks are always expanded, with section jump links. Text areas grow and shrink to show complete text on input, saved-page load, language change, font load, and viewport width changes. Leading blank lines and paragraph structure are retained. Directory login forms and privacy help open by default.
 
 ## Privacy boundaries
 
@@ -18,7 +19,11 @@ The shared Worker changes apply only to UAT. Production private endpoints return
 
 UAT member/maintenance data returns empty legacy reflection collections and audit responses filter legacy reflection changes. Generic reflection submissions, reviews/batch reviews, and bulk writes are blocked. The private namespace is absent from normal API datasets and export/promotion scripts; those scripts also exclude legacy reflection bodies. Do not copy UAT journals into PROD or provision PROD accounts during ordinary dataset promotion.
 
-This is application-level privacy, not end-to-end encryption. General Site/Admin/Approver tokens cannot read/write notebook text. Administrators can manage account enable/reset/disable but cannot read notebook bodies through the application. Infrastructure operators with Redis access can technically read writing. Sharing a player password or remembered device also shares access.
+The user's follow-up explicitly authorizes Admins to read all player notebooks in UAT. The player-facing disclosure now says the player and club administrators can read the notebook; other players, members, and Approvers cannot. The requested infrastructure/encryption sentence was removed from that UI. This does not change the technical architecture into end-to-end encryption. Sharing a player password or remembered device also shares access.
+
+Site/Approver tokens cannot read notebook text. Admin tokens can read it only through the dedicated read-only `/api/reflections/admin/players`, `/admin/dates?playerId=…`, and `/admin/day?playerId=…&date=…` routes (all under `/api/reflections`). These validate Admin role on each request, explicit IDs/dates, and the environment rollout; every non-GET method is rejected. Player-session endpoints still derive ownership from the player token and do not accept Admin tokens. No Admin journal editing, deletion, publishing, exporting, or translation is implemented.
+
+UAT Data Maintenance → **Player Notebooks / 選手ノート** (`admin.html?tab=notebooks`) provides player and saved-date selectors, previous/next saved dates, refresh/retry, readable full-text language panels, recorded-match context, and orphan-note preservation. Disabled accounts remain readable to Admin without reenabling them. Only one selected day is loaded at a time; no whole-history dump or local text cache. Selecting another player/date clears previous text before loading; request failures never leave old text under new labels. Sign-out, role rejection, cross-tab session changes, and frozen-page returns clear/hide text and require fresh validation. Approver navigation excludes this page; PROD navigation is unchanged.
 
 Private API CORS allows `https://rickliky.github.io`; optional `PRIVATE_REFLECTION_ORIGINS` is a comma-separated explicit local-test allowlist. Never use wildcard origins. Responses are `no-store`; writing is escaped, request bodies are size-bounded, and errors never echo request content or Redis credentials. Login is limited to 10 attempts per IP/player and 60 per IP over 15 minutes. Passwords use random 256-bit salts and PBKDF2-SHA256 (100,000 iterations, the Workers Web Crypto maximum). Tokens are opaque random 256-bit values, stored only as SHA-256 lookup hashes with server TTL and account-version validation. Reset/disable increments the version and invalidates every previous session; saving checks revocation atomically too.
 
@@ -44,7 +49,7 @@ Private notebook fields/date history stay hidden during reauthentication. A froz
 
 `scripts/manage-reflection-account.js` is intentionally UAT-only. Supply `ADMIN_PASSWORD` in the process environment. `--list` prints only player ID, enabled status, and credential version. For changes, set `REFLECTION_PLAYER_ID`, choose `--enable`, `--disable`, or `--reset`, and preview first. Add `--apply` to write. Set `REFLECTION_PASSWORD` only for initial enable or explicit reset; do not put passwords in script source or command-line arguments. Enabling an already-enabled account is a no-op, never an implicit password reset. Reenable/disable/reset preserves all journal text but revokes previous sessions.
 
-The Worker `/api/reflections/accounts` GET/POST requires the Admin role. It is not a content-management endpoint. The current Admin page does not expose notebook content or account passwords; use the restricted script to manage feature access.
+The Worker `/api/reflections/accounts` GET/POST requires the Admin role. It is not a content-management endpoint. Data Maintenance has a separate read-only notebook viewer, never account passwords. Use the restricted script to manage feature access.
 
 ## Verification
 

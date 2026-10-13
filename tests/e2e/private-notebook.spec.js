@@ -76,9 +76,9 @@ test('private directory has no club gate/data request; player login restores for
 test('match/daily layout, manual bilingual coach block and autosave retain paragraphs without local drafts', async ({ page, context }) => {
   const { documents } = await mock(context); await login(page);
   await expect(page.locator('.notebook-matches > .notebook-match')).toHaveCount(2);
-  await expect(page.locator('.notebook-entry h2')).toHaveCount(1); // one daily coach block
+  await expect(page.locator('#notebook-coach')).toHaveCount(1); // one daily coach block
   await expect(page.locator('.notebook-match img')).toHaveCount(0); // escaped opponent
-  await page.locator('.notebook-matches > .notebook-match').first().locator('summary').click();
+  await expect(page.locator('[data-field="match.training:M-001.en"]')).toBeVisible();
   await page.locator('[data-field="match.training:M-001.en"]').fill('First paragraph.\n\nNext focus.');
   await page.locator('[data-field="coach.ja"]').fill('1. 合成テスト\n2. 次の項目');
   await expect(page.locator('#notebook-status')).toContainText('保存済み');
@@ -86,7 +86,7 @@ test('match/daily layout, manual bilingual coach block and autosave retain parag
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('First paragraph');
   await page.locator('#language-toggle').click();
   await expect(page.locator('[data-field="coach.en"]')).toBeVisible();
-  await expect(page.locator('#feedback-app')).toContainText('Automatic translation is on hold');
+  await expect(page.locator('#feedback-app')).toContainText('Translation is manual');
   await page.locator('#notebook-date').fill('2026-10-10'); await page.locator('#notebook-date').press('Tab');
   await expect(page.locator('[data-field="daily.en"]')).toBeVisible();
   await page.locator('[data-field="daily.en"]').fill('Daily practice');
@@ -189,4 +189,30 @@ test('a frozen-page return revalidates access before revealing notebook text', a
   await page.locator('#notebook-reauth input[type=password]').fill('synthetic-only-password');
   await page.locator('#notebook-reauth button').click();
   await expect(page.locator('[data-field="coach.ja"]')).toHaveValue('Synthetic frozen-page note');
+});
+
+test('all writing is expanded and text areas fit long content on load, typing, resizing and language changes', async ({ page, context }) => {
+  const { documents } = await mock(context);
+  const longText = '\n\n' + Array.from({ length: 35 }, (_, index) => `${index + 1}. Synthetic table-tennis reflection with numbered coaching advice and next focus.`).join('\n\n');
+  documents.set('LK-0080|2026-10-11', { revision: 1, fields: { 'daily.en': longText, 'coach.ja': longText, 'match.training:M-001.en': longText } });
+  await page.setViewportSize({ width: 390, height: 900 }); await login(page);
+  await expect(page.locator('.notebook-day details')).toHaveCount(0);
+  await expect(page.locator('.notebook-directory details:not([open])')).toHaveCount(0);
+  const field = page.locator('[data-field="match.training:M-001.en"]');
+  await expect(field).toHaveValue(longText);
+  const fits = () => field.evaluate(element => element.clientHeight >= element.scrollHeight - 1 && element.scrollTop === 0);
+  await expect.poll(fits).toBe(true);
+  await field.fill(longText + '\n\nMore synthetic writing.');
+  await expect.poll(fits).toBe(true);
+  await expect(page.locator('#notebook-status')).toContainText('保存済み');
+  for (const width of [1440, 320, 390]) {
+    await page.setViewportSize({ width, height: 900 }); await expect.poll(fits).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+  }
+  await page.locator('#language-toggle').click(); await expect.poll(fits).toBe(true);
+  await expect(page.locator('.notebook-privacy')).toContainText('club administrators');
+  await expect(page.locator('.notebook-privacy')).not.toContainText('Infrastructure operators');
+  await page.reload(); await expect(field).toHaveValue(longText + '\n\nMore synthetic writing.'); await expect.poll(fits).toBe(true);
+  await field.fill('Short note'); await expect.poll(() => field.evaluate(element => element.clientHeight)).toBeLessThan(200);
+  await expect(page.locator('#notebook-status')).toContainText('Saved');
 });

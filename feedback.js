@@ -13,15 +13,15 @@
   const words = {
     en: {
       title: 'Private Player Notebook', eyebrow: 'YOUR PRIVATE REFLECTION', invitation: 'To use private reflections, please speak to Jacelyn and Kaitlyn’s daddy.',
-      privacy: 'Only your player login can open this notebook. It is not published to club members or normal Admin/Approver accounts. Infrastructure operators can technically access stored data; this is not end-to-end encryption.',
+      privacy: 'You and club administrators can read your notebook. Other players, club members, and Approvers cannot read it. It is not published.',
       privacyTitle: 'Who can read this?',
       password: 'Player password', login: 'Open my notebook', remember: 'Remember me on this browser for eight weeks', shared: 'Use only your own account. Do not remember access on a shared device.',
       invalid: 'Could not sign in. Check the password or try again later.', unavailable: 'The notebook service is unavailable. Please try again.', retry: 'Try again', lock: 'Lock / sign out',
       date: 'Notebook date', previous: 'Previous day', next: 'Next day', history: 'Your saved dates', choose: 'Choose a date', activity: 'Activity (optional)',
       reflection: 'My reflection', reflectionHint: 'What happened, what did you learn, and what will you focus on next?', english: 'English original', japanese: 'Japanese version (manual)',
       coach: 'Coach feedback — entered by the player', coachHint: 'Advice received from the coach, not a coach-authenticated evaluation. Preserve paragraphs and numbered points.',
-      coachJapanese: 'Japanese original', coachEnglish: 'English version (manual)', translation: 'Automatic translation is on hold. Both language fields can be edited manually.',
-      daily: 'Daily reflection', recorded: 'Recorded matches', matchHint: 'Cards are ordered by record ID, not verified play order. Unwritten cards may be left closed.',
+      coachJapanese: 'Japanese original', coachEnglish: 'English version (manual)', translation: 'Translation is manual. Write or paste each language version below.',
+      daily: 'Daily reflection', recorded: 'Recorded matches', matchHint: 'All entries are open. Text boxes grow with your writing. Match order follows record IDs, not verified play order.', jump: 'Go to',
       noMatches: 'No recorded matches for this date yet. You can write a daily note below.', training: 'Training', tournament: 'Tournament', win: 'Win', loss: 'Loss', incomplete: 'Incomplete',
       ready: 'Write freely — changes autosave.', unsaved: 'Unsaved changes', saving: 'Saving…', saved: 'Saved', offline: 'Offline — not synced. Keep this page open.', failed: 'Save failed — your writing is still here. Keep this page open and retry.',
       expired: 'Your player session expired or was reset. Sign in again below; your unsaved writing stays on this page.',
@@ -33,15 +33,15 @@
     },
     ja: {
       title: '選手のプライベートノート', eyebrow: '自分だけの振り返り', invitation: 'この振り返り機能を使いたい選手は、ジェイスとケイツのお父さんに声をかけてください。',
-      privacy: 'このノートは本人の選手ログインでのみ開けます。クラブメンバーや通常の管理者・承認者には公開されません。ただし、システム運営者は保存データへ技術的にアクセスできます。エンドツーエンド暗号化ではありません。',
+      privacy: '本人とクラブ管理者がノートを読めます。他の選手、クラブメンバー、承認者は読めません。公開はされません。',
       privacyTitle: 'プライバシーについて',
       password: '選手パスワード', login: '自分のノートを開く', remember: 'このブラウザで8週間ログインを保持する', shared: '必ず自分のアカウントを使ってください。共用端末ではログインを保持しないでください。',
       invalid: 'ログインできませんでした。パスワードを確認するか、時間をおいて試してください。', unavailable: 'ノートサービスを利用できません。もう一度試してください。', retry: 'もう一度試す', lock: 'ロック・ログアウト',
       date: 'ノートの日付', previous: '前の日', next: '次の日', history: '自分の保存済み日付', choose: '日付を選ぶ', activity: '活動内容（任意）',
       reflection: '自分の振り返り', reflectionHint: '起きたこと、学んだこと、次に意識したいことを書きましょう。', english: '英語の原文', japanese: '日本語版（手入力）',
       coach: 'コーチのアドバイス — 選手が入力', coachHint: 'コーチから受けたアドバイスです。コーチ本人のログインや評価ではありません。段落や番号をそのまま残せます。',
-      coachJapanese: '日本語の原文', coachEnglish: '英語版（手入力）', translation: '自動翻訳は保留中です。両言語の欄を手入力で編集できます。',
-      daily: '1日の振り返り', recorded: '登録済み試合', matchHint: '記録ID順で表示しています。実際の試合順とは限りません。未記入のカードは閉じたままで構いません。',
+      coachJapanese: '日本語の原文', coachEnglish: '英語版（手入力）', translation: '翻訳は手入力です。各言語の文章を入力・貼り付けできます。',
+      daily: '1日の振り返り', recorded: '登録済み試合', matchHint: 'すべての欄を開いて表示します。入力欄は文章に合わせて広がります。記録ID順で、実際の試合順とは限りません。', jump: '移動',
       noMatches: 'この日付の試合はまだ登録されていません。下に1日のメモを書けます。', training: '練習試合', tournament: '大会', win: '勝ち', loss: '負け', incomplete: '未完了',
       ready: '自由に書いてください。変更は自動保存されます。', unsaved: '未保存の変更', saving: '保存中…', saved: '保存済み', offline: 'オフライン — 未同期です。このページを開いたままにしてください。', failed: '保存できませんでした。文章はこのページに残っています。ページを閉じずに再試行してください。',
       expired: '選手ログインの期限が切れたか、リセットされました。下から再ログインしてください。未保存の文章はこのページに残ります。',
@@ -70,7 +70,7 @@
   }
 
   function header() {
-    return `<section class="feedback-hero"><div><p class="eyebrow">${t('eyebrow')}</p><h1>${t('title')}</h1></div><details class="notebook-privacy"><summary>${t('privacyTitle')}</summary><p>${t('privacy')}</p></details></section>`;
+    return `<section class="feedback-hero"><div><p class="eyebrow">${t('eyebrow')}</p><h1>${t('title')}</h1></div><details open class="notebook-privacy"><summary>${t('privacyTitle')}</summary><p>${t('privacy')}</p></details></section>`;
   }
   function updateLanguage() {
     document.documentElement.lang = language;
@@ -104,13 +104,13 @@
   }
   function renderDirectory() {
     updateLanguage();
-    const selected = params.get('player');
-    app.innerHTML = `${header()}<p class="notebook-invitation">${t('invitation')}</p><section class="notebook-directory">${directory.map(person => `<details ${person.playerId === selected ? 'open' : ''}><summary>${escapeHtml(name(person))}</summary>${loginForm(person)}</details>`).join('') || `<p>${t('emptyDirectory')}</p>`}</section>`;
+    const selected = params.get('player'), people = [...directory].sort((a, b) => Number(b.playerId === selected) - Number(a.playerId === selected));
+    app.innerHTML = `${header()}<p class="notebook-invitation">${t('invitation')}</p><section class="notebook-directory">${people.map(person => `<details open><summary>${escapeHtml(name(person))}</summary>${loginForm(person)}</details>`).join('') || `<p>${t('emptyDirectory')}</p>`}</section>`;
     bindLogins();
   }
   function field(key, label, hint = '') {
     const value = dirty.has(key) ? dirty.get(key) : documentValue.fields[key] || '';
-    return `<label class="notebook-field"><span>${escapeHtml(label)}</span>${hint ? `<small>${hint}</small>` : ''}<textarea data-field="${escapeHtml(key)}" maxlength="8000" rows="6">${escapeHtml(value)}</textarea></label>`;
+    return `<label class="notebook-field"><span>${escapeHtml(label)}</span>${hint ? `<small>${hint}</small>` : ''}<textarea data-field="${escapeHtml(key)}" maxlength="8000" rows="3">${escapeHtml(value)}</textarea></label>`;
   }
   function reflectionFields(prefix) {
     return player.bilingual ? `<div class="notebook-bilingual">${field(`${prefix}.en`, t('english'), t('reflectionHint'))}${field(`${prefix}.ja`, t('japanese'))}</div>` : field(`${prefix}.ja`, t('reflection'), t('reflectionHint'));
@@ -121,24 +121,27 @@
     const activity = dirty.has('activity') ? dirty.get('activity') : documentValue.fields.activity || '';
     const orphanKeys = [...new Set(Object.keys(documentValue.fields).concat([...dirty.keys()]).filter(key => key.startsWith('match.')).map(key => key.slice(6, -3)))].filter(key => !matches.some(match => match.key === key));
     const matchCards = matches.map(match => {
-      const prefix = `match.${match.key}`, written = ['en', 'ja'].some(lang => dirty.get(`${prefix}.${lang}`) || documentValue.fields[`${prefix}.${lang}`]);
-      const targeted = match.key === `${params.get('matchType') || 'training'}:${params.get('matchId')}`;
-      return `<details class="notebook-match" ${written || targeted ? 'open' : ''}><summary><span><small>${t(match.source)} · ${t(match.result)}</small><b>${escapeHtml(name(player))} <em>${escapeHtml(match.score)}</em> ${escapeHtml(match.opponentName)}</b><small>${escapeHtml([match.eventName, match.round].filter(Boolean).join(' · '))}</small></span></summary><div>${reflectionFields(prefix)}</div></details>`;
+      const prefix = `match.${match.key}`;
+      return `<article class="notebook-match"><header class="notebook-match-heading"><span><small>${t(match.source)} · ${t(match.result)}</small><b>${escapeHtml(name(player))} <em>${escapeHtml(match.score)}</em> ${escapeHtml(match.opponentName)}</b><small>${escapeHtml([match.eventName, match.round].filter(Boolean).join(' · '))}</small></span></header><div>${reflectionFields(prefix)}</div></article>`;
     }).join('');
     app.innerHTML = `${header()}<div class="notebook-identity"><strong>${escapeHtml(name(player))}</strong><button id="notebook-lock" type="button">${t('lock')}</button></div><p class="notebook-notice">${player.bilingual ? t('translation') : ''} ${t('retention')}</p>
       <nav class="notebook-dates" ${requiresLogin ? 'hidden' : ''} aria-label="${t('date')}"><button type="button" data-step="-1" aria-label="${t('previous')}">←</button><label>${t('date')}<input id="notebook-date" type="date" min="2000-01-01" max="2100-12-31" value="${date}"></label><button type="button" data-step="1" aria-label="${t('next')}">→</button><label>${t('history')}<select id="notebook-history"><option value="">${t('choose')}</option>${dates.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}</select></label></nav>
       <div class="notebook-savebar"><p id="notebook-status" role="status" aria-live="polite"></p><button id="notebook-retry" type="button">${t('retry')}</button></div><section id="notebook-reauth">${requiresLogin ? loginForm(player, true) : ''}</section><section id="notebook-conflict"></section>
-      <section class="notebook-day" ${requiresLogin ? 'hidden' : ''}><label class="notebook-field"><span>${t('activity')}</span><input data-field="activity" maxlength="160" value="${escapeHtml(activity)}"></label>
-      ${matchDay && matches.length ? '' : `<section class="notebook-entry"><h2>${t('daily')}</h2>${matchDay ? `<p>${t('noMatches')}</p>` : ''}${reflectionFields('daily')}</section>`}
-      ${matches.length ? `<section class="notebook-matches"><h2>${t('recorded')} · ${matches.length}</h2><p>${t('matchHint')}</p>${matchCards}</section>` : ''}
-      ${matchDay && matches.length ? `<details class="notebook-match"><summary>${t('daily')}</summary><div>${reflectionFields('daily')}</div></details>` : ''}
-      ${orphanKeys.map(key => `<details class="notebook-match"><summary>${t('missing')} · ${escapeHtml(key)}</summary><div>${reflectionFields(`match.${key}`)}</div></details>`).join('')}
-      <section class="notebook-entry"><h2>${t('coach')}</h2><p>${t('coachHint')}</p>${player.bilingual ? `<div class="notebook-bilingual">${field('coach.ja', t('coachJapanese'))}${field('coach.en', t('coachEnglish'))}</div>` : field('coach.ja', t('coachJapanese'))}</section></section>`;
+      <section class="notebook-day" ${requiresLogin ? 'hidden' : ''}><nav class="notebook-jump" aria-label="${t('jump')}"><a href="#notebook-daily">${t('daily')}</a>${matches.length ? `<a href="#notebook-matches">${t('recorded')}</a>` : ''}<a href="#notebook-coach">${t('coach')}</a></nav><label class="notebook-field"><span>${t('activity')}</span><input data-field="activity" maxlength="160" value="${escapeHtml(activity)}"></label>
+      ${matchDay && matches.length ? '' : `<section id="notebook-daily" class="notebook-entry"><h2>${t('daily')}</h2>${matchDay ? `<p>${t('noMatches')}</p>` : ''}${reflectionFields('daily')}</section>`}
+      ${matches.length ? `<section id="notebook-matches" class="notebook-matches"><h2>${t('recorded')} · ${matches.length}</h2><p>${t('matchHint')}</p>${matchCards}</section>` : ''}
+      ${matchDay && matches.length ? `<section id="notebook-daily" class="notebook-entry"><h2>${t('daily')}</h2>${reflectionFields('daily')}</section>` : ''}
+      ${orphanKeys.map(key => `<article class="notebook-match"><h3>${t('missing')} · ${escapeHtml(key)}</h3><div>${reflectionFields(`match.${key}`)}</div></article>`).join('')}
+      <section id="notebook-coach" class="notebook-entry"><h2>${t('coach')}</h2><p>${t('coachHint')}</p>${player.bilingual ? `<div class="notebook-bilingual">${field('coach.ja', t('coachJapanese'))}${field('coach.en', t('coachEnglish'))}</div>` : field('coach.ja', t('coachJapanese'))}</section></section>`;
     updateStatus(); renderConflict(); bindLogins();
     app.querySelectorAll('[data-field]').forEach(input => {
-      input.oninput = () => { dirty.set(input.dataset.field, input.value); statusKey = 'unsaved'; updateStatus(); if (conflict) renderConflict(); clearTimeout(timer); timer = setTimeout(flush, 1000); };
+      // Setting value directly also preserves initial blank lines that HTML
+      // textarea parsing otherwise removes on reload.
+      input.value = dirty.has(input.dataset.field) ? dirty.get(input.dataset.field) : documentValue.fields[input.dataset.field] || '';
+      input.oninput = () => { resizeField(input); dirty.set(input.dataset.field, input.value); statusKey = 'unsaved'; updateStatus(); if (conflict) renderConflict(); clearTimeout(timer); timer = setTimeout(flush, 1000); };
       input.onblur = () => { if (dirty.size) flush(); };
     });
+    resizeFields();
     app.querySelector('#notebook-retry').onclick = () => { if (!conflict) flush(); };
     app.querySelector('#notebook-date').onchange = event => navigate(event.target.value);
     app.querySelector('#notebook-history').onchange = event => { if (event.target.value) navigate(event.target.value); };
@@ -155,6 +158,21 @@
       finally { busy = false; const day = app.querySelector('.notebook-day'); if (day) day.inert = false; }
     };
   }
+  function resizeField(input) {
+    if (input.tagName !== 'TEXTAREA' || !input.getClientRects().length) return;
+    input.style.height = 'auto';
+    const style = getComputedStyle(input);
+    input.style.height = `${Math.ceil(input.scrollHeight + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth))}px`;
+  }
+  function resizeFields() { app.querySelectorAll('textarea[data-field]').forEach(resizeField); }
+  let resizeFrame, lastWidth;
+  const resizeObserver = new ResizeObserver(entries => {
+    const width = entries[0].contentRect.width;
+    if (width === lastWidth) return;
+    lastWidth = width; cancelAnimationFrame(resizeFrame); resizeFrame = requestAnimationFrame(resizeFields);
+  });
+  resizeObserver.observe(app);
+  document.fonts.ready.then(resizeFields);
   function updateStatus() {
     const node = app.querySelector('#notebook-status');
     if (node) node.textContent = `${t(requiresLogin ? 'expired' : conflict ? 'conflict' : statusKey)}${statusKey === 'saved' && savedAt ? ` · ${new Date(savedAt).toLocaleTimeString(language === 'en' ? 'en-GB' : 'ja-JP')}` : ''}`;

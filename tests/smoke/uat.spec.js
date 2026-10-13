@@ -37,6 +37,10 @@ test('deployed UAT exposes only authenticated data boundaries', async ({ page, r
 
   const privateResponse = await request.get(`${WORKER_BASE}/api/reflections/day?environment=uat&date=2026-10-11`);
   expect(privateResponse.status()).toBe(401);
+  for (const path of ['players', 'dates?playerId=LK-0080', 'day?playerId=LK-0080&date=2099-12-31']) {
+    const url = new URL(`${WORKER_BASE}/api/reflections/admin/${path}`); url.searchParams.set('environment', 'uat');
+    expect((await request.get(url.toString())).status()).toBe(401);
+  }
   const prodResponse = await request.get(`${WORKER_BASE}/api/reflections/directory?environment=prod`);
   expect(prodResponse.status()).toBe(404);
   apiRequests.length = 0;

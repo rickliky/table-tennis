@@ -36,6 +36,20 @@ const dateIsValid = date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.te
 const validId = id => typeof id === 'string' && /^LK-\d{4}$/.test(id);
 const own = (match, id) => match.player1Id === id || match.player2Id === id;
 
+async function matchesForDay(readCollection, playerId, date) {
+  const [training, tournaments, events] = await Promise.all(['matches', 'tournament-matches', 'tournaments'].map(readCollection));
+  const matches = [];
+  for (const [source, records] of [['training', training], ['tournament', tournaments]]) {
+    for (const match of records) {
+      if (match.matchDate !== date || !own(match, playerId) || (match.format && match.format !== 'Singles') || (source === 'training' && !/club|training|練習/i.test(`${match.event || ''} ${match.division || ''}`))) continue;
+      const first = match.player1Id === playerId, ownSets = Number(first ? match.player1Sets : match.player2Sets), otherSets = Number(first ? match.player2Sets : match.player1Sets);
+      const complete = Number(match.player1Sets) >= 3 || Number(match.player2Sets) >= 3;
+      matches.push({ key: `${source}:${source === 'training' ? match.matchId : match.tournamentMatchId}`, source, opponentName: (first ? match.player2Name : match.player1Name) || (first ? match.player2Id : match.player1Id), score: `${ownSets}-${otherSets}`, result: complete ? (ownSets > otherSets ? 'win' : 'loss') : 'incomplete', eventName: source === 'training' ? match.event || '' : events.find(event => event.tournamentId === match.tournamentId)?.name || '', round: match.round || '' });
+    }
+  }
+  return matches.sort((a, b) => a.key.localeCompare(b.key));
+}
+
 // Compare-and-set and date-index update are a single Redis transaction. Also
 // recheck the account version inside the transaction to prevent reset races.
 export const SAVE_SCRIPT = `
@@ -109,6 +123,31 @@ export async function handlePrivateReflections(request, env, environment) {
     const playerFor = async id => (await readCollection('players')).find(player => player.playerId === id);
     const publicAccount = (account, player) => ({ playerId: account.playerId, displayName: player?.displayName || account.playerId, englishName: player?.englishName || '', bilingual: bilingualIds.has(account.playerId) });
 
+    // Separate, read-only Admin viewer. Never include journals in maintenance
+    // datasets, audit history, exports, or ordinary approval/write endpoints.
+    if (url.pathname.startsWith('/api/reflections/admin/')) {
+      await requireRole(request, env, ['admin']);
+      if (request.method !== 'GET') fail('Read-only access', 405);
+      if (url.pathname === '/api/reflections/admin/players') {
+        const values = await redis('HGETALL', accountsKey) || [], players = await readCollection('players'), result = [];
+        for (let index = 1; index < values.length; index += 2) {
+          const account = JSON.parse(values[index]);
+          result.push({ ...publicAccount(account, players.find(player => player.playerId === account.playerId)), enabled: Boolean(account.enabled) });
+        }
+        return respond({ ok: true, players: result.sort((a, b) => a.playerId.localeCompare(b.playerId)) });
+      }
+      if (!['/api/reflections/admin/dates', '/api/reflections/admin/day'].includes(url.pathname)) fail('Not found', 404);
+      const playerId = url.searchParams.get('playerId');
+      if (!validId(playerId)) fail('Valid player required');
+      const account = await accountFor(playerId);
+      if (!account) fail('Notebook account not found', 404);
+      if (url.pathname === '/api/reflections/admin/dates') return respond({ ok: true, playerId, dates: await redis('ZREVRANGE', `${prefix}dates:${playerId}`, 0, -1) || [] });
+      const date = url.searchParams.get('date');
+      if (!dateIsValid(date)) fail('Valid date required');
+      const document = await readJson(redis, `${prefix}day:${playerId}:${date}`);
+      return respond({ ok: true, player: publicAccount(account, await playerFor(playerId)), date, document: document || { revision: 0, fields: {} }, matches: await matchesForDay(readCollection, playerId, date) });
+    }
+
     if (url.pathname === '/api/reflections/directory' && request.method === 'GET') {
       const values = await redis('HGETALL', accountsKey) || [], players = await readCollection('players'), result = [];
       for (let index = 1; index < values.length; index += 2) {
@@ -165,17 +204,7 @@ export async function handlePrivateReflections(request, env, environment) {
     const date = url.searchParams.get('date');
     if (!dateIsValid(date)) fail('Valid date required');
     const dayKey = `${prefix}day:${actor.playerId}:${date}`;
-    const [training, tournaments, events] = await Promise.all(['matches', 'tournament-matches', 'tournaments'].map(readCollection));
-    const matches = [];
-    for (const [source, records] of [['training', training], ['tournament', tournaments]]) {
-      for (const match of records) {
-        if (match.matchDate !== date || !own(match, actor.playerId) || (match.format && match.format !== 'Singles') || (source === 'training' && !/club|training|練習/i.test(`${match.event || ''} ${match.division || ''}`))) continue;
-        const first = match.player1Id === actor.playerId, ownSets = Number(first ? match.player1Sets : match.player2Sets), otherSets = Number(first ? match.player2Sets : match.player1Sets);
-        const complete = Number(match.player1Sets) >= 3 || Number(match.player2Sets) >= 3;
-        matches.push({ key: `${source}:${source === 'training' ? match.matchId : match.tournamentMatchId}`, source, opponentName: (first ? match.player2Name : match.player1Name) || (first ? match.player2Id : match.player1Id), score: `${ownSets}-${otherSets}`, result: complete ? (ownSets > otherSets ? 'win' : 'loss') : 'incomplete', eventName: source === 'training' ? match.event || '' : events.find(event => event.tournamentId === match.tournamentId)?.name || '', round: match.round || '' });
-      }
-    }
-    matches.sort((a, b) => a.key.localeCompare(b.key));
+    const matches = await matchesForDay(readCollection, actor.playerId, date);
     if (request.method === 'GET') return respond({ ok: true, date, document: await readJson(redis, dayKey) || { revision: 0, fields: {} }, matches });
     if (request.method === 'POST') {
       const body = await bodyOf(request);
