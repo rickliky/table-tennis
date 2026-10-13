@@ -25,6 +25,7 @@
     const listeners = new AbortController();
     let controller, disposed = false, players = [], dates = [], playerId = '', date = '';
     const name = player => language === 'en' ? player.englishName || player.displayName : player.displayName;
+    const dateLabel = value => `${value} (${new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'ja-JP', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`))})`;
     panel.innerHTML = `<h2>${copy.title}</h2><p class="admin-notebook-notice">${copy.notice}</p><div class="admin-notebook-controls"><label>${copy.player}<select id="admin-notebook-player" disabled></select></label><label>${copy.date}<select id="admin-notebook-date" disabled><option value="">${copy.choose}</option></select></label><div class="admin-notebook-date-actions"><button type="button" class="admin-button" id="admin-notebook-older" aria-label="${copy.previous}">←</button><button type="button" class="admin-button" id="admin-notebook-newer" aria-label="${copy.next}">→</button><button type="button" class="admin-button" id="admin-notebook-refresh">${copy.refresh}</button></div></div><p id="admin-notebook-status" role="status"></p><div id="admin-notebook-content"></div>`;
     const playerSelect = panel.querySelector('#admin-notebook-player'), dateSelect = panel.querySelector('#admin-notebook-date');
     const content = panel.querySelector('#admin-notebook-content'), status = panel.querySelector('#admin-notebook-status');
@@ -73,7 +74,7 @@
         ? `<div class="notebook-bilingual">${readField(copy.enOriginal, fields[`${prefix}.en`])}${readField(copy.jaVersion, fields[`${prefix}.ja`])}</div>`
         : readField(copy.jaOriginal, fields[`${prefix}.ja`]);
       const matchKeys = [...new Set(Object.keys(fields).filter(key => /^match\.(training|tournament):[A-Za-z0-9_-]+\.(en|ja)$/.test(key)).map(key => key.slice(6, -3)))];
-      content.innerHTML = `<header class="admin-notebook-day-title"><h3>${escapeHtml(name(result.player))} · ${escapeHtml(result.date)}</h3>${result.document.updatedAt ? `<p>${copy.updated}: ${escapeHtml(new Date(result.document.updatedAt).toLocaleString(language === 'en' ? 'en-GB' : 'ja-JP'))}</p>` : ''}</header>
+      content.innerHTML = `<header class="admin-notebook-day-title"><h3>${escapeHtml(name(result.player))} · ${escapeHtml(dateLabel(result.date))}</h3>${result.document.updatedAt ? `<p>${copy.updated}: ${escapeHtml(new Date(result.document.updatedAt).toLocaleString(language === 'en' ? 'en-GB' : 'ja-JP', { timeZone: 'Asia/Tokyo', weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }))}</p>` : ''}</header>
         ${fields.activity ? readField(copy.activity, fields.activity) : ''}<article class="notebook-entry"><h3>${copy.daily}</h3>${reflection('daily')}</article>
         ${matchKeys.length ? `<h3>${copy.matches}</h3>${matchKeys.map(key => {
           const match = result.matches.find(match => match.key === key);
@@ -92,7 +93,7 @@
       if (!active() || signal.aborted) return;
       dates = result.dates; date = dates[0] || '';
       if (dates.length) dateSelect.replaceChildren();
-      dates.forEach(value => dateSelect.add(new Option(value, value))); dateSelect.value = date;
+      dates.forEach(value => dateSelect.add(new Option(dateLabel(value), value))); dateSelect.value = date;
       await day(signal);
     }
     async function directory(signal) {

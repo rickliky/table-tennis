@@ -1477,6 +1477,8 @@ body.data-load-failed { overflow:hidden; }
 .notebook-dates[hidden], .notebook-day[hidden] { display: none; }
 .notebook-dates label { flex: 1; }
 .notebook-dates button { flex-shrink: 0; }
+.notebook-date-label { color: var(--gold); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.notebook-schedule { color: #aeb4bd; font-size: 14px; line-height: 1.8; margin: 0 0 16px; }
 .notebook-day { margin-top: 20px; }
 .notebook-day > .notebook-field { margin-bottom: 24px; }
 .notebook-field span { font-weight: 700; }

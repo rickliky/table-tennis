@@ -140,7 +140,7 @@ Official references checked:
 
 ## Current Decisions / Future Approvals
 
-- Friday and atypical schedules: implemented with optional daily notes plus actual recorded matches, as communicated at implementation start.
+- Friday: user confirmed there is never practice. Notebook-day arrows now skip Fridays; the Friday default opens Thursday. Explicit empty Fridays show a rest message rather than writing boxes; existing Friday notes stay accessible and are never deleted/moved. Dates show localized weekdays in player and Admin views. This supersedes the earlier atypical-Friday default.
 - Translation will remain manual by user decision. Any future change to external translation requires a new request and provider/billing/privacy approval.
 - Production rollout, production account provisioning, and historical sample import are not authorized by the UAT implementation request.
 - Confirmed choices: sample headings were reversed, coach feedback is daily-only, and there is no separate “Things to improve” field. Typed examples suffice for layout planning; do not require reuploading all photos. No sample import is authorized yet.

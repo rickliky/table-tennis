@@ -7,7 +7,7 @@
   let token = localStorage.getItem(storageKey) || '', player = null, directory = [], dates = [];
   let rememberSession = Boolean(token);
   let language = localStorage.getItem('lk-language') || 'ja';
-  let date = /^\d{4}-\d{2}-\d{2}$/.test(params.get('date') || '') ? params.get('date') : today();
+  let date = /^\d{4}-\d{2}-\d{2}$/.test(params.get('date') || '') ? params.get('date') : defaultDate();
   let documentValue = { revision: 0, fields: {} }, matches = [], dirty = new Map(), timer, saving = null;
   let conflict = null, requiresLogin = false, busy = false, statusKey = 'ready', savedAt = '';
   const words = {
@@ -17,7 +17,8 @@
       privacyTitle: 'Who can read this?',
       password: 'Player password', login: 'Open my notebook', remember: 'Remember me on this browser for eight weeks', shared: 'Use only your own account. Do not remember access on a shared device.',
       invalid: 'Could not sign in. Check the password or try again later.', unavailable: 'The notebook service is unavailable. Please try again.', retry: 'Try again', lock: 'Lock / sign out',
-      date: 'Notebook date', previous: 'Previous day', next: 'Next day', history: 'Your saved dates', choose: 'Choose a date', activity: 'Activity (optional)',
+      date: 'Notebook date', previous: 'Previous notebook day (skip Friday)', next: 'Next notebook day (skip Friday)', history: 'Your saved dates', choose: 'Choose a date', activity: 'Activity (optional)',
+      schedule: 'Friday is a rest day. Date arrows skip Fridays.', rest: 'Friday — no practice or reflection needed.', restHint: 'Choose another date to write your reflection. Existing Friday notes remain available in your saved dates.', fridaySaved: 'Friday is a rest day. This previously saved note is kept for your reference.',
       reflection: 'My reflection', reflectionHint: 'What happened, what did you learn, and what will you focus on next?', english: 'English original', japanese: 'Japanese version (manual)',
       coach: 'Coach feedback — entered by the player', coachHint: 'Advice received from the coach, not a coach-authenticated evaluation. Preserve paragraphs and numbered points.',
       coachJapanese: 'Japanese original', coachEnglish: 'English version (manual)', translation: 'Translation is manual. Write or paste each language version below.',
@@ -37,7 +38,8 @@
       privacyTitle: 'プライバシーについて',
       password: '選手パスワード', login: '自分のノートを開く', remember: 'このブラウザで8週間ログインを保持する', shared: '必ず自分のアカウントを使ってください。共用端末ではログインを保持しないでください。',
       invalid: 'ログインできませんでした。パスワードを確認するか、時間をおいて試してください。', unavailable: 'ノートサービスを利用できません。もう一度試してください。', retry: 'もう一度試す', lock: 'ロック・ログアウト',
-      date: 'ノートの日付', previous: '前の日', next: '次の日', history: '自分の保存済み日付', choose: '日付を選ぶ', activity: '活動内容（任意）',
+      date: 'ノートの日付', previous: '前のノート日（金曜日を除く）', next: '次のノート日（金曜日を除く）', history: '自分の保存済み日付', choose: '日付を選ぶ', activity: '活動内容（任意）',
+      schedule: '金曜日は練習がお休みです。日付の矢印は金曜日を飛ばします。', rest: '金曜日 — 練習・振り返りはお休みです。', restHint: '別の日付を選んで振り返りを書きましょう。以前保存した金曜日のノートは保存済み日付から開けます。', fridaySaved: '金曜日はお休みです。この以前保存したノートは、そのまま参照できます。',
       reflection: '自分の振り返り', reflectionHint: '起きたこと、学んだこと、次に意識したいことを書きましょう。', english: '英語の原文', japanese: '日本語版（手入力）',
       coach: 'コーチのアドバイス — 選手が入力', coachHint: 'コーチから受けたアドバイスです。コーチ本人のログインや評価ではありません。段落や番号をそのまま残せます。',
       coachJapanese: '日本語の原文', coachEnglish: '英語版（手入力）', translation: '翻訳は手入力です。各言語の文章を入力・貼り付けできます。',
@@ -55,6 +57,17 @@
   const t = key => words[language][key];
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
   function today() { return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
+  function weekdayOf(value) { return new Date(`${value}T12:00:00Z`).getUTCDay(); }
+  function stepDate(value, step) {
+    const next = new Date(`${value}T12:00:00Z`);
+    do { next.setUTCDate(next.getUTCDate() + step); } while (next.getUTCDay() === 5);
+    return next.toISOString().slice(0, 10);
+  }
+  function defaultDate() { const value = today(); return weekdayOf(value) === 5 ? stepDate(value, -1) : value; }
+  function dateLabel(value) {
+    const weekday = new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'ja-JP', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`));
+    return `${value} (${weekday})`;
+  }
   const name = person => language === 'en' ? person.englishName || person.displayName : person.displayName;
 
   async function request(path, { method = 'GET', body, authenticated = true } = {}) {
@@ -117,7 +130,8 @@
   }
   function renderNotebook() {
     updateLanguage();
-    const weekday = new Date(`${date}T12:00:00Z`).getUTCDay(), matchDay = [0, 4].includes(weekday);
+    const weekday = weekdayOf(date), matchDay = [0, 4].includes(weekday);
+    const friday = weekday === 5, restDay = friday && !Object.values(documentValue.fields).some(value => value.trim()) && !dirty.size;
     const activity = dirty.has('activity') ? dirty.get('activity') : documentValue.fields.activity || '';
     const orphanKeys = [...new Set(Object.keys(documentValue.fields).concat([...dirty.keys()]).filter(key => key.startsWith('match.')).map(key => key.slice(6, -3)))].filter(key => !matches.some(match => match.key === key));
     const matchCards = matches.map(match => {
@@ -125,14 +139,14 @@
       return `<article class="notebook-match"><header class="notebook-match-heading"><span><small>${t(match.source)} · ${t(match.result)}</small><b>${escapeHtml(name(player))} <em>${escapeHtml(match.score)}</em> ${escapeHtml(match.opponentName)}</b><small>${escapeHtml([match.eventName, match.round].filter(Boolean).join(' · '))}</small></span></header><div>${reflectionFields(prefix)}</div></article>`;
     }).join('');
     app.innerHTML = `${header()}<div class="notebook-identity"><strong>${escapeHtml(name(player))}</strong><button id="notebook-lock" type="button">${t('lock')}</button></div><p class="notebook-notice">${player.bilingual ? t('translation') : ''} ${t('retention')}</p>
-      <nav class="notebook-dates" ${requiresLogin ? 'hidden' : ''} aria-label="${t('date')}"><button type="button" data-step="-1" aria-label="${t('previous')}">←</button><label>${t('date')}<input id="notebook-date" type="date" min="2000-01-01" max="2100-12-31" value="${date}"></label><button type="button" data-step="1" aria-label="${t('next')}">→</button><label>${t('history')}<select id="notebook-history"><option value="">${t('choose')}</option>${dates.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}</select></label></nav>
+      <nav class="notebook-dates" ${requiresLogin ? 'hidden' : ''} aria-label="${t('date')}"><button type="button" data-step="-1" aria-label="${t('previous')}">←</button><label>${t('date')}<span id="notebook-date-label" class="notebook-date-label">${escapeHtml(dateLabel(date))}</span><input id="notebook-date" type="date" min="2000-01-01" max="2100-12-31" aria-describedby="notebook-date-label" value="${date}"></label><button type="button" data-step="1" aria-label="${t('next')}">→</button><label>${t('history')}<select id="notebook-history"><option value="">${t('choose')}</option>${dates.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(dateLabel(value))}</option>`).join('')}</select></label></nav>
       <div class="notebook-savebar"><p id="notebook-status" role="status" aria-live="polite"></p><button id="notebook-retry" type="button">${t('retry')}</button></div><section id="notebook-reauth">${requiresLogin ? loginForm(player, true) : ''}</section><section id="notebook-conflict"></section>
-      <section class="notebook-day" ${requiresLogin ? 'hidden' : ''}><nav class="notebook-jump" aria-label="${t('jump')}"><a href="#notebook-daily">${t('daily')}</a>${matches.length ? `<a href="#notebook-matches">${t('recorded')}</a>` : ''}<a href="#notebook-coach">${t('coach')}</a></nav><label class="notebook-field"><span>${t('activity')}</span><input data-field="activity" maxlength="160" value="${escapeHtml(activity)}"></label>
+      <section class="notebook-day" ${requiresLogin ? 'hidden' : ''}><p class="notebook-schedule">${t('schedule')}</p>${restDay ? `<section class="notebook-entry notebook-rest"><h2>${t('rest')}</h2><p>${t('restHint')}</p></section>` : `${friday ? `<p class="notebook-schedule">${t('fridaySaved')}</p>` : ''}<nav class="notebook-jump" aria-label="${t('jump')}"><a href="#notebook-daily">${t('daily')}</a>${matches.length ? `<a href="#notebook-matches">${t('recorded')}</a>` : ''}<a href="#notebook-coach">${t('coach')}</a></nav><label class="notebook-field"><span>${t('activity')}</span><input data-field="activity" maxlength="160" value="${escapeHtml(activity)}"></label>
       ${matchDay && matches.length ? '' : `<section id="notebook-daily" class="notebook-entry"><h2>${t('daily')}</h2>${matchDay ? `<p>${t('noMatches')}</p>` : ''}${reflectionFields('daily')}</section>`}
       ${matches.length ? `<section id="notebook-matches" class="notebook-matches"><h2>${t('recorded')} · ${matches.length}</h2><p>${t('matchHint')}</p>${matchCards}</section>` : ''}
       ${matchDay && matches.length ? `<section id="notebook-daily" class="notebook-entry"><h2>${t('daily')}</h2>${reflectionFields('daily')}</section>` : ''}
       ${orphanKeys.map(key => `<article class="notebook-match"><h3>${t('missing')} · ${escapeHtml(key)}</h3><div>${reflectionFields(`match.${key}`)}</div></article>`).join('')}
-      <section id="notebook-coach" class="notebook-entry"><h2>${t('coach')}</h2><p>${t('coachHint')}</p>${player.bilingual ? `<div class="notebook-bilingual">${field('coach.ja', t('coachJapanese'))}${field('coach.en', t('coachEnglish'))}</div>` : field('coach.ja', t('coachJapanese'))}</section></section>`;
+      <section id="notebook-coach" class="notebook-entry"><h2>${t('coach')}</h2><p>${t('coachHint')}</p>${player.bilingual ? `<div class="notebook-bilingual">${field('coach.ja', t('coachJapanese'))}${field('coach.en', t('coachEnglish'))}</div>` : field('coach.ja', t('coachJapanese'))}</section>`}</section>`;
     updateStatus(); renderConflict(); bindLogins();
     app.querySelectorAll('[data-field]').forEach(input => {
       // Setting value directly also preserves initial blank lines that HTML
@@ -148,7 +162,7 @@
     app.querySelector('#notebook-retry').onclick = () => { if (!conflict) flush(); };
     app.querySelector('#notebook-date').onchange = event => navigate(event.target.value);
     app.querySelector('#notebook-history').onchange = event => { if (event.target.value) navigate(event.target.value); };
-    app.querySelectorAll('[data-step]').forEach(button => button.onclick = () => { const next = new Date(`${date}T12:00:00Z`); next.setUTCDate(next.getUTCDate() + Number(button.dataset.step)); navigate(next.toISOString().slice(0, 10)); });
+    app.querySelectorAll('[data-step]').forEach(button => button.onclick = () => navigate(stepDate(date, Number(button.dataset.step))));
     app.querySelector('#notebook-lock').onclick = async () => {
       if (busy) return;
       if (!await flush()) { alert(t('leave')); return; }
@@ -229,7 +243,7 @@
   async function openDay(nextDate) {
     const [result, historyResult] = await Promise.all([request(`/api/reflections/day?date=${encodeURIComponent(nextDate)}`), request('/api/reflections/dates')]);
     date = result.date; documentValue = result.document; matches = result.matches; dates = historyResult.dates;
-    statusKey = 'ready'; conflict = null; savedAt = ''; dirty.clear();
+    statusKey = weekdayOf(date) === 5 && !Object.values(documentValue.fields).some(value => value.trim()) ? 'rest' : 'ready'; conflict = null; savedAt = ''; dirty.clear();
     history.replaceState(null, '', `feedback.html?${new URLSearchParams({ player: player.playerId, date })}`);
     renderNotebook();
   }

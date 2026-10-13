@@ -8,7 +8,8 @@ The user chose to keep translation manual. No provider, API key, AI button, bill
 
 - `feedback.html` uses a dedicated player login, not the seven-day club gate. The anonymous directory exposes only enabled player names/IDs and bilingual mode, never writing, dates, counts, hashes, or session details.
 - Initial accounts: Jacelyn (`LK-0080`) and Kaitlyn (`LK-0002`). Their separately supplied passwords must never be committed. Optional remember-login is checked by default and lasts an absolute 56 days; uncheck on shared devices, in which case the session remains in the current page only. Lock revokes the server token.
-- Default Mon/Tue/Wed/Fri/Sat: one daily reflection. Thu/Sun: recorded-match cards (training and tournament clearly separated), plus an optional daily note. Actual matches remain available on any weekday; missing imports never generate invented results. Match cards use record-ID order, not a claimed play order.
+- Default Mon/Tue/Wed/Sat: one daily reflection. Thu/Sun: recorded-match cards (training and tournament clearly separated), plus an optional daily note. **Friday is always a rest day**: previous/next notebook-day arrows skip it; opening the page without an explicit date on a Tokyo Friday selects Thursday. Explicit Friday dates show a rest message without empty writing prompts. Previously saved Friday text remains accessible/editable through history or a direct date, never deleted or reassigned. No Worker date restriction or stored-data migration is introduced. Missing imports never generate invented results. Match cards use record-ID order, not a claimed play order.
+- Dates include their weekday in the current language in the player's selected-date label and saved history, and in Admin saved-date options/day headings. ISO dates remain the request/storage values; weekdays are calculated as calendar dates, independent of browser timezone. Admin last-saved timestamps show weekday/time in Asia/Tokyo.
 - One daily coach-feedback block, entered by the player. No ratings, approval/publishing, per-match coach inputs, or separate “Things to improve” field.
 - Only the two initial IDs have English reflection originals and manual Japanese versions, plus Japanese coach originals and manual English versions. Other enabled players write Japanese only; enforced by the Worker.
 - Mobile usability update: all daily/match/orphan writing blocks are always expanded, with section jump links. Text areas grow and shrink to show complete text on input, saved-page load, language change, font load, and viewport width changes. Leading blank lines and paragraph structure are retained. Directory login forms and privacy help open by default.
@@ -60,3 +61,14 @@ The Worker `/api/reflections/accounts` GET/POST requires the Admin role. It is n
 - Live UAT smoke treats Reflection as a limited anonymous directory with protected private-day access, not a member-data route. Other routes keep their existing gates.
 - Before deployment, recheck legacy collections/audit counts without printing bodies. If real legacy content appears, stop and plan a restricted archive/migration; do not delete it automatically.
 - A production release requires explicit user approval, separate PROD account provisioning, and private backup/recovery planning. Never set the production switch merely because UAT passed.
+
+## Suggested next usability package — not implemented or authorized
+
+Prioritize writing/reading clarity over more statistics or mandatory fields:
+
+1. **Player Write / Read modes**: keep all entries expanded and autosave in Write; Read presents the same paragraphs as clean text without editable boxes. Switch only after pending saves succeed, and retain the same access/session-clearing safeguards.
+2. **Small day overview**: selected date/weekday, daily-versus-match layout, recorded-match count, and clear saved/unsynced state. Distinguish “not written” from “no recorded match”; do not treat writing coverage as a player grade or attendance.
+3. **Reading-language controls**: original, manual translation, or both; default to both, remember only the preference (not text). This shortens mobile reading without automatic translation or collapsing entry sections. Optional readable-text size controls can follow.
+4. **Better history browsing**: month filter, latest saved-date shortcut, and preserve the selected date on Admin refresh. Continue loading only one private day at a time; do not add whole-history downloads/search or exports implicitly.
+
+Protected recovery for accidental mobile closure and revision history are a separate reliability/privacy design, not a reason to store plaintext drafts locally. Avoid mandatory ratings, extra goal boxes, automatic rewriting, public sharing, or streak pressure.
