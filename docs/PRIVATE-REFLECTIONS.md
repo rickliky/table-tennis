@@ -2,6 +2,8 @@
 
 UAT mobile/Admin-reading release `fb1c262` is live; deployment `38348611933` passed the complete verification suite (17 browser tests) and post-deploy smoke. Real authentication and read-only access checks passed. JA/EN phone/desktop usability checks used intercepted synthetic documents and writes, without modifying any real notebook entries or printing their content. Existing saved-day Admin reads were validated locally for document/owner/context shape without export. Production behavior/data is unchanged and requires separate approval.
 
+Friday-rest/weekday update `f6d82a2` is live in UAT (Actions `38350379083`, all 19 browser tests and live smoke passed). Live player/Admin layouts passed JA/EN at 320/390/1440 px using only intercepted synthetic sessions/documents, including Friday-skipping navigation, rest state, historical-Friday access, and weekday labels. No real notebook content, credentials, Worker deployment, or Upstash data changed.
+
 The user chose to keep translation manual. No provider, API key, AI button, billing, or transmission of writing to a translator is enabled. Notebook examples are design references only, not imported data.
 
 ## Access and layout
