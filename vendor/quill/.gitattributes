@@ -1,0 +1,5 @@
+# Preserve the official pinned browser assets and license byte-for-byte on
+# Windows as well as Linux; README remains an ordinary text file.
+quill.js -text
+quill.core.css -text
+LICENSE -text

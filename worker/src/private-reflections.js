@@ -1,4 +1,5 @@
 import { requireRole } from './auth.js';
+import RichText from '../../notebook-rich-text.js';
 
 // A separate namespace: never part of collection exports or UAT-to-PROD overlays.
 export const privateReflectionsEnabled = (environment, env) => environment === 'uat' || env.PRIVATE_REFLECTION_PROD === 'true';
@@ -37,14 +38,16 @@ const validId = id => typeof id === 'string' && /^LK-\d{4}$/.test(id);
 const own = (match, id) => match.player1Id === id || match.player2Id === id;
 
 async function matchesForDay(readCollection, playerId, date) {
-  const [training, tournaments, events] = await Promise.all(['matches', 'tournament-matches', 'tournaments'].map(readCollection));
+  const [training, tournaments, events, players, opponents] = await Promise.all(['matches', 'tournament-matches', 'tournaments', 'players', 'external-opponents'].map(readCollection));
+  const identities = new Map([...opponents.map(person => [person.externalOpponentId, person]), ...players.map(person => [person.playerId, person])]);
   const matches = [];
   for (const [source, records] of [['training', training], ['tournament', tournaments]]) {
     for (const match of records) {
       if (match.matchDate !== date || !own(match, playerId) || (match.format && match.format !== 'Singles') || (source === 'training' && !/club|training|練習/i.test(`${match.event || ''} ${match.division || ''}`))) continue;
       const first = match.player1Id === playerId, ownSets = Number(first ? match.player1Sets : match.player2Sets), otherSets = Number(first ? match.player2Sets : match.player1Sets);
       const complete = Number(match.player1Sets) >= 3 || Number(match.player2Sets) >= 3;
-      matches.push({ key: `${source}:${source === 'training' ? match.matchId : match.tournamentMatchId}`, source, opponentName: (first ? match.player2Name : match.player1Name) || (first ? match.player2Id : match.player1Id), score: `${ownSets}-${otherSets}`, result: complete ? (ownSets > otherSets ? 'win' : 'loss') : 'incomplete', eventName: source === 'training' ? match.event || '' : events.find(event => event.tournamentId === match.tournamentId)?.name || '', round: match.round || '' });
+      const opponentId = first ? match.player2Id : match.player1Id, opponent = identities.get(opponentId);
+      matches.push({ key: `${source}:${source === 'training' ? match.matchId : match.tournamentMatchId}`, source, opponentName: opponent?.displayName || (first ? match.player2Name : match.player1Name) || opponentId, opponentId, opponentEnglishName: opponent?.englishName || '', score: `${ownSets}-${otherSets}`, result: complete ? (ownSets > otherSets ? 'win' : 'loss') : 'incomplete', eventName: source === 'training' ? match.event || '' : events.find(event => event.tournamentId === match.tournamentId)?.name || '', round: match.round || '' });
     }
   }
   return matches.sort((a, b) => a.key.localeCompare(b.key));
@@ -217,7 +220,11 @@ export async function handlePrivateReflections(request, env, environment) {
       for (const field of Object.keys(current?.fields || {})) if (/^match\.(training|tournament):[A-Za-z0-9_-]+\.(ja|en)$/.test(field) && (!field.endsWith('.en') || bilingualIds.has(actor.playerId))) allowedFields.add(field);
       const entries = Object.entries(body.patch);
       if (!entries.length || entries.length > 100) fail('Invalid number of fields');
-      for (const [field, value] of entries) if (!allowedFields.has(field) || typeof value !== 'string' || value.length > (field === 'activity' ? 160 : 8000)) fail('Invalid journal field or text length');
+      for (const [field, value] of entries) {
+        // Approved rich-text rollout: both environments keep the same restricted
+        // schema, ownership and revision checks. Legacy activity stays plain.
+        if (!allowedFields.has(field) || !RichText.valid(value, field === 'activity' ? 160 : 8000) || (typeof value !== 'string' && field === 'activity')) fail('Invalid journal field or text length');
+      }
       if (JSON.stringify({ ...current?.fields, ...body.patch }).length > 250000) fail('Notebook day is too large', 413);
       const updatedAt = new Date().toISOString();
       const result = await redis('EVAL', SAVE_SCRIPT, 4, accountsKey, dayKey, datesKey, sessionKey, actor.playerId, actor.version, body.revision, JSON.stringify(body.patch), updatedAt, date.replace(/-/g, ''), date);

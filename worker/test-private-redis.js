@@ -29,10 +29,16 @@ try {
   assert.ok(day.fields['daily.en'].startsWith('Synthetic transaction test'));
   assert.equal(day.fields['coach.ja'], '合成テストのみ');
   assert.deepEqual(await redis('ZREVRANGE', keys[2], 0, -1), ['2099-12-31']);
-  assert.equal((await save(2, { 'daily.en': 'Must not be saved' }, 2))[0], 'unauthorized');
+  const rich = { format: 'lk-rich-v1', ops: [{ insert: '\n\n' }, { insert: 'Synthetic bold <not HTML>', attributes: { bold: true } }, { insert: '\n', attributes: { list: 'bullet' } }, { insert: '合成の斜体', attributes: { italic: true } }, { insert: '\n', attributes: { list: 'ordered' } }] };
+  assert.equal((await save(2, { 'daily.en': rich }))[0], 'saved');
+  const formattedDay = JSON.parse(await redis('GET', keys[1]));
+  assert.deepEqual(formattedDay.fields['daily.en'], rich);
+  assert.equal(formattedDay.fields['coach.ja'], day.fields['coach.ja']);
+  assert.equal((await save(2, { 'daily.en': 'Stale synthetic rich revision' }))[0], 'conflict');
+  assert.equal((await save(3, { 'daily.en': 'Must not be saved' }, 2))[0], 'unauthorized');
   await redis('DEL', keys[3]);
-  assert.equal((await save(2, { 'daily.en': 'Must not be saved' }))[0], 'unauthorized');
-  console.log('Live Redis Lua atomic save, field preservation, date index and revocation checks passed.');
+  assert.equal((await save(3, { 'daily.en': 'Must not be saved' }))[0], 'unauthorized');
+  console.log('Live Redis Lua atomic plain/rich save, exact structured round-trip, field preservation, date index and revocation checks passed.');
 } finally {
   await redis('DEL', ...keys);
   console.log('Isolated synthetic test keys removed. No live player data touched.');

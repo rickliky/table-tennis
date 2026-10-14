@@ -6,7 +6,7 @@ const store = new Map(), hashes = new Map(), sorted = new Map();
 const hashFor = key => { if (!hashes.has(key)) hashes.set(key, new Map()); return hashes.get(key); };
 const setJson = (key, value) => store.set(key, JSON.stringify(value));
 const getJson = key => JSON.parse(store.get(key) || 'null');
-const players = [{ playerId: 'LK-0080', displayName: 'Player A' }, { playerId: 'LK-0002', displayName: 'Player B' }, { playerId: 'LK-0003', displayName: 'Player C' }];
+const players = [{ playerId: 'LK-0080', displayName: 'Player A' }, { playerId: 'LK-0002', displayName: 'Player B' }, { playerId: 'LK-0003', displayName: 'Current Player C', englishName: 'Current Romanized C' }];
 for (const environment of ['uat', 'prod']) {
   setJson(`${environment}:players`, players);
   setJson(`${environment}:session-feedback`, [{ feedbackId: 'legacy', note: 'DO NOT EXPOSE' }]);
@@ -18,6 +18,10 @@ setJson('uat:matches', [
   { matchId: 'M-B', player1Id: 'LK-0003', player2Id: 'LK-0002', player1Name: 'Opponent C', matchDate: '2026-10-11', player1Sets: 2, player2Sets: 1, event: 'Club training' }
 ]);
 setJson('uat:tournament-matches', [{ tournamentMatchId: 'TM-A', player1Id: 'LK-0080', player2Id: 'EXT-0001', player2Name: 'Tournament opponent', matchDate: '2026-10-11', player1Sets: 0, player2Sets: 3 }]);
+setJson('uat:external-opponents', [{ externalOpponentId: 'EXT-0001', displayName: 'Current External Name', englishName: 'Current External Romanized', privateExtra: 'NOT PART OF MATCH RESPONSE' }]);
+setJson('prod:matches', getJson('uat:matches'));
+setJson('prod:tournament-matches', getJson('uat:tournament-matches'));
+setJson('prod:external-opponents', getJson('uat:external-opponents'));
 
 const originalFetch = globalThis.fetch;
 globalThis.fetch = async (input, options = {}) => {
@@ -89,6 +93,14 @@ try {
   const ownDay = await call(day, { token: a.token });
   assert.equal(ownDay.value.matches.length, 2);
   assert.ok(ownDay.value.matches.every(match => match.key !== 'training:M-B'));
+  const trainingEvidence = ownDay.value.matches.find(match => match.source === 'training'), tournamentEvidence = ownDay.value.matches.find(match => match.source === 'tournament');
+  assert.equal(trainingEvidence.opponentId, 'LK-0003'); assert.equal(trainingEvidence.opponentName, 'Current Player C'); assert.equal(trainingEvidence.opponentEnglishName, 'Current Romanized C');
+  assert.equal(trainingEvidence.result, 'win'); assert.equal(trainingEvidence.score, '3-1');
+  assert.equal(tournamentEvidence.opponentName, 'Current External Name'); assert.equal(tournamentEvidence.opponentEnglishName, 'Current External Romanized'); assert.equal(tournamentEvidence.result, 'loss');
+  assert.ok(!JSON.stringify(ownDay.value).includes('NOT PART OF MATCH RESPONSE'));
+  const externalRecords = getJson('uat:external-opponents'); setJson('uat:external-opponents', []);
+  assert.equal((await call(day, { token: a.token })).value.matches.find(match => match.source === 'tournament').opponentName, 'Tournament opponent', 'Missing current identity falls back to saved match name');
+  setJson('uat:external-opponents', externalRecords);
   assert.equal((await call(day, { token: b.token })).value.matches[0].result, 'incomplete');
   assert.equal((await call(day, { token: a.token, body: { revision: 0, patch: { 'match.training:M-B.en': 'not mine' } } })).status, 400);
   assert.equal((await call('/api/reflections/day?date=2026-02-30', { token: a.token })).status, 400);
@@ -96,13 +108,24 @@ try {
   assert.equal((await call(day, { token: a.token, body: { revision: 0, playerId: 'LK-0002', patch: { 'daily.en': 'not mine' } } })).status, 400);
   assert.equal((await call(day, { token: a.token, body: { revision: 0, patch: { 'daily.en': 'x'.repeat(8001) } } })).status, 400);
   assert.equal((await call(day, { token: a.token, body: { revision: 0, patch: { 'daily.en': 'x'.repeat(70000) } } })).status, 413);
+  const rich = { format: 'lk-rich-v1', ops: [{ insert: 'Synthetic formatted note', attributes: { bold: true } }, { insert: '\n', attributes: { list: 'bullet' } }] };
+  const richDay = '/api/reflections/day?date=2026-10-10';
+  assert.equal((await call(richDay, { token: a.token, body: { revision: 0, patch: { 'daily.en': rich } } })).status, 200);
+  assert.deepEqual((await call(richDay, { token: a.token })).value.document.fields['daily.en'], rich);
+  assert.equal((await call(richDay, { token: a.token, body: { revision: 1, patch: { activity: rich } } })).status, 400);
+  assert.equal((await call(richDay, { token: c.token, body: { revision: 0, patch: { 'daily.en': rich } } })).status, 400);
+  for (const bad of [{ ...rich, html: '<script>unsafe</script>' }, { format: 'lk-rich-v1', ops: [{ insert: { image: 'https://evil.example' } }] }, { format: 'lk-rich-v1', ops: [{ insert: '\n', attributes: { list: 'bullet', bold: true } }] }]) {
+    assert.equal((await call(richDay, { token: a.token, body: { revision: 1, patch: { 'daily.en': bad } } })).status, 400);
+  }
+  assert.equal((await call(richDay, { token: a.token, body: { revision: 0, patch: { 'coach.ja': rich } } })).status, 409);
+  assert.deepEqual((await call('/api/reflections/admin/day?playerId=LK-0080&date=2026-10-10', { token: admin })).value.document.fields['daily.en'], rich);
   const concurrent = await Promise.all(['first', 'second'].map(text => call(day, { token: a.token, body: { revision: 0, patch: { 'daily.en': text } } })));
   assert.deepEqual(concurrent.map(result => result.status).sort(), [200, 409], 'atomic revision check must reject the stale writer');
   assert.equal((await call(day, { token: a.token, body: { revision: 1, patch: { 'coach.ja': 'synthetic coach comment' } } })).status, 200);
   const stored = (await call(day, { token: a.token })).value.document;
   assert.ok(['first', 'second'].includes(stored.fields['daily.en']));
   assert.equal(stored.fields['coach.ja'], 'synthetic coach comment');
-  assert.deepEqual((await call('/api/reflections/dates', { token: a.token })).value.dates, ['2026-10-11']);
+  assert.deepEqual((await call('/api/reflections/dates', { token: a.token })).value.dates, ['2026-10-11', '2026-10-10']);
   assert.deepEqual((await call('/api/reflections/dates', { token: b.token })).value.dates, []);
   assert.deepEqual((await call(day, { token: b.token })).value.document.fields, {});
   const adminPaths = ['/api/reflections/admin/players', '/api/reflections/admin/dates?playerId=LK-0080', '/api/reflections/admin/day?playerId=LK-0080&date=2026-10-11'];
@@ -118,10 +141,11 @@ try {
     assert.equal((await call(path, { token: admin, environment: 'prod' })).status, 404);
     assert.equal((await call(path, { token: admin, origin: 'https://evil.example' })).status, 403);
   }
-  assert.deepEqual((await call(adminPaths[1], { token: admin })).value.dates, ['2026-10-11']);
+  assert.deepEqual((await call(adminPaths[1], { token: admin })).value.dates, ['2026-10-11', '2026-10-10']);
   const adminDay = (await call(adminPaths[2], { token: admin })).value;
   assert.equal(adminDay.player.playerId, 'LK-0080'); assert.deepEqual(adminDay.document, stored);
   assert.equal(adminDay.matches.length, 2);
+  assert.equal(adminDay.matches.find(match => match.source === 'training').opponentName, 'Current Player C');
   assert.equal((await call('/api/reflections/admin/day?playerId=LK-9999&date=2026-10-11', { token: admin })).status, 404);
   assert.equal((await call('/api/reflections/admin/day?playerId=../../prod&date=2026-10-11', { token: admin })).status, 400);
   assert.equal((await call('/api/reflections/admin/day?playerId=LK-0080&date=2026-02-30', { token: admin })).status, 400);
@@ -142,11 +166,36 @@ try {
   const prodOptions = { environment: 'prod', environmentValues: { PRIVATE_REFLECTION_PROD: 'true' } };
   const prodLogin = await call('/api/reflections/login', { ...prodOptions, body: { playerId: 'LK-0080', password: 'synthetic-password-only' } });
   assert.equal(prodLogin.status, 200);
+  const prodToken = prodLogin.value.token;
+  const prodRich = { format: 'lk-rich-v1', ops: [{ insert: 'Synthetic PROD formatted note', attributes: { italic: true } }, { insert: '\n', attributes: { list: 'ordered' } }] };
+  const legacyProdDay = { revision: 3, fields: { 'daily.en': '\n\nSynthetic existing PROD note\n\n', 'coach.ja': 'Synthetic existing PROD advice', activity: 'Synthetic historical activity' } };
+  setJson('prod:private-reflection:day:LK-0080:2026-10-10', legacyProdDay);
+  assert.deepEqual((await call(richDay, { ...prodOptions, token: prodToken })).value.document, legacyProdDay, 'Reading must not convert existing plain notes');
+  for (const patch of [{ activity: rich }, { 'daily.en': { ...rich, html: '<script>unsafe</script>' } }, { 'daily.en': { format: 'lk-rich-v1', ops: [{ insert: { image: 'https://evil.example' } }] } }, { 'daily.en': 'x'.repeat(8001) }]) {
+    assert.equal((await call(richDay, { ...prodOptions, token: prodToken, body: { revision: 3, patch } })).status, 400);
+    assert.deepEqual(getJson('prod:private-reflection:day:LK-0080:2026-10-10'), legacyProdDay);
+  }
+  for (const token of [undefined, site, admin, approver, a.token]) assert.equal((await call(richDay, { ...prodOptions, token, body: { revision: 3, patch: { 'daily.en': prodRich } } })).status, 401);
+  assert.equal((await call(richDay, { ...prodOptions, token: prodToken, body: { revision: 3, playerId: 'LK-0002', patch: { 'daily.en': prodRich } } })).status, 400);
+  assert.equal((await call(richDay, { ...prodOptions, token: prodToken, body: { revision: 3, patch: { 'daily.en': prodRich } } })).status, 200, 'Approved PROD rich writes use the existing guarded autosave');
+  const prodRichDocument = (await call(richDay, { ...prodOptions, token: prodToken })).value.document;
+  assert.deepEqual(prodRichDocument.fields, { ...legacyProdDay.fields, 'daily.en': prodRich });
+  assert.equal(prodRichDocument.revision, 4);
+  assert.equal((await call(richDay, { ...prodOptions, token: prodToken, body: { revision: 3, patch: { 'coach.ja': rich } } })).status, 409);
+  assert.deepEqual((await call(richDay, { token: a.token })).value.document.fields['daily.en'], rich, 'UAT remains independent');
+  assert.deepEqual((await call('/api/reflections/admin/day?playerId=LK-0080&date=2026-10-10', { ...prodOptions, token: admin })).value.document, prodRichDocument);
   assert.deepEqual((await call(day, { ...prodOptions, token: prodLogin.value.token })).value.document, stored);
+  const prodMatches = (await call(day, { ...prodOptions, token: prodToken })).value.matches;
+  assert.deepEqual(prodMatches, ownDay.value.matches, 'Approved PROD name lookup returns current identity names in both languages');
+  assert.ok(!JSON.stringify(prodMatches).includes('NOT PART OF MATCH RESPONSE'));
+  const prodExternalRecords = getJson('prod:external-opponents'); setJson('prod:external-opponents', []);
+  assert.equal((await call(day, { ...prodOptions, token: prodToken })).value.matches.find(match => match.source === 'tournament').opponentName, 'Tournament opponent');
+  setJson('prod:external-opponents', prodExternalRecords);
   assert.equal((await call(day, { ...prodOptions, token: a.token })).status, 401);
   assert.equal((await call(day, { token: prodLogin.value.token })).status, 401);
   for (const token of [undefined, site, approver, prodLogin.value.token]) assert.ok([401, 403].includes((await call(adminPaths[2], { ...prodOptions, token })).status));
   assert.deepEqual((await call(adminPaths[2], { ...prodOptions, token: admin })).value.document, stored);
+  assert.deepEqual((await call(adminPaths[2], { ...prodOptions, token: admin })).value.matches, prodMatches);
   assert.equal((await call(adminPaths[2], { ...prodOptions, token: admin, method: 'POST', body: {} })).status, 405);
   for (const path of ['/api/public-data', '/api/admin-data', '/api/pending']) {
     const result = await call(path, { ...prodOptions, token: admin });

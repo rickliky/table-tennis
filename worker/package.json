@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "check": "node --check src/index.js && node --check src/auth.js && node --check src/repository.js && node --check src/validation.js && node --check src/diff.js && node --check test-security.js",
-    "test": "node test-security.js && node test-private-reflections.js"
+    "test": "node test-security.js && node test-private-reflections.js && node test-notebook-rich-text.js"
   },
   "devDependencies": {
     "wrangler": "^4.134.0"

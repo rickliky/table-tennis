@@ -1,5 +1,87 @@
 # Private player notebook
 
+## Code-only production promotion — approved (2026-10-14)
+
+The user explicitly approved promoting the accumulated UAT **code**, while
+excluding reflection-data promotion. This includes the limited rich editor,
+simplified labels/removal of the Activity input, always-bilingual match cards
+and player-specific dated practice templates described below. Earlier UAT-only
+release restrictions are superseded for this rollout only.
+
+Production Worker support must accept the same restricted rich documents and
+return current opponent display/Romanized names. Existing production private
+enablement and security secrets remain unchanged. Plain notes are not converted
+on read, and schema/ownership/size/revision checks and Admin read-only access
+remain enforced. Only an intentional player edit changes a stored field.
+
+**No reflection data, accounts, credentials, indexes or sessions are copied or
+synchronized. No migration or ordinary data-promotion script is run.** Existing
+PROD notes remain the source for actual writing; UAT/PROD stay independent.
+Verification uses in-memory Worker fixtures and intercepted synthetic browser
+documents/writes only. Current release/deployment status is in `AGENTS.md`.
+
+## Player-specific dated practice templates — UAT update (2026-10-14)
+
+This supersedes the shared three-part starter template below. Jacelyn/LK-0080
+uses **Things to Improve**, **What I Practised Today**, and **What I Noticed or
+Learned Today**. Kaitlyn/LK-0002 uses **What I Did Well** and **Things to Improve**.
+Each heading remains bold with an empty bullet underneath. Both start with the
+selected notebook date in English, e.g. **13 October 2026 (Tuesday)**; other dates
+use their own date/weekday, independent of browser timezone/interface language.
+
+The existing safeguards remain: only previously uninitialized English daily
+fields on non-Friday dates with no recorded matches get an unsaved Write-mode
+starter. Existing notes (including old templates intentionally saved/edited)
+and deliberately cleared fields are never replaced. No template-only save or
+date index is created. Japanese and coach fields are not auto-filled. The
+fictional preview uses the three-part style with its own example date.
+This is UAT-only, with no Worker deployment, real notebook read/write or
+production migration. UAT release **`5d6a7df`**, Actions **`38504013810`**, passed
+all verification suites, **41 browser tests** and **13 live smoke checks**.
+The general gate smoke needed one retry in CI; a separate full live rerun passed
+all 13 without retry. Both synthetic account IDs passed JA/EN at 320/390/1440 px;
+fictional-only screenshots of both dated templates were visually reviewed.
+Production remains `c1ea726` and requires fresh rollout approval.
+
+## Always-bilingual match cards — UAT update (2026-10-14)
+
+At the user's request, reflection match cards always show the recorded Japanese
+display name followed by the stored Romanized name for **both players**, with
+`勝ち / Win` and `負け / Loss` result labels. Switching the interface language
+does not hide either name or result language. Incomplete status is bilingual and
+never claims a winner. An unavailable Romanized name is explicitly marked
+unrecorded, not guessed. Owner Write/Read, Admin evidence and the fictional
+preview share this rendering. Existing current-name API fields are reused;
+there is no Worker, profile, match, journal or credential change. This release
+is UAT-only. Release **`9520c56`**, Actions **`38501911252`**, passed all
+verification suites, **41 browser tests**, deployment and **seven live smoke
+checks**. Live synthetic JA/EN checks passed at 320/390/1440 px; the fictional
+mobile match card was visually reviewed. Production remains `c1ea726`;
+no real notebook or other stored data was read or modified.
+
+## Practice template and clearer match results — UAT update (2026-10-14)
+
+The user requested these refinements to the UAT notebook; production is not approved for this release.
+
+- Removed the Activity (optional) **input**. Existing saved activity is kept in storage, readable in historical Read/Admin views, and never erased during a reflection save.
+- Language field labels no longer include `(manual)` / `（手入力）`; the coach heading is simply **Coach feedback / コーチのアドバイス**. Player, Admin and fictional preview use the same wording. Translation remains manually entered and coach writing is not a coach-authenticated evaluation.
+- Jacelyn/LK-0080 and Kaitlyn/LK-0002 see the requested three-part template in previously uninitialized **English daily reflection** fields on non-Friday days with no recorded matches. Each bold heading (`Things to Improve`, `What I Practised Today`, `What I Noticed or Learned Today`) has one empty bullet. Japanese and coach fields are not auto-translated/filled. It is an editable starting document, not placeholder text and not a separate improvement box. It saves only after intentional editing; opening/focusing/changing language/Read/date does not create a saved note or date index. Existing strings/rich notes, intentionally cleared fields, Friday notes, match-day fields and future Japanese-only accounts are not overwritten or seeded.
+- Both participants have explicit **Winner / Loser** (`勝者 / 敗者`) labels beside their names on completed match cards, with gold/red emphasis and the player's perspective score. Incomplete records explicitly say no winner is recorded, never labelling a leading player a winner. Player Write/Read, Admin evidence and the fictional preview share `notebook-match.js`.
+- UAT Worker owner/Admin day reads resolve the opponent ID against the approved `players` and `external-opponents` collections and return current display/Romanized names only, falling back to the saved match name/ID if the identity is absent. No name is guessed and no approved match/profile is rewritten. Production remains on the prior snapshot-name API behavior until a separately approved rollout; only UAT uses the new lookup.
+- UAT release **`f1ab47a`**, Actions **`38498892667`**, passed all Worker suites, syntax/JSON, migration validation, **40 browser tests** and all **seven live smoke checks**. Cache-busted UAT build confirms it; shared Worker version is `5c9d7c5d-19db-4b3a-b0f2-74926f8a1099`. Live JA/EN 320/390/1440 px player/Admin/preview checks use intercepted synthetic documents/writes only, with zero overflow/page errors and no template-only save. Both initial players' template editing/preservation/clear/reload passed locally. No actual notebook body/profile/match/account/credential or production data was read or changed. Production remains build `c1ea726` with its prior behavior, and anonymous protected reads remain 401 in both environments. Review UAT before any separately approved production promotion.
+
+## Limited rich-text editor — UAT rollout (2026-10-14)
+
+The user approved implementing limited formatting **in UAT only**. Production remains the verified plain-text release; no production rich-text rollout, translation, real-note import, account change or data migration is authorized.
+
+- Player reflection/manual-language/coach fields use locally vendored **Quill 2.0.3** with bold, italic, bullet/numbered lists and undo/redo. Activity stays plain text. All entries remain expanded; the editor grows naturally to show full content on phones. Toolbar buttons have Japanese/English labels and 44 px touch targets.
+- `notebook-rich-text.js` is the shared DOM-free schema/renderer; `notebook-editor.js` is the browser adapter. Formatted values are `{format: "lk-rich-v1", ops: [...]}` with insert-only text operations. Only `bold:true`, `italic:true` on text and `list:"bullet"|"ordered"` on standalone newline operations are allowed. Terminal newline is editor structure, not an extra saved paragraph. Limits: 8,000 text characters (excluding terminal newline), 2,048 operations, 60,000 serialized characters per rich field; existing request/day size limits remain. Worker rejects unknown keys/formats/attributes/embeds, excessive values, rich activity and rich writes to PROD.
+- Existing strings stay strings until intentionally edited. Opening a note, changing language or switching modes never migrates it. Unformatted changes still save as strings; leading blank lines/paragraphs remain. No bulk conversion or data rewrite occurs. Rich Read/Admin/conflict displays construct only escaped text and fixed allowlisted tags, never saved user HTML. Existing owner/Admin-read-only isolation is unchanged.
+- HTML paste is parsed in an inert template, then converted to allowlisted text operations. Supported bold/italic/lists are retained; headings/tables/fonts/colours/links are simplified, scripts/resource embeds/images/attachments discarded and drops blocked. Plain clipboard text, including Markdown, stays literal. Exact ChatGPT Windows app clipboard output is **not verified**: test select-and-copy and its Copy button on the user's device; neither path is promised to provide HTML. Undo/redo and formatting-only changes use the normal serialized revision-checked autosave. IME composition pauses saving/navigation; frozen/cross-tab invalidation retains partial text in memory without a local draft cache.
+- `notebook-sample.html` uses the same editor and newly authored fictional formatted coach advice; demo changes remain in memory with no API/auth/session reads or writing persistence.
+- Verification uses synthetic documents only: Worker schema/access/revision/PROD rejection, browser paste/formatting/undo/legacy/limits/IME/autosave/offline/conflict/Admin/preview coverage, and optional `node worker/test-private-redis.js --live` exercises structured values against UUID-scoped synthetic Redis keys removed afterward. `tests/smoke/notebook-rich.spec.js` tests deployed static assets in JA/EN at 320/390/1440 px with **all** notebook/Admin API responses and writes intercepted. No real diary is loaded or saved.
+- Behavior release `386d6ee` is live in UAT; shared Worker version `ae394549-cd6f-460e-ad3b-eb47612ca675` enables rich writes only in UAT. All 35 local/pre-deploy browser tests, Worker suites/schema checks, migration validation and actual synthetic Redis rich round-trip passed. The initial CI smoke ran too early against the prior page, so the new smoke now waits for the exact commit before its assertions. Follow-up release **`4bf03a1` / Actions `38495264621` passed the full verification/deployment and all seven live smoke checks**; cache-busted UAT build confirms that release. JA/EN 320/390/1440 px player/Admin/preview checks use only intercepted synthetic documents and writes, with zero overflow/page errors; deployed vendor hashes match the official assets, and fictional phone/desktop screenshots were visually reviewed. Production site behavior remains `87edfcb` (docs-only build stamp `c1ea726`), anonymous protected reads remain 401, and no actual writing/accounts/security secrets were changed. Promoting site code or enabling rich writes in PROD requires fresh explicit approval; ordinary/private dataset synchronization is not part of that promotion.
+
 ## Production rollout — live (2026-10-13)
 
 On 2026-10-13 the user approved promoting all code/data, explicitly selected **Migrate existing notebooks**, and confirmed **Proceed with PROD cutover** after UAT verification. Production is now enabled with both players' existing passwords and all eight saved day documents. UAT originals were retained, no browser sessions were copied, and no production notebook was overwritten. **Use production for future writing; UAT and PROD are separate and not continuously synchronized.** Players must sign in again with their existing passwords.
