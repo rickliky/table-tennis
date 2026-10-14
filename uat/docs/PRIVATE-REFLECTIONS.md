@@ -1,5 +1,25 @@
 # Private player notebook
 
+## Code-only production promotion — approved (2026-10-14)
+
+The user explicitly approved promoting the accumulated UAT **code**, while
+excluding reflection-data promotion. This includes the limited rich editor,
+simplified labels/removal of the Activity input, always-bilingual match cards
+and player-specific dated practice templates described below. Earlier UAT-only
+release restrictions are superseded for this rollout only.
+
+Production Worker support must accept the same restricted rich documents and
+return current opponent display/Romanized names. Existing production private
+enablement and security secrets remain unchanged. Plain notes are not converted
+on read, and schema/ownership/size/revision checks and Admin read-only access
+remain enforced. Only an intentional player edit changes a stored field.
+
+**No reflection data, accounts, credentials, indexes or sessions are copied or
+synchronized. No migration or ordinary data-promotion script is run.** Existing
+PROD notes remain the source for actual writing; UAT/PROD stay independent.
+Verification uses in-memory Worker fixtures and intercepted synthetic browser
+documents/writes only. Current release/deployment status is in `AGENTS.md`.
+
 ## Player-specific dated practice templates — UAT update (2026-10-14)
 
 This supersedes the shared three-part starter template below. Jacelyn/LK-0080
