@@ -12,6 +12,9 @@
   let conflict = null, requiresLogin = false, busy = false, statusKey = 'ready', savedAt = '';
   let viewMode = 'write', historyMonth = '';
   let directoryPlayerId = params.get('player') || '', directoryQuery = '', directoryLimit = 12;
+  const Rich = window.LKNotebookRich;
+  let editors = [];
+  const disposeEditors = () => { editors.forEach(editor => editor.dispose()); editors = []; };
   const words = {
     en: {
       title: 'Private Player Notebook', eyebrow: 'YOUR PRIVATE REFLECTION', invitation: 'Want to try private reflections? Setup is easy — just let Jacelyn and Kaitlyn’s daddy know.',
@@ -147,6 +150,7 @@
     });
   }
   function renderDirectory() {
+    disposeEditors();
     updateLanguage();
     app.classList.add('notebook-landing');
     const selected = directory.find(person => person.playerId === directoryPlayerId);
@@ -188,26 +192,27 @@
   function field(key, label, hint = '') {
     const value = dirty.has(key) ? dirty.get(key) : documentValue.fields[key] || '';
     if (viewMode === 'read') return readField(key, label, value);
-    return `<label class="notebook-field"><span>${escapeHtml(label)}</span>${hint ? `<small>${hint}</small>` : ''}<textarea data-field="${escapeHtml(key)}" maxlength="8000" rows="3">${escapeHtml(value)}</textarea></label>`;
+    return `<section class="notebook-field"><span>${escapeHtml(label)}</span>${hint ? `<small>${hint}</small>` : ''}<div data-rich-field="${escapeHtml(key)}" data-rich-label="${escapeHtml(label)}"></div></section>`;
   }
   function readField(key, label, value) {
-    return `<section class="notebook-read-field"><h3>${escapeHtml(label)}</h3><p data-read-field="${escapeHtml(key)}" ${value ? '' : 'class="empty"'}>${escapeHtml(value || t('blank'))}</p></section>`;
+    return `<section class="notebook-read-field"><h3>${escapeHtml(label)}</h3>${typeof value === 'string' ? `<p data-read-field="${escapeHtml(key)}" ${value ? '' : 'class="empty"'}>${escapeHtml(value || t('blank'))}</p>` : `<div data-read-field="${escapeHtml(key)}" class="notebook-rich-content">${Rich.html(value)}</div>`}</section>`;
   }
   function reflectionFields(prefix) {
     return player.bilingual ? `<div class="notebook-bilingual">${field(`${prefix}.en`, t('english'), t('reflectionHint'))}${field(`${prefix}.ja`, t('japanese'))}</div>` : field(`${prefix}.ja`, t('reflection'), t('reflectionHint'));
   }
   function renderNotebook() {
+    disposeEditors();
     updateLanguage();
     app.classList.remove('notebook-landing');
     const weekday = weekdayOf(date), matchDay = [0, 4].includes(weekday);
-    const friday = weekday === 5, restDay = friday && !Object.values(documentValue.fields).some(value => value.trim()) && !dirty.size;
+    const friday = weekday === 5, restDay = friday && !Object.values(documentValue.fields).some(value => Rich.text(value).trim()) && !dirty.size;
     const activity = dirty.has('activity') ? dirty.get('activity') : documentValue.fields.activity || '';
     const orphanKeys = [...new Set(Object.keys(documentValue.fields).concat([...dirty.keys()]).filter(key => key.startsWith('match.')).map(key => key.slice(6, -3)))].filter(key => !matches.some(match => match.key === key));
     const matchCards = matches.map(match => {
       const prefix = `match.${match.key}`;
       return `<article class="notebook-match"><header class="notebook-match-heading"><span><small>${t(match.source)} · ${t(match.result)}</small><b>${escapeHtml(name(player))} <em>${escapeHtml(match.score)}</em> ${escapeHtml(match.opponentName)}</b><small>${escapeHtml([match.eventName, match.round].filter(Boolean).join(' · '))}</small></span></header><div>${reflectionFields(prefix)}</div></article>`;
     }).join('');
-    app.innerHTML = `${header()}<div class="notebook-identity"><strong>${escapeHtml(name(player))}</strong><button id="notebook-lock" type="button">${t('lock')}</button></div><p class="notebook-notice">${player.bilingual ? t('translation') : ''} ${t('retention')}</p>
+    app.innerHTML = `${header()}<div class="notebook-identity"><strong>${escapeHtml(name(player))}</strong><button id="notebook-lock" type="button">${t('lock')}</button></div><p class="notebook-notice">${player.bilingual ? t('translation') : ''} ${t('retention')} ${window.LKNotebookEditor.hint(language)}</p>
       <nav class="notebook-dates" ${requiresLogin ? 'hidden' : ''} aria-label="${t('date')}"><button type="button" data-step="-1" aria-label="${t('previous')}">←</button><label>${t('date')}<span id="notebook-date-label" class="notebook-date-label">${escapeHtml(dateLabel(date))}</span><input id="notebook-date" type="date" min="2000-01-01" max="2100-12-31" aria-describedby="notebook-date-label" value="${date}"></label><button type="button" data-step="1" aria-label="${t('next')}">→</button></nav>
       <section class="notebook-tools" ${requiresLogin ? 'hidden' : ''}><div class="notebook-modes" role="group" aria-label="${t('mode')}">${['write', 'read'].map(mode => `<button type="button" data-mode="${mode}" aria-pressed="${mode === viewMode}">${t(mode)}</button>`).join('')}</div>${viewMode === 'read' ? `<p class="notebook-read-hint">${t('readHint')}</p>` : ''}<div class="notebook-history-tools"><label>${t('month')}<select id="notebook-history-month"></select></label><label>${t('history')}<select id="notebook-history"></select></label><button type="button" id="notebook-latest">${t('latest')}</button></div><p id="notebook-history-empty">${t('noSavedDates')}</p></section>
       <div class="notebook-savebar"><p id="notebook-status" role="status" aria-live="polite"></p><button id="notebook-retry" type="button">${t('retry')}</button></div><section id="notebook-reauth">${requiresLogin ? loginForm(player, true) : ''}</section><section id="notebook-conflict"></section>
@@ -218,17 +223,24 @@
       ${orphanKeys.map(key => `<article class="notebook-match"><h3>${t('missing')} · ${escapeHtml(key)}</h3><div>${reflectionFields(`match.${key}`)}</div></article>`).join('')}
       <section id="notebook-coach" class="notebook-entry"><h2>${t('coach')}</h2><p>${t('coachHint')}</p>${player.bilingual ? `<div class="notebook-bilingual">${field('coach.ja', t('coachJapanese'))}${field('coach.en', t('coachEnglish'))}</div>` : field('coach.ja', t('coachJapanese'))}</section>`}</section>`;
     updateStatus(); renderConflict(); bindLogins();
-    app.querySelectorAll('[data-field]').forEach(input => {
-      // Setting value directly also preserves initial blank lines that HTML
-      // textarea parsing otherwise removes on reload.
+    function edited(key, value) {
+      dirty.set(key, value); statusKey = 'unsaved'; updateStatus(); if (conflict) renderConflict(); clearTimeout(timer); timer = setTimeout(flush, 1000);
+    }
+    app.querySelectorAll('[data-rich-field]').forEach(host => {
+      const key = host.dataset.richField;
+      const editor = window.LKNotebookEditor.mount({ host, label: host.dataset.richLabel, language, field: key, value: dirty.has(key) ? dirty.get(key) : documentValue.fields[key] || '', onChange: value => edited(key, value) });
+      editor.root.addEventListener('blur', () => { if (dirty.size) flush(); });
+      editors.push(editor);
+    });
+    app.querySelectorAll('input[data-field]').forEach(input => {
+      // Activity remains an ordinary plain-text input.
       input.value = dirty.has(input.dataset.field) ? dirty.get(input.dataset.field) : documentValue.fields[input.dataset.field] || '';
-      input.oninput = () => { resizeField(input); dirty.set(input.dataset.field, input.value); statusKey = 'unsaved'; updateStatus(); if (conflict) renderConflict(); clearTimeout(timer); timer = setTimeout(flush, 1000); };
+      input.oninput = () => edited(input.dataset.field, input.value);
       input.onblur = () => { if (dirty.size) flush(); };
     });
     chromeObserver.disconnect();
     chromeObserver.observe(document.querySelector('.site-header'));
     chromeObserver.observe(app.querySelector('.notebook-savebar'));
-    resizeFields();
     app.querySelector('#notebook-retry').onclick = () => { if (!conflict) flush(); };
     app.querySelector('#notebook-date').onchange = event => navigate(event.target.value);
     app.querySelector('#notebook-history').onchange = event => { if (event.target.value) navigate(event.target.value); };
@@ -260,27 +272,12 @@
       if (viewMode === nextMode && !requiresLogin) app.querySelector(`[data-mode="${nextMode}"]`)?.focus({ preventScroll: true });
     }
   }
-  function resizeField(input) {
-    if (input.tagName !== 'TEXTAREA' || !input.getClientRects().length) return;
-    input.style.height = 'auto';
-    const style = getComputedStyle(input);
-    input.style.height = `${Math.ceil(input.scrollHeight + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth))}px`;
-  }
-  function resizeFields() { app.querySelectorAll('textarea[data-field]').forEach(resizeField); }
-  let resizeFrame, lastWidth;
-  const resizeObserver = new ResizeObserver(entries => {
-    const width = entries[0].contentRect.width;
-    if (width === lastWidth) return;
-    lastWidth = width; cancelAnimationFrame(resizeFrame); resizeFrame = requestAnimationFrame(resizeFields);
-  });
   const chromeObserver = new ResizeObserver(entries => {
     for (const entry of entries) {
       const key = entry.target.classList.contains('site-header') ? '--notebook-header-height' : '--notebook-savebar-height';
       app.style.setProperty(key, `${Math.ceil(entry.target.getBoundingClientRect().height)}px`);
     }
   });
-  resizeObserver.observe(app);
-  document.fonts.ready.then(resizeFields);
   function updateStatus() {
     const node = app.querySelector('#notebook-status');
     if (node) node.textContent = `${t(requiresLogin ? 'expired' : conflict ? 'conflict' : viewMode === 'read' && statusKey === 'ready' ? 'reading' : statusKey)}${statusKey === 'saved' && savedAt ? ` · ${new Date(savedAt).toLocaleTimeString(language === 'en' ? 'en-GB' : 'ja-JP')}` : ''}`;
@@ -289,12 +286,13 @@
   function renderConflict() {
     const target = app.querySelector('#notebook-conflict');
     if (!target || !conflict || requiresLogin) return;
-    target.innerHTML = `<h2>${t('conflict')}</h2>${[...dirty].map(([key, value]) => `<article><strong>${escapeHtml(key)}</strong><div class="notebook-bilingual"><section><small>${t('server')}</small><pre>${escapeHtml(conflict.fields[key] || '')}</pre></section><section><small>${t('mine')}</small><pre>${escapeHtml(value)}</pre></section></div></article>`).join('')}<button id="notebook-use-server" type="button">${t('useServer')}</button><button id="notebook-use-mine" type="button">${t('useMine')}</button>`;
+    target.innerHTML = `<h2>${t('conflict')}</h2>${[...dirty].map(([key, value]) => `<article><strong>${escapeHtml(key)}</strong><div class="notebook-bilingual"><section><small>${t('server')}</small><div class="notebook-rich-content">${Rich.html(conflict.fields[key] || '')}</div></section><section><small>${t('mine')}</small><div class="notebook-rich-content">${Rich.html(value)}</div></section></div></article>`).join('')}<button id="notebook-use-server" type="button">${t('useServer')}</button><button id="notebook-use-mine" type="button">${t('useMine')}</button>`;
     target.querySelector('#notebook-use-server').onclick = () => { if (!confirm(t('discard'))) return; documentValue = conflict; conflict = null; dirty.clear(); statusKey = 'ready'; renderNotebook(); };
     target.querySelector('#notebook-use-mine').onclick = async () => { documentValue = conflict; conflict = null; await flush(); renderNotebook(); };
   }
   async function flush() {
     clearTimeout(timer);
+    if (editors.some(editor => editor.composing)) return false;
     if (saving) { const success = await saving; if (!success) return false; return dirty.size ? flush() : true; }
     if (!dirty.size) return true;
     if (conflict || requiresLogin || !player) return false;
@@ -331,7 +329,7 @@
     const [result, historyResult] = await Promise.all([request(`/api/reflections/day?date=${encodeURIComponent(nextDate)}`), request('/api/reflections/dates')]);
     date = result.date; documentValue = result.document; matches = result.matches; dates = historyResult.dates;
     historyMonth = nextMonth;
-    statusKey = weekdayOf(date) === 5 && !Object.values(documentValue.fields).some(value => value.trim()) ? 'rest' : 'ready'; conflict = null; savedAt = ''; dirty.clear();
+    statusKey = weekdayOf(date) === 5 && !Object.values(documentValue.fields).some(value => Rich.text(value).trim()) ? 'rest' : 'ready'; conflict = null; savedAt = ''; dirty.clear();
     history.replaceState(null, '', `feedback.html?${new URLSearchParams({ player: player.playerId, date })}`);
     renderNotebook();
   }
@@ -349,17 +347,17 @@
     } finally { busy = false; renderHistoryControls(); const picker = app.querySelector('#notebook-date'); if (picker) picker.value = date; const day = app.querySelector('.notebook-day'); if (day) day.inert = false; }
   }
   document.querySelector('#language-toggle').onclick = () => {
-    if (busy) return;
+    if (busy || editors.some(editor => editor.composing)) return;
     language = language === 'en' ? 'ja' : 'en'; localStorage.setItem('lk-language', language);
     if (player) renderNotebook(); else renderDirectory();
   };
   document.querySelector('#menu-toggle').onclick = event => { const open = document.querySelector('.site-header nav').classList.toggle('open'); event.currentTarget.setAttribute('aria-expanded', String(open)); };
-  window.addEventListener('beforeunload', event => { if (dirty.size || saving) { event.preventDefault(); event.returnValue = ''; } });
+  window.addEventListener('beforeunload', event => { if (dirty.size || saving || editors.some(editor => editor.composing)) { event.preventDefault(); event.returnValue = ''; } });
   window.addEventListener('online', () => { if (dirty.size) flush(); });
   window.addEventListener('offline', () => { if (dirty.size) { statusKey = 'offline'; updateStatus(); } });
   // Browser Back can restore a frozen page without re-running start(). Hide
   // private DOM before caching and revalidate before displaying it again.
-  window.addEventListener('pagehide', () => { app.style.visibility = 'hidden'; app.inert = true; });
+  window.addEventListener('pagehide', () => { editors.forEach(editor => editor.capture()); app.style.visibility = 'hidden'; app.inert = true; });
   window.addEventListener('pageshow', async event => {
     if (!event.persisted) return;
     try {
@@ -379,6 +377,7 @@
   // visible under a different identity. In-memory non-remembered sessions stay local.
   window.addEventListener('storage', event => {
     if (event.key === storageKey && player && token && event.newValue !== token && event.oldValue === token) {
+      editors.forEach(editor => editor.capture());
       requiresLogin = true; token = '';
       if (dirty.size) { renderNotebook(); } else { player = null; documentValue = { revision: 0, fields: {} }; matches = []; dates = []; renderDirectory(); }
     }

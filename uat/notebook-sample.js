@@ -3,6 +3,8 @@
   // Standalone, fictional examples. No API client, authentication, or notebook
   // storage is used here; only the shared interface-language preference persists.
   const app = document.querySelector('#notebook-sample-app');
+  const Rich = window.LKNotebookRich;
+  let editors = [];
   let language = localStorage.getItem('lk-language') === 'en' ? 'en' : 'ja', mode = 'read', day = 'daily';
   const words = {
     en: {
@@ -32,8 +34,8 @@
     daily: {
       'daily.en': 'Today I practised moving from backhand to forehand. When I moved my feet first, I could hit the next ball more comfortably.\n\nNext practice, I want to return to my ready position after each shot.',
       'daily.ja': '今日はバックからフォアへの切り替えを練習しました。先に足を動かすと、次のボールを打ちやすくなりました。\n\n次の練習では、1球打つごとに基本姿勢に戻ることを意識したいです。',
-      'coach.ja': '1. ボールを打った後、すぐに基本姿勢へ戻りましょう。\n\n2. 焦らず、小さな足の動きで次のボールに備えましょう。',
-      'coach.en': '1. Return to your ready position soon after hitting the ball.\n\n2. Stay calm and use small steps to prepare for the next ball.'
+      'coach.ja': { format: 'lk-rich-v1', ops: [{ insert: '基本姿勢', attributes: { bold: true } }, { insert: '：ボールを打った後、すぐに戻りましょう。' }, { insert: '\n', attributes: { list: 'ordered' } }, { insert: '焦らず、小さな足の動きで次のボールに備えましょう。' }, { insert: '\n', attributes: { list: 'ordered' } }] },
+      'coach.en': { format: 'lk-rich-v1', ops: [{ insert: 'Ready position', attributes: { bold: true } }, { insert: ': return soon after hitting the ball.' }, { insert: '\n', attributes: { list: 'ordered' } }, { insert: 'Stay calm', attributes: { italic: true } }, { insert: ' and use small steps to prepare for the next ball.' }, { insert: '\n', attributes: { list: 'ordered' } }] }
     },
     matches: {
       'daily.en': 'I tried to remember my ready position between points.', 'daily.ja': 'ポイントの間に、基本姿勢を意識しました。',
@@ -52,42 +54,33 @@
   function field(key, label) {
     const value = documents[day][key] || '';
     return mode === 'write'
-      ? `<label class="notebook-field"><span>${t(label)}</span><textarea data-sample-field="${key}" maxlength="8000" rows="3"></textarea></label>`
-      : `<section class="notebook-read-field"><h3>${t(label)}</h3><p data-sample-read="${key}">${escapeHtml(value || t('blank'))}</p></section>`;
+      ? `<section class="notebook-field"><span>${t(label)}</span><div data-sample-host="${key}" data-rich-label="${t(label)}"></div></section>`
+      : `<section class="notebook-read-field"><h3>${t(label)}</h3>${typeof value === 'string' ? `<p data-sample-read="${key}">${escapeHtml(value || t('blank'))}</p>` : `<div data-sample-read="${key}" class="notebook-rich-content">${Rich.html(value)}</div>`}</section>`;
   }
   const reflection = prefix => `<div class="notebook-bilingual">${field(`${prefix}.en`, 'english')}${field(`${prefix}.ja`, 'japanese')}</div>`;
-  function resize() {
-    app.querySelectorAll('textarea').forEach(input => {
-      input.style.height = 'auto';
-      input.style.height = `${input.scrollHeight + 2}px`;
-    });
-  }
   function render() {
+    editors.forEach(editor => editor.dispose()); editors = [];
     document.documentElement.lang = language;
     document.querySelector('#language-toggle').textContent = language === 'en' ? '日本語' : 'ENGLISH';
     document.querySelector('#sample-back').textContent = t('back');
     app.innerHTML = `<header class="feedback-hero"><div><p class="eyebrow">${t('badge')}</p><h1>${t('title')}</h1><p>${t('intro')}</p></div><details open class="notebook-privacy"><summary>${t('privacyTitle')}</summary><p>${t('privacy')}</p></details></header>
-      <div class="notebook-identity"><strong>${t('player')}</strong><button type="button" id="sample-reset">${t('reset')}</button></div><p class="notebook-notice">${t('manual')}</p>
+      <div class="notebook-identity"><strong>${t('player')}</strong><button type="button" id="sample-reset">${t('reset')}</button></div><p class="notebook-notice">${t('manual')} ${window.LKNotebookEditor.hint(language)}</p>
       <div class="notebook-dates"><label>${t('sampleDay')}<select id="sample-day">${['daily', 'matches', 'rest'].map(value => `<option value="${value}" ${value === day ? 'selected' : ''}>${t(value === 'daily' ? 'dailyDay' : value === 'matches' ? 'matchDay' : 'restDay')}</option>`).join('')}</select></label></div>
       <div class="notebook-modes" role="group" aria-label="${t('mode')}">${['write', 'read'].map(value => `<button type="button" data-sample-mode="${value}" aria-pressed="${mode === value}">${t(value)}</button>`).join('')}</div>${mode === 'read' ? `<p class="notebook-read-hint">${t('readHint')}</p>` : ''}
       <div class="notebook-savebar notebook-demo-warning" role="status">${t('warning')}</div><section class="notebook-day">${day === 'rest' ? `<section class="notebook-entry"><h2>${t('rest')}</h2></section>` : `
       ${day === 'matches' ? `<section class="notebook-matches"><h2>${t('matches')} · 2</h2>${['a', 'b'].map((value, index) => `<article class="notebook-match"><header class="notebook-match-heading"><span><small>${t('training')} · ${t(index ? 'loss' : 'win')}</small><b>${t('player')} <em>${index ? '1-3' : '3-2'}</em> ${t(index ? 'opponentB' : 'opponentA')}</b></span></header>${reflection(`match.${value}`)}</article>`).join('')}</section>` : ''}
       <section class="notebook-entry"><h2>${t('daily')}</h2>${reflection('daily')}</section><section class="notebook-entry"><h2>${t('coach')}</h2><p>${t('coachHint')}</p><div class="notebook-bilingual">${field('coach.ja', 'coachJapanese')}${field('coach.en', 'coachEnglish')}</div></section>`}</section>
       <aside class="notebook-invitation"><h2>${t('invitation')}</h2><a class="notebook-preview-link" href="feedback.html">${t('back')} <span aria-hidden="true">→</span></a></aside>`;
-    app.querySelectorAll('[data-sample-field]').forEach(input => {
-      input.value = documents[day][input.dataset.sampleField] || '';
-      input.oninput = () => { documents[day][input.dataset.sampleField] = input.value; resize(); };
+    app.querySelectorAll('[data-sample-host]').forEach(host => {
+      const key = host.dataset.sampleHost;
+      editors.push(window.LKNotebookEditor.mount({ host, label: host.dataset.richLabel, language, field: key, attribute: 'data-sample-field', value: documents[day][key] || '', onChange: value => { documents[day][key] = value; } }));
     });
-    app.querySelector('#sample-day').onchange = event => { day = event.target.value; render(); };
-    app.querySelectorAll('[data-sample-mode]').forEach(button => button.onclick = () => { mode = button.dataset.sampleMode; render(); app.querySelector(`[data-sample-mode="${mode}"]`).focus({ preventScroll: true }); });
+    app.querySelector('#sample-day').onchange = event => { if (editors.some(editor => editor.composing)) { event.target.value = day; return; } day = event.target.value; render(); };
+    app.querySelectorAll('[data-sample-mode]').forEach(button => button.onclick = () => { if (editors.some(editor => editor.composing)) return; mode = button.dataset.sampleMode; render(); app.querySelector(`[data-sample-mode="${mode}"]`).focus({ preventScroll: true }); });
     app.querySelector('#sample-reset').onclick = () => { documents = structuredClone(examples); render(); app.querySelector('#sample-reset').focus({ preventScroll: true }); };
     chromeObserver.disconnect(); chromeObserver.observe(document.querySelector('.site-header')); chromeObserver.observe(app.querySelector('.notebook-savebar'));
-    resize();
   }
   const chromeObserver = new ResizeObserver(entries => entries.forEach(entry => app.style.setProperty(entry.target.classList.contains('site-header') ? '--notebook-header-height' : '--notebook-savebar-height', `${Math.ceil(entry.target.getBoundingClientRect().height)}px`)));
-  let lastWidth;
-  new ResizeObserver(entries => { const width = entries[0].contentRect.width; if (width !== lastWidth) { lastWidth = width; resize(); } }).observe(app);
-  document.fonts.ready.then(resize);
-  document.querySelector('#language-toggle').onclick = () => { language = language === 'en' ? 'ja' : 'en'; localStorage.setItem('lk-language', language); render(); };
+  document.querySelector('#language-toggle').onclick = () => { if (editors.some(editor => editor.composing)) return; language = language === 'en' ? 'ja' : 'en'; localStorage.setItem('lk-language', language); render(); };
   render();
 })();

@@ -82,7 +82,7 @@
       }
     }
     function readField(label, value) {
-      return `<section class="admin-notebook-field"><h4>${label}</h4><p ${value ? '' : 'class="empty"'}>${escapeHtml(value || copy.blank)}</p></section>`;
+      return `<section class="admin-notebook-field"><h4>${label}</h4>${typeof value === 'object' && value ? `<div class="notebook-rich-content">${window.LKNotebookRich.html(value)}</div>` : `<p ${value ? '' : 'class="empty"'}>${escapeHtml(value || copy.blank)}</p>`}</section>`;
     }
     function renderDay(result) {
       const fields = result.document.fields, bilingual = result.player.bilingual;

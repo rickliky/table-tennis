@@ -96,13 +96,24 @@ try {
   assert.equal((await call(day, { token: a.token, body: { revision: 0, playerId: 'LK-0002', patch: { 'daily.en': 'not mine' } } })).status, 400);
   assert.equal((await call(day, { token: a.token, body: { revision: 0, patch: { 'daily.en': 'x'.repeat(8001) } } })).status, 400);
   assert.equal((await call(day, { token: a.token, body: { revision: 0, patch: { 'daily.en': 'x'.repeat(70000) } } })).status, 413);
+  const rich = { format: 'lk-rich-v1', ops: [{ insert: 'Synthetic formatted note', attributes: { bold: true } }, { insert: '\n', attributes: { list: 'bullet' } }] };
+  const richDay = '/api/reflections/day?date=2026-10-10';
+  assert.equal((await call(richDay, { token: a.token, body: { revision: 0, patch: { 'daily.en': rich } } })).status, 200);
+  assert.deepEqual((await call(richDay, { token: a.token })).value.document.fields['daily.en'], rich);
+  assert.equal((await call(richDay, { token: a.token, body: { revision: 1, patch: { activity: rich } } })).status, 400);
+  assert.equal((await call(richDay, { token: c.token, body: { revision: 0, patch: { 'daily.en': rich } } })).status, 400);
+  for (const bad of [{ ...rich, html: '<script>unsafe</script>' }, { format: 'lk-rich-v1', ops: [{ insert: { image: 'https://evil.example' } }] }, { format: 'lk-rich-v1', ops: [{ insert: '\n', attributes: { list: 'bullet', bold: true } }] }]) {
+    assert.equal((await call(richDay, { token: a.token, body: { revision: 1, patch: { 'daily.en': bad } } })).status, 400);
+  }
+  assert.equal((await call(richDay, { token: a.token, body: { revision: 0, patch: { 'coach.ja': rich } } })).status, 409);
+  assert.deepEqual((await call('/api/reflections/admin/day?playerId=LK-0080&date=2026-10-10', { token: admin })).value.document.fields['daily.en'], rich);
   const concurrent = await Promise.all(['first', 'second'].map(text => call(day, { token: a.token, body: { revision: 0, patch: { 'daily.en': text } } })));
   assert.deepEqual(concurrent.map(result => result.status).sort(), [200, 409], 'atomic revision check must reject the stale writer');
   assert.equal((await call(day, { token: a.token, body: { revision: 1, patch: { 'coach.ja': 'synthetic coach comment' } } })).status, 200);
   const stored = (await call(day, { token: a.token })).value.document;
   assert.ok(['first', 'second'].includes(stored.fields['daily.en']));
   assert.equal(stored.fields['coach.ja'], 'synthetic coach comment');
-  assert.deepEqual((await call('/api/reflections/dates', { token: a.token })).value.dates, ['2026-10-11']);
+  assert.deepEqual((await call('/api/reflections/dates', { token: a.token })).value.dates, ['2026-10-11', '2026-10-10']);
   assert.deepEqual((await call('/api/reflections/dates', { token: b.token })).value.dates, []);
   assert.deepEqual((await call(day, { token: b.token })).value.document.fields, {});
   const adminPaths = ['/api/reflections/admin/players', '/api/reflections/admin/dates?playerId=LK-0080', '/api/reflections/admin/day?playerId=LK-0080&date=2026-10-11'];
@@ -118,7 +129,7 @@ try {
     assert.equal((await call(path, { token: admin, environment: 'prod' })).status, 404);
     assert.equal((await call(path, { token: admin, origin: 'https://evil.example' })).status, 403);
   }
-  assert.deepEqual((await call(adminPaths[1], { token: admin })).value.dates, ['2026-10-11']);
+  assert.deepEqual((await call(adminPaths[1], { token: admin })).value.dates, ['2026-10-11', '2026-10-10']);
   const adminDay = (await call(adminPaths[2], { token: admin })).value;
   assert.equal(adminDay.player.playerId, 'LK-0080'); assert.deepEqual(adminDay.document, stored);
   assert.equal(adminDay.matches.length, 2);
@@ -142,6 +153,8 @@ try {
   const prodOptions = { environment: 'prod', environmentValues: { PRIVATE_REFLECTION_PROD: 'true' } };
   const prodLogin = await call('/api/reflections/login', { ...prodOptions, body: { playerId: 'LK-0080', password: 'synthetic-password-only' } });
   assert.equal(prodLogin.status, 200);
+  assert.equal((await call(richDay, { ...prodOptions, token: prodLogin.value.token, body: { revision: 0, patch: { 'daily.en': rich } } })).status, 400, 'PROD rich writes remain disabled');
+  assert.deepEqual((await call(richDay, { ...prodOptions, token: prodLogin.value.token })).value.document.fields, {}, 'Rejected PROD rich write must not create a document');
   assert.deepEqual((await call(day, { ...prodOptions, token: prodLogin.value.token })).value.document, stored);
   assert.equal((await call(day, { ...prodOptions, token: a.token })).status, 401);
   assert.equal((await call(day, { token: prodLogin.value.token })).status, 401);
