@@ -206,6 +206,11 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Notebook Formatting Recommendation (2026-10-14) — PROPOSAL ONLY
+- User asked whether notebook input could support reasonable rich formatting (bold/bullets). Current reflection/coach fields remain plain text with preserved paragraphs; no application, Worker or private data changes are authorized by this question.
+- Recommend a maintained vanilla-JS rich-text editor (e.g. locally vendored/pinned Quill) with a small mobile toolbar: bold, italic, bullet/numbered lists and undo/redo. Keep expanding entries, manual language versions, per-field revision-checked autosave, save-before-navigation/mode changes, and owner/Admin access boundaries. Avoid fonts/colors/tables/images/attachments and Markdown syntax for young players.
+- Any implementation requires UAT-first changes across player writing, Worker validation/storage, Read/Admin rendering and regressions. Store an allowlisted, versioned structured document (e.g. restricted Delta), not arbitrary user HTML; reject embeds/unsupported formatting server-side and constrain pasted content. Preserve existing plain-text notes/leading blank lines, converting only when intentionally edited without a bulk destructive migration. Await implementation approval; production remains the verified notebook release.
+
 ### Notebook Production Rollout (2026-10-13) — LIVE IN PRODUCTION
 - User explicitly requested committing/pushing all code/data to PROD and subsequently selected **Migrate existing notebooks**. This authorizes enabling production private notebooks, migrating LK-0002/LK-0080 credentials and saved writing, retaining UAT originals, copying no sessions, and overwriting no PROD notebook. Prior production prohibitions are superseded for this release only; translation and historical sample import remain unapproved.
 - Read-only Redis comparison found all ten ordinary approved collections identical between environments (89 players/1,954 matches), zero pending changes, and zero legacy reflection bodies/audit records. No ordinary data rewrite is necessary. Migration preview found two UAT accounts/eight saved day documents, zero PROD private keys/accounts.
