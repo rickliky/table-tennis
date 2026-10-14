@@ -374,7 +374,7 @@ test('month filtering never changes the open day; latest navigation is save-safe
   await expect(page.locator('#notebook-date')).toHaveValue('2026-10-02');
   await expect(page.locator('#notebook-history-month')).toHaveValue('');
   await page.locator('#notebook-date').fill('2027-01-02'); await page.locator('#notebook-date').press('Tab');
-  await expectWriting(page.locator('[data-field="daily.en"]'), Rich.text(Rich.practiceTemplate()));
+  await expectWriting(page.locator('[data-field="daily.en"]'), Rich.text(Rich.practiceTemplate('LK-0080', '2027-01-02')));
   await page.locator('[data-field="daily.en"]').fill('Synthetic new-month note'); await expect(page.locator('#notebook-status')).toContainText('保存済み');
   await expect(page.locator('#notebook-history-month option[value="2027-01"]')).toBeAttached();
   await expect(page.locator('#notebook-history')).toHaveValue('2027-01-02');
@@ -513,12 +513,17 @@ test('cross-tab invalidation retains partially composed synthetic writing for sa
 
 for (const id of ['LK-0080', 'LK-0002']) test(`practice template for ${id} is unsaved until edited; labels and Activity input are simplified`, async ({ page, context }) => {
   const { documents, requests } = await mock(context); await login(page, id);
+  const headings = id === 'LK-0080' ? ['Things to Improve', 'What I Practised Today', 'What I Noticed or Learned Today'] : ['What I Did Well', 'Things to Improve'];
   const field = page.locator('[data-field="daily.en"]');
   await expectWriting(field, ''); // Recorded match day never gets the practice template.
   await page.locator('#notebook-date').fill('2026-10-10'); await page.locator('#notebook-date').press('Tab');
-  await expectWriting(field, Rich.text(Rich.practiceTemplate()));
-  await expect(field.locator('strong')).toHaveText(['Things to Improve', 'What I Practised Today', 'What I Noticed or Learned Today']);
-  await expect(field.locator('li[data-list="bullet"]')).toHaveCount(3);
+  await expectWriting(field, Rich.text(Rich.practiceTemplate(id, '2026-10-10')));
+  await expect(field).toContainText('10 October 2026 (Saturday)');
+  await page.locator('#notebook-date').fill('2026-10-13'); await page.locator('#notebook-date').press('Tab');
+  await expectWriting(field, Rich.text(Rich.practiceTemplate(id, '2026-10-13')));
+  await expect(field).toContainText('13 October 2026 (Tuesday)');
+  await expect(field.locator('strong')).toHaveText(headings);
+  await expect(field.locator('li[data-list="bullet"]')).toHaveCount(headings.length);
   await expectWriting(page.locator('[data-field="daily.ja"]'), '');
   await expectWriting(page.locator('[data-field="coach.ja"]'), '');
   await expect(page.locator('input[data-field="activity"]')).toHaveCount(0);
@@ -528,17 +533,24 @@ for (const id of ['LK-0080', 'LK-0002']) test(`practice template for ${id} is un
   await page.locator('#language-toggle').click();
   await expect(page.locator('#notebook-coach h2')).toHaveText('Coach feedback');
   await expect(page.locator('.notebook-field > span')).toContainText(['Japanese version', 'English version']);
+  await expect(field).toContainText('13 October 2026 (Tuesday)');
+  await expect(field.locator('strong')).toHaveText(headings);
   await page.locator('[data-mode="read"]').click(); await expect(page.locator('[data-read-field="daily.en"]')).toHaveText('Not written');
   expect(requests.filter(request => request.body?.patch)).toHaveLength(0);
   expect(documents.has(`${id}|2026-10-10`)).toBe(false);
+  expect(documents.has(`${id}|2026-10-13`)).toBe(false);
   await page.locator('[data-mode="write"]').click();
-  await field.evaluate(element => window.Quill.find(element.parentElement).setSelection('Things to Improve'.length + 1, 0));
+  await field.evaluate(element => {
+    const editor = window.Quill.find(element.parentElement);
+    editor.setSelection(editor.getText().indexOf('\n', editor.getText().indexOf('\n\n') + 2) + 1, 0);
+  });
   await field.pressSequentially('Synthetic focus');
   await page.locator('[data-mode="read"]').click();
   await expect(page.locator('[data-read-field="daily.en"] ul li').first()).toHaveText('Synthetic focus');
-  expect(Rich.valid(documents.get(`${id}|2026-10-10`).fields['daily.en'])).toBe(true);
+  expect(Rich.valid(documents.get(`${id}|2026-10-13`).fields['daily.en'])).toBe(true);
+  expect(Rich.text(documents.get(`${id}|2026-10-13`).fields['daily.en'])).toContain('13 October 2026 (Tuesday)');
   expect(requests.filter(request => request.body?.patch).every(request => Object.keys(request.body.patch).join() === 'daily.en')).toBe(true);
-  await page.reload(); await expect(field.locator('strong')).toHaveCount(3); await expect(field.locator('li').first()).toHaveText('Synthetic focus');
+  await page.reload(); await expect(field.locator('strong')).toHaveText(headings); await expect(field.locator('li').first()).toHaveText('Synthetic focus');
   await field.fill(''); await page.locator('[data-mode="read"]').click(); await page.reload();
   await expectWriting(field, ''); // An intentionally cleared/saved field stays cleared.
 });

@@ -195,7 +195,7 @@
     return key === 'daily.en' && ['LK-0080', 'LK-0002'].includes(player.playerId) && !matches.length && weekdayOf(date) !== 5 && !dirty.has(key) && !Object.hasOwn(documentValue.fields, key);
   }
   function editorValue(key) {
-    return dirty.has(key) ? dirty.get(key) : usesPracticeTemplate(key) ? Rich.practiceTemplate() : documentValue.fields[key] || '';
+    return dirty.has(key) ? dirty.get(key) : usesPracticeTemplate(key) ? Rich.practiceTemplate(player.playerId, date) : documentValue.fields[key] || '';
   }
   function field(key, label, hint = '') {
     const value = dirty.has(key) ? dirty.get(key) : documentValue.fields[key] || '';

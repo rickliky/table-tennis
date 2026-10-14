@@ -16,8 +16,9 @@ test.beforeAll(async ({ request, baseURL }) => {
 
 // Live static assets; ALL API responses, sessions, dates and writing intercepted.
 // Never sign in to a real player/Admin account or fetch a real journal here.
-for (const language of ['ja', 'en']) for (const width of [320, 390, 1440]) {
-  test(`live rich notebooks use safe synthetic player/Admin data (${language}, ${width}px)`, async ({ page, context }) => {
+for (const playerId of ['LK-0080', 'LK-0002']) for (const language of ['ja', 'en']) for (const width of [320, 390, 1440]) {
+  test(`live rich notebooks use safe synthetic player/Admin data (${playerId}, ${language}, ${width}px)`, async ({ page, context }) => {
+    const syntheticPlayer = { ...player, playerId };
     const errors = [], writes = [], requests = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.setViewportSize({ width, height: 900 });
@@ -31,8 +32,8 @@ for (const language of ['ja', 'en']) for (const width of [320, 390, 1440]) {
     await context.route(`${API}/api/**`, async route => {
       const request = route.request(), url = new URL(request.url()); requests.push(url.pathname);
       const send = value => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, ...value }) });
-      if (url.pathname === '/api/reflections/directory') return send({ players: [player] });
-      if (['/api/reflections/login', '/api/reflections/session'].includes(url.pathname)) return send({ player, token: 'a'.repeat(64), expires: Date.now() + 86400000 });
+      if (url.pathname === '/api/reflections/directory') return send({ players: [syntheticPlayer] });
+      if (['/api/reflections/login', '/api/reflections/session'].includes(url.pathname)) return send({ player: syntheticPlayer, token: 'a'.repeat(64), expires: Date.now() + 86400000 });
       if (url.pathname === '/api/reflections/dates') return send({ dates: ['2026-10-10'] });
       if (url.pathname === '/api/reflections/day') {
         if (request.method() === 'GET' && url.searchParams.get('date') === '2026-10-12') return send({ date: '2026-10-12', document: { revision: 0, fields: {} }, matches: [] });
@@ -48,9 +49,9 @@ for (const language of ['ja', 'en']) for (const width of [320, 390, 1440]) {
       if (url.pathname === '/api/session') return send({ role: 'admin' });
       if (url.pathname === '/api/admin-data') return send({ players: [], matches: [], rubbers: [] });
       if (url.pathname === '/api/pending') return send({ changes: [] });
-      if (url.pathname === '/api/reflections/admin/players') return send({ players: [player] });
+      if (url.pathname === '/api/reflections/admin/players') return send({ players: [syntheticPlayer] });
       if (url.pathname === '/api/reflections/admin/dates') return send({ dates: ['2026-10-10'] });
-      if (url.pathname === '/api/reflections/admin/day') return send({ player, date: '2026-10-10', document: day, matches: [] });
+      if (url.pathname === '/api/reflections/admin/day') return send({ player: syntheticPlayer, date: '2026-10-10', document: day, matches: [] });
       throw new Error(`Unexpected synthetic notebook request: ${url.pathname}`);
     });
     await page.goto('feedback.html?date=2026-10-10');
@@ -69,8 +70,10 @@ for (const language of ['ja', 'en']) for (const width of [320, 390, 1440]) {
     await page.reload(); await expect(field.locator('strong').filter({ hasText: 'Synthetic pasted ending' })).toHaveCount(1);
     const beforeTemplate = writes.length;
     await page.locator('#notebook-date').fill('2026-10-12'); await page.locator('#notebook-date').press('Tab');
-    await expect(field.locator('strong')).toHaveText(['Things to Improve', 'What I Practised Today', 'What I Noticed or Learned Today']);
-    await expect(field.locator('li[data-list="bullet"]')).toHaveCount(3);
+    const headings = playerId === 'LK-0080' ? ['Things to Improve', 'What I Practised Today', 'What I Noticed or Learned Today'] : ['What I Did Well', 'Things to Improve'];
+    await expect(field).toContainText('12 October 2026 (Monday)');
+    await expect(field.locator('strong')).toHaveText(headings);
+    await expect(field.locator('li[data-list="bullet"]')).toHaveCount(headings.length);
     await page.locator('[data-mode="read"]').click(); await expect(page.locator('[data-read-field="daily.en"]')).toHaveText(language === 'en' ? 'Not written' : '未記入');
     expect(writes.length).toBe(beforeTemplate);
     await page.locator('#notebook-date').fill('2026-10-11'); await page.locator('#notebook-date').press('Tab');
