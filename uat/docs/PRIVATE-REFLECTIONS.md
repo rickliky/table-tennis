@@ -1,5 +1,23 @@
 # Private player notebook
 
+## Player-specific dated practice templates — UAT update (2026-10-14)
+
+This supersedes the shared three-part starter template below. Jacelyn/LK-0080
+uses **Things to Improve**, **What I Practised Today**, and **What I Noticed or
+Learned Today**. Kaitlyn/LK-0002 uses **What I Did Well** and **Things to Improve**.
+Each heading remains bold with an empty bullet underneath. Both start with the
+selected notebook date in English, e.g. **13 October 2026 (Tuesday)**; other dates
+use their own date/weekday, independent of browser timezone/interface language.
+
+The existing safeguards remain: only previously uninitialized English daily
+fields on non-Friday dates with no recorded matches get an unsaved Write-mode
+starter. Existing notes (including old templates intentionally saved/edited)
+and deliberately cleared fields are never replaced. No template-only save or
+date index is created. Japanese and coach fields are not auto-filled. The
+fictional preview uses the three-part style with its own example date.
+This is UAT-only, with no Worker deployment, real notebook read/write or
+production migration. Release verification is recorded in `AGENTS.md`.
+
 ## Always-bilingual match cards — UAT update (2026-10-14)
 
 At the user's request, reflection match cards always show the recorded Japanese

@@ -32,7 +32,7 @@
   };
   const examples = {
     daily: {
-      'daily.en': Rich.practiceTemplate(),
+      'daily.en': Rich.practiceTemplate('LK-0080', '2026-10-10'),
       'daily.ja': '今日はバックからフォアへの切り替えを練習しました。先に足を動かすと、次のボールを打ちやすくなりました。\n\n次の練習では、1球打つごとに基本姿勢に戻ることを意識したいです。',
       'coach.ja': { format: 'lk-rich-v1', ops: [{ insert: '基本姿勢', attributes: { bold: true } }, { insert: '：ボールを打った後、すぐに戻りましょう。' }, { insert: '\n', attributes: { list: 'ordered' } }, { insert: '焦らず、小さな足の動きで次のボールに備えましょう。' }, { insert: '\n', attributes: { list: 'ordered' } }] },
       'coach.en': { format: 'lk-rich-v1', ops: [{ insert: 'Ready position', attributes: { bold: true } }, { insert: ': return soon after hitting the ball.' }, { insert: '\n', attributes: { list: 'ordered' } }, { insert: 'Stay calm', attributes: { italic: true } }, { insert: ' and use small steps to prepare for the next ball.' }, { insert: '\n', attributes: { list: 'ordered' } }] }

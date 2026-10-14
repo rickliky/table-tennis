@@ -2,8 +2,19 @@ import assert from 'node:assert/strict';
 import Rich from '../notebook-rich-text.js';
 
 const value = { format: 'lk-rich-v1', ops: [{ insert: '\n\n' }, { insert: 'Synthetic <unsafe> text', attributes: { bold: true, italic: true } }, { insert: '\n', attributes: { list: 'bullet' } }, { insert: 'Next item' }, { insert: '\n', attributes: { list: 'ordered' } }] };
-assert.ok(Rich.valid(Rich.practiceTemplate()));
-assert.equal(Rich.practiceTemplate().ops.filter(op => op.attributes?.list === 'bullet').length, 3);
+for (const [id, headings] of [
+  ['LK-0080', ['Things to Improve', 'What I Practised Today', 'What I Noticed or Learned Today']],
+  ['LK-0002', ['What I Did Well', 'Things to Improve']]
+]) {
+  const template = Rich.practiceTemplate(id, '2026-10-13');
+  assert.ok(Rich.valid(template));
+  assert.equal(Rich.text(template), `13 October 2026 (Tuesday)\n\n${headings.map(heading => `${heading}\n`).join('\n\n')}`);
+  assert.equal(template.ops.filter(op => op.attributes?.list === 'bullet').length, headings.length);
+  assert.deepEqual(template.ops.filter(op => op.attributes?.bold).map(op => op.insert), headings);
+  assert.ok(Rich.text(Rich.practiceTemplate(id, '2027-01-02')).startsWith('2 January 2027 (Saturday)\n\n'));
+}
+assert.equal(Rich.practiceTemplate('LK-0003', '2026-10-13'), '');
+assert.equal(Rich.practiceTemplate('LK-0002', '2026-02-30'), '');
 assert.ok(Rich.valid(value));
 assert.equal(Rich.text(value), '\n\nSynthetic <unsafe> text\nNext item');
 assert.ok(Rich.html(value).includes('<ul><li><em><strong>Synthetic &lt;unsafe&gt; text</strong></em></li></ul>'));

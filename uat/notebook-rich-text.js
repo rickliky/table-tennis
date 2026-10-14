@@ -78,13 +78,18 @@
     if (list) output += `</${list}>`;
     return output;
   }
-  function practiceTemplate() {
-    const headings = ['Things to Improve', 'What I Practised Today', 'What I Noticed or Learned Today'];
-    return { format, ops: headings.flatMap((heading, index) => [
+  function practiceTemplate(playerId, date) {
+    const headings = playerId === 'LK-0080' ? ['Things to Improve', 'What I Practised Today', 'What I Noticed or Learned Today']
+      : playerId === 'LK-0002' ? ['What I Did Well', 'Things to Improve'] : null;
+    const day = new Date(`${date}T12:00:00Z`);
+    if (!headings || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(day.getTime()) || day.toISOString().slice(0, 10) !== date) return '';
+    const dateText = day.toLocaleDateString('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' });
+    const weekday = day.toLocaleDateString('en-GB', { timeZone: 'UTC', weekday: 'long' });
+    return { format, ops: [{ insert: `${dateText} (${weekday})\n\n` }, ...headings.flatMap((heading, index) => [
       ...(index ? [{ insert: '\n' }] : []),
       { insert: heading, attributes: { bold: true } }, { insert: '\n' },
       { insert: '\n', attributes: { list: 'bullet' } }
-    ]) };
+    ])] };
   }
   return Object.freeze({ format, valid, text, delta, fromDelta, html, practiceTemplate });
 });
