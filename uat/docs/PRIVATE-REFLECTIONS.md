@@ -16,7 +16,12 @@ and deliberately cleared fields are never replaced. No template-only save or
 date index is created. Japanese and coach fields are not auto-filled. The
 fictional preview uses the three-part style with its own example date.
 This is UAT-only, with no Worker deployment, real notebook read/write or
-production migration. Release verification is recorded in `AGENTS.md`.
+production migration. UAT release **`5d6a7df`**, Actions **`38504013810`**, passed
+all verification suites, **41 browser tests** and **13 live smoke checks**.
+The general gate smoke needed one retry in CI; a separate full live rerun passed
+all 13 without retry. Both synthetic account IDs passed JA/EN at 320/390/1440 px;
+fictional-only screenshots of both dated templates were visually reviewed.
+Production remains `c1ea726` and requires fresh rollout approval.
 
 ## Always-bilingual match cards — UAT update (2026-10-14)
 
