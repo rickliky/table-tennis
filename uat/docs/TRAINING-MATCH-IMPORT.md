@@ -33,3 +33,10 @@ matchDate,player1,player1Sets,player2,player2Sets,division,matchFormat,player1Na
 The downloadable template uses the example above. Tests use synthetic approved
 records and intercepted submissions only; this example is not an authorized
 request to import an actual match. Release results are recorded in `AGENTS.md`.
+
+UAT release **`4b5e90e`**, Actions **`38580250951`**, passed all verification
+suites, **46 browser tests** and **17 live checks without retry**. Import checks
+cover JA/EN at 320/1440 px with mocked Admin/data and zero actual writes; mobile
+screenshots were visually reviewed. Input/preview panels fit the viewport, and
+the wide results table scrolls internally. Production remains `baacdb0`; no
+matches, sessions, imports or private notebooks were modified.
