@@ -10,7 +10,11 @@ never claims a winner. An unavailable Romanized name is explicitly marked
 unrecorded, not guessed. Owner Write/Read, Admin evidence and the fictional
 preview share this rendering. Existing current-name API fields are reused;
 there is no Worker, profile, match, journal or credential change. This release
-is UAT-only; verified deployment results are recorded in `AGENTS.md`.
+is UAT-only. Release **`9520c56`**, Actions **`38501911252`**, passed all
+verification suites, **41 browser tests**, deployment and **seven live smoke
+checks**. Live synthetic JA/EN checks passed at 320/390/1440 px; the fictional
+mobile match card was visually reviewed. Production remains `c1ea726`;
+no real notebook or other stored data was read or modified.
 
 ## Practice template and clearer match results — UAT update (2026-10-14)
 
