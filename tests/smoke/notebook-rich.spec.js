@@ -4,6 +4,16 @@ const API = process.env.WORKER_BASE_URL || 'https://little-kings-api.little-king
 const player = { playerId: 'LK-0080', displayName: '合成テスト選手', englishName: 'Synthetic Test Player', bilingual: true, enabled: true };
 const rich = { format: 'lk-rich-v1', ops: [{ insert: '\n\n' }, { insert: 'Synthetic bold only', attributes: { bold: true } }, { insert: '\n' }, { insert: '合成の箇条書き' }, { insert: '\n', attributes: { list: 'bullet' } }, { insert: 'Synthetic numbered item', attributes: { italic: true } }, { insert: '\n', attributes: { list: 'ordered' } }] };
 
+test.beforeAll(async ({ request, baseURL }) => {
+  if (!process.env.EXPECTED_COMMIT) return;
+  // Pages publishes asynchronously after the gh-pages push. Wait before any
+  // rich-editor assertion, rather than relying on a later smoke file's wait.
+  await expect.poll(async () => {
+    const response = await request.get(new URL(`build-info.json?check=${Date.now()}`, baseURL).toString());
+    return response.ok() ? (await response.json()).commit : '';
+  }, { timeout: 60000, intervals: [1000, 2000, 3000] }).toBe(process.env.EXPECTED_COMMIT);
+});
+
 // Live static assets; ALL API responses, sessions, dates and writing intercepted.
 // Never sign in to a real player/Admin account or fetch a real journal here.
 for (const language of ['ja', 'en']) for (const width of [320, 390, 1440]) {
@@ -46,6 +56,7 @@ for (const language of ['ja', 'en']) for (const width of [320, 390, 1440]) {
     await expect(page.locator('[data-read-field="daily.en"] ul li')).toHaveCount(2);
     expect(writes.length).toBeGreaterThan(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+    await page.reload(); await expect(field.locator('strong').filter({ hasText: 'Synthetic pasted ending' })).toHaveCount(1);
     await page.goto('admin.html?tab=notebooks');
     await page.locator('select[name=role]').selectOption('admin'); await page.locator('input[type=password]').fill('synthetic-password'); await page.locator('button[type=submit]').click();
     await expect(page.locator('#admin-notebook-content strong').filter({ hasText: 'Synthetic pasted ending' })).toHaveCount(1);
