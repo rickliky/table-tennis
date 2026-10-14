@@ -54,7 +54,7 @@ test('fictional preview demonstrates formatting; supported pasted lists survive 
   await field.fill(''); await paste(field, '<p><strong>Synthetic formatted preview</strong></p><ul><li>Preview bullet</li></ul>');
   await page.locator('#language-toggle').click(); await expect(field.locator('strong')).toHaveText('Synthetic formatted preview');
   await page.locator('[data-sample-mode="read"]').click();
-  await expect(page.locator('[data-sample-read="daily.en"] ul li')).toHaveText('Preview bullet');
+  await expect(page.locator('[data-sample-read="daily.en"] ul li').filter({ hasText: 'Preview bullet' })).toHaveCount(1);
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('Preview bullet');
   await page.reload(); await expect(page.locator('.notebook-day')).not.toContainText('Preview bullet');
   expect(requests).toEqual([]);

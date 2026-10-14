@@ -161,3 +161,18 @@ test('Admin reads structured formatting safely alongside legacy strings and orph
   expect(requests.filter(request => request.path.startsWith('/api/reflections/admin/')).every(request => request.method === 'GET')).toBe(true);
   await page.getByRole('button', { name: /SIGN OUT/ }).click(); await expect(page.locator('#admin-notebook-content')).toHaveCount(0);
 });
+
+test('Admin match evidence uses current bilingual names and explicit result labels with simplified headings', async ({ page, context }) => {
+  await mock(context);
+  await context.route(`${API}/api/reflections/admin/day**`, route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, player: players[0], date: '2026-10-11', document: { revision: 1, fields: { 'match.training:M-1.en': 'Synthetic match reflection', 'match.training:M-2.ja': '合成の未完了振り返り' } }, matches: [
+    { key: 'training:M-1', source: 'training', opponentName: '現在の合成対戦相手', opponentEnglishName: 'Current Synthetic Opponent', score: '1-3', result: 'loss' },
+    { key: 'training:M-2', source: 'training', opponentName: '合成の未完了相手', score: '2-1', result: 'incomplete' }
+  ] }) }));
+  await page.goto('/uat/admin.html'); await page.evaluate(() => localStorage.setItem('lk-language', 'en')); await login(page);
+  await expect(page.locator('#admin-notebook-content .notebook-result-label')).toHaveText(['Loser', 'Winner']);
+  await expect(page.locator('#admin-notebook-content .is-winner')).toContainText('Current Synthetic Opponent');
+  await expect(page.locator('#admin-notebook-content .notebook-match-incomplete')).toHaveText('Incomplete — no winner recorded');
+  await expect(page.locator('#admin-notebook-content h3')).toContainText(['Coach feedback']);
+  await expect(page.locator('#admin-notebook-content h4')).not.toContainText(['(manual)']);
+  await expect(page.locator('#admin-notebook-content [contenteditable],#admin-notebook-content textarea')).toHaveCount(0);
+});

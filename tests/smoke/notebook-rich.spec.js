@@ -23,6 +23,11 @@ for (const language of ['ja', 'en']) for (const width of [320, 390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await context.addInitScript(language => localStorage.setItem('lk-language', language), language);
     const day = { revision: 1, fields: { 'daily.en': rich, 'coach.ja': '\n\n合成の従来メモ\n\n' } };
+    const matches = [
+      { key: 'training:SYNTHETIC-1', source: 'training', opponentName: '現在の合成選手名', opponentEnglishName: 'Current Synthetic Opponent', score: '3-1', result: 'win' },
+      { key: 'training:SYNTHETIC-2', source: 'training', opponentName: '合成の外部選手', opponentEnglishName: 'Synthetic External', score: '0-3', result: 'loss' },
+      { key: 'training:SYNTHETIC-3', source: 'training', opponentName: '合成の未完了相手', score: '2-1', result: 'incomplete' }
+    ];
     await context.route(`${API}/api/**`, async route => {
       const request = route.request(), url = new URL(request.url()); requests.push(url.pathname);
       const send = value => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, ...value }) });
@@ -30,6 +35,8 @@ for (const language of ['ja', 'en']) for (const width of [320, 390, 1440]) {
       if (['/api/reflections/login', '/api/reflections/session'].includes(url.pathname)) return send({ player, token: 'a'.repeat(64), expires: Date.now() + 86400000 });
       if (url.pathname === '/api/reflections/dates') return send({ dates: ['2026-10-10'] });
       if (url.pathname === '/api/reflections/day') {
+        if (request.method() === 'GET' && url.searchParams.get('date') === '2026-10-12') return send({ date: '2026-10-12', document: { revision: 0, fields: {} }, matches: [] });
+        if (request.method() === 'GET' && url.searchParams.get('date') === '2026-10-11') return send({ date: '2026-10-11', document: { revision: 0, fields: {} }, matches });
         if (request.method() === 'POST') {
           const body = request.postDataJSON(); writes.push(body); Object.assign(day.fields, body.patch); day.revision++;
           return send({ revision: day.revision, updatedAt: new Date().toISOString() });
@@ -49,6 +56,9 @@ for (const language of ['ja', 'en']) for (const width of [320, 390, 1440]) {
     await page.goto('feedback.html?date=2026-10-10');
     await page.locator('[data-notebook-player]').click(); await page.locator('input[type=password]').fill('synthetic-password'); await page.locator('button[type=submit]').click();
     const field = page.locator('[data-field="daily.en"]'); await expect(field.locator('strong')).toHaveText('Synthetic bold only');
+    await expect(page.locator('input[data-field="activity"]')).toHaveCount(0);
+    await expect(page.locator('#notebook-coach h2')).toHaveText(language === 'en' ? 'Coach feedback' : 'コーチのアドバイス');
+    await expect(page.locator('.notebook-field > span')).not.toContainText([language === 'en' ? '(manual)' : '（手入力）']);
     await expect(field.locator('li')).toHaveCount(2);
     await field.press('Control+End'); await paste(field, '<p><strong>Synthetic pasted ending</strong></p><ul><li>Synthetic pasted bullet</li></ul>');
     await page.locator('[data-mode="read"]').click();
@@ -57,6 +67,17 @@ for (const language of ['ja', 'en']) for (const width of [320, 390, 1440]) {
     expect(writes.length).toBeGreaterThan(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
     await page.reload(); await expect(field.locator('strong').filter({ hasText: 'Synthetic pasted ending' })).toHaveCount(1);
+    const beforeTemplate = writes.length;
+    await page.locator('#notebook-date').fill('2026-10-12'); await page.locator('#notebook-date').press('Tab');
+    await expect(field.locator('strong')).toHaveText(['Things to Improve', 'What I Practised Today', 'What I Noticed or Learned Today']);
+    await expect(field.locator('li[data-list="bullet"]')).toHaveCount(3);
+    await page.locator('[data-mode="read"]').click(); await expect(page.locator('[data-read-field="daily.en"]')).toHaveText(language === 'en' ? 'Not written' : '未記入');
+    expect(writes.length).toBe(beforeTemplate);
+    await page.locator('#notebook-date').fill('2026-10-11'); await page.locator('#notebook-date').press('Tab');
+    await expect(page.locator('.notebook-result-label')).toHaveText(language === 'en' ? ['Winner', 'Loser', 'Loser', 'Winner'] : ['勝者', '敗者', '敗者', '勝者']);
+    await expect(page.locator('.notebook-match').first().locator('.is-loser')).toContainText(language === 'en' ? 'Current Synthetic Opponent' : '現在の合成選手名');
+    await expect(page.locator('.notebook-match-incomplete')).toContainText(language === 'en' ? 'no winner recorded' : '勝敗は未確定');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
     await page.goto('admin.html?tab=notebooks');
     await page.locator('select[name=role]').selectOption('admin'); await page.locator('input[type=password]').fill('synthetic-password'); await page.locator('button[type=submit]').click();
     await expect(page.locator('#admin-notebook-content strong').filter({ hasText: 'Synthetic pasted ending' })).toHaveCount(1);
@@ -65,6 +86,7 @@ for (const language of ['ja', 'en']) for (const width of [320, 390, 1440]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
     const beforePreview = requests.length;
     await page.goto('notebook-sample.html'); await expect(page.locator('[data-sample-read="coach.en"] ol li')).toHaveCount(2);
+    await expect(page.locator('[data-sample-read="daily.en"] strong')).toHaveCount(3);
     await page.locator('[data-sample-mode="write"]').click();
     const preview = page.locator('[data-sample-field="daily.en"]'); await preview.fill(''); await paste(preview, '<p><strong>Synthetic preview</strong></p>');
     await page.locator('[data-sample-mode="read"]').click(); await expect(page.locator('[data-sample-read="daily.en"] strong')).toHaveText('Synthetic preview');

@@ -374,7 +374,7 @@ test('month filtering never changes the open day; latest navigation is save-safe
   await expect(page.locator('#notebook-date')).toHaveValue('2026-10-02');
   await expect(page.locator('#notebook-history-month')).toHaveValue('');
   await page.locator('#notebook-date').fill('2027-01-02'); await page.locator('#notebook-date').press('Tab');
-  await expectWriting(page.locator('[data-field="daily.en"]'), '');
+  await expectWriting(page.locator('[data-field="daily.en"]'), Rich.text(Rich.practiceTemplate()));
   await page.locator('[data-field="daily.en"]').fill('Synthetic new-month note'); await expect(page.locator('#notebook-status')).toContainText('保存済み');
   await expect(page.locator('#notebook-history-month option[value="2027-01"]')).toBeAttached();
   await expect(page.locator('#notebook-history')).toHaveValue('2027-01-02');
@@ -509,4 +509,79 @@ test('cross-tab invalidation retains partially composed synthetic writing for sa
   await expectWriting(field, '合成の入力途中');
   await expect(page.locator('#notebook-status')).toContainText('保存済み');
   expect(documents.get('LK-0080|2026-10-11').fields['coach.ja']).toBe('合成の入力途中');
+});
+
+for (const id of ['LK-0080', 'LK-0002']) test(`practice template for ${id} is unsaved until edited; labels and Activity input are simplified`, async ({ page, context }) => {
+  const { documents, requests } = await mock(context); await login(page, id);
+  const field = page.locator('[data-field="daily.en"]');
+  await expectWriting(field, ''); // Recorded match day never gets the practice template.
+  await page.locator('#notebook-date').fill('2026-10-10'); await page.locator('#notebook-date').press('Tab');
+  await expectWriting(field, Rich.text(Rich.practiceTemplate()));
+  await expect(field.locator('strong')).toHaveText(['Things to Improve', 'What I Practised Today', 'What I Noticed or Learned Today']);
+  await expect(field.locator('li[data-list="bullet"]')).toHaveCount(3);
+  await expectWriting(page.locator('[data-field="daily.ja"]'), '');
+  await expectWriting(page.locator('[data-field="coach.ja"]'), '');
+  await expect(page.locator('input[data-field="activity"]')).toHaveCount(0);
+  await expect(page.locator('#notebook-coach h2')).toHaveText('コーチのアドバイス');
+  await expect(page.locator('.notebook-field > span')).not.toContainText(['（手入力）']);
+  await field.focus(); await page.locator('#notebook-date').focus();
+  await page.locator('#language-toggle').click();
+  await expect(page.locator('#notebook-coach h2')).toHaveText('Coach feedback');
+  await expect(page.locator('.notebook-field > span')).toContainText(['Japanese version', 'English version']);
+  await page.locator('[data-mode="read"]').click(); await expect(page.locator('[data-read-field="daily.en"]')).toHaveText('Not written');
+  expect(requests.filter(request => request.body?.patch)).toHaveLength(0);
+  expect(documents.has(`${id}|2026-10-10`)).toBe(false);
+  await page.locator('[data-mode="write"]').click();
+  await field.evaluate(element => window.Quill.find(element.parentElement).setSelection('Things to Improve'.length + 1, 0));
+  await field.pressSequentially('Synthetic focus');
+  await page.locator('[data-mode="read"]').click();
+  await expect(page.locator('[data-read-field="daily.en"] ul li').first()).toHaveText('Synthetic focus');
+  expect(Rich.valid(documents.get(`${id}|2026-10-10`).fields['daily.en'])).toBe(true);
+  expect(requests.filter(request => request.body?.patch).every(request => Object.keys(request.body.patch).join() === 'daily.en')).toBe(true);
+  await page.reload(); await expect(field.locator('strong')).toHaveCount(3); await expect(field.locator('li').first()).toHaveText('Synthetic focus');
+  await field.fill(''); await page.locator('[data-mode="read"]').click(); await page.reload();
+  await expectWriting(field, ''); // An intentionally cleared/saved field stays cleared.
+});
+
+test('practice templates never replace existing plain/rich notes, Friday notes or other accounts', async ({ page, context }) => {
+  const { documents } = await mock(context);
+  documents.set('LK-0080|2026-10-10', { revision: 3, fields: { activity: 'Synthetic historical activity', 'daily.en': '\n\nExisting synthetic note\n\n' } });
+  await login(page); await page.locator('#notebook-date').fill('2026-10-10'); await page.locator('#notebook-date').press('Tab');
+  await expectWriting(page.locator('[data-field="daily.en"]'), '\n\nExisting synthetic note\n\n');
+  await page.locator('[data-mode="read"]').click(); await expect(page.locator('[data-read-field="activity"]')).toHaveText('Synthetic historical activity');
+  expect(documents.get('LK-0080|2026-10-10').revision).toBe(3);
+  await page.locator('[data-mode="write"]').click();
+  documents.set('LK-0080|2026-10-12', { revision: 1, fields: { 'daily.en': { format: 'lk-rich-v1', ops: [{ insert: 'Existing synthetic bold', attributes: { bold: true } }, { insert: '\n' }] } } });
+  await page.locator('#notebook-date').fill('2026-10-12'); await page.locator('#notebook-date').press('Tab');
+  await expect(page.locator('[data-field="daily.en"] strong')).toHaveText('Existing synthetic bold');
+  documents.set('LK-0080|2026-10-09', { revision: 1, fields: { 'coach.ja': 'Synthetic preserved Friday advice' } });
+  await page.locator('#notebook-date').fill('2026-10-09'); await page.locator('#notebook-date').press('Tab');
+  await expectWriting(page.locator('[data-field="daily.en"]'), '');
+  await page.locator('#notebook-lock').click(); await login(page, 'LK-0003');
+  await page.locator('#notebook-date').fill('2026-10-10'); await page.locator('#notebook-date').press('Tab');
+  await expectWriting(page.locator('[data-field="daily.ja"]'), ''); await expect(page.locator('.notebook-template-hint')).toHaveCount(0);
+});
+
+test('match evidence uses localized system names and explicit winners/losers, never incomplete winners', async ({ page, context }) => {
+  await mock(context);
+  const matches = [
+    { key: 'training:M-001', source: 'training', opponentId: 'LK-0003', opponentName: '現在の合成選手名', opponentEnglishName: 'Current Synthetic Opponent', score: '3-1', result: 'win' },
+    { key: 'tournament:TM-001', source: 'tournament', opponentName: '<img src=x onerror=alert(1)>', opponentEnglishName: 'Current Synthetic External', score: '0-3', result: 'loss' },
+    { key: 'training:M-002', source: 'training', opponentName: '合成の未完了対戦相手', score: '2-1', result: 'incomplete' }
+  ];
+  await context.route(`${API}/api/reflections/day**`, route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, date: '2026-10-11', document: { revision: 0, fields: {} }, matches }) }));
+  await login(page);
+  const cards = page.locator('.notebook-match');
+  await expect(cards.nth(0).locator('.is-winner')).toContainText('選手A'); await expect(cards.nth(0).locator('.is-loser')).toContainText('現在の合成選手名');
+  await expect(cards.nth(0).locator('.notebook-result-label')).toHaveText(['勝者', '敗者']);
+  await expect(cards.nth(1).locator('.notebook-result-label')).toHaveText(['敗者', '勝者']);
+  await expect(cards.nth(1).locator('img')).toHaveCount(0);
+  await expect(cards.nth(2).locator('.notebook-result-label')).toHaveCount(0); await expect(cards.nth(2)).toContainText('勝敗は未確定');
+  await page.locator('#language-toggle').click();
+  await expect(cards.nth(0).locator('.is-winner')).toContainText('Player A'); await expect(cards.nth(0).locator('.is-loser')).toContainText('Current Synthetic Opponent');
+  await expect(cards.nth(0).locator('.notebook-result-label')).toHaveText(['Winner', 'Loser']);
+  await expect(cards.nth(1).locator('.is-winner')).toContainText('Current Synthetic External');
+  await expect(cards.nth(2)).toContainText('Incomplete — no winner recorded');
+  for (const width of [320, 390, 1440]) { await page.setViewportSize({ width, height: 900 }); expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0); }
+  await page.locator('[data-mode="read"]').click(); await expect(cards.nth(0).locator('.notebook-result-label')).toHaveText(['Winner', 'Loser']);
 });

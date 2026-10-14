@@ -78,5 +78,13 @@
     if (list) output += `</${list}>`;
     return output;
   }
-  return Object.freeze({ format, valid, text, delta, fromDelta, html });
+  function practiceTemplate() {
+    const headings = ['Things to Improve', 'What I Practised Today', 'What I Noticed or Learned Today'];
+    return { format, ops: headings.flatMap((heading, index) => [
+      ...(index ? [{ insert: '\n' }] : []),
+      { insert: heading, attributes: { bold: true } }, { insert: '\n' },
+      { insert: '\n', attributes: { list: 'bullet' } }
+    ]) };
+  }
+  return Object.freeze({ format, valid, text, delta, fromDelta, html, practiceTemplate });
 });

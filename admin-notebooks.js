@@ -5,8 +5,8 @@
       title: 'Player Notebooks', notice: 'Admin-only, read-only access. Players can see their own notebook; other members and Approvers cannot. Translation is manual.',
       player: 'Player', date: 'Saved date', choose: 'Choose a saved date', loading: 'Loading…', empty: 'No saved notebook dates for this player yet.', noPlayers: 'No notebook accounts yet.',
       failed: 'Could not load the notebook. Try again.', retry: 'Try again', refresh: 'Refresh', previous: 'Older saved date', next: 'Newer saved date', disabled: 'Account disabled',
-      activity: 'Activity', daily: 'Daily reflection', coach: 'Coach feedback — entered by the player', matches: 'Match reflections', missing: 'Current match record unavailable',
-      enOriginal: 'English original', jaVersion: 'Japanese version (manual)', jaOriginal: 'Japanese original', enVersion: 'English version (manual)', blank: 'Not written',
+      activity: 'Activity', daily: 'Daily reflection', coach: 'Coach feedback', matches: 'Match reflections', missing: 'Current match record unavailable',
+      enOriginal: 'English original', jaVersion: 'Japanese version', jaOriginal: 'Japanese original', enVersion: 'English version', blank: 'Not written',
       updated: 'Last saved', training: 'Training', tournament: 'Tournament', win: 'Win', loss: 'Loss', incomplete: 'Incomplete',
       month: 'Saved month', allMonths: 'All months', latest: 'Latest saved note'
     },
@@ -14,8 +14,8 @@
       title: '選手ノート', notice: '管理者専用・閲覧のみ。選手は自分のノートだけを読めます。他のメンバーや承認者は読めません。翻訳は手入力です。',
       player: '選手', date: '保存済み日付', choose: '保存済み日付を選ぶ', loading: '読み込み中…', empty: 'この選手の保存済みノートはまだありません。', noPlayers: 'ノートのアカウントはまだありません。',
       failed: 'ノートを読み込めませんでした。再試行してください。', retry: 'もう一度試す', refresh: '更新', previous: '前の保存済み日付', next: '次の保存済み日付', disabled: 'アカウント停止中',
-      activity: '活動内容', daily: '1日の振り返り', coach: 'コーチのアドバイス — 選手が入力', matches: '試合の振り返り', missing: '現在の試合記録を参照できません',
-      enOriginal: '英語の原文', jaVersion: '日本語版（手入力）', jaOriginal: '日本語の原文', enVersion: '英語版（手入力）', blank: '未記入',
+      activity: '活動内容', daily: '1日の振り返り', coach: 'コーチのアドバイス', matches: '試合の振り返り', missing: '現在の試合記録を参照できません',
+      enOriginal: '英語の原文', jaVersion: '日本語版', jaOriginal: '日本語の原文', enVersion: '英語版', blank: '未記入',
       updated: '最終保存', training: '練習試合', tournament: '大会', win: '勝ち', loss: '負け', incomplete: '未完了',
       month: '保存済み月', allMonths: 'すべての月', latest: '最新の保存済みノート'
     }
@@ -94,7 +94,7 @@
         ${fields.activity ? readField(copy.activity, fields.activity) : ''}<article class="notebook-entry"><h3>${copy.daily}</h3>${reflection('daily')}</article>
         ${matchKeys.length ? `<h3>${copy.matches}</h3>${matchKeys.map(key => {
           const match = result.matches.find(match => match.key === key);
-          return `<article class="notebook-entry"><h3>${match ? `${copy[match.source]} · ${escapeHtml(match.opponentName)} · ${escapeHtml(match.score)} · ${copy[match.result]}` : `${copy.missing} · ${escapeHtml(key)}`}</h3>${match ? `<p>${escapeHtml([match.eventName, match.round].filter(Boolean).join(' · '))}</p>` : ''}${reflection(`match.${key}`)}</article>`;
+          return `<article class="notebook-entry"><h3>${match ? copy[match.source] : `${copy.missing} · ${escapeHtml(key)}`}</h3>${match ? `${window.LKNotebookMatch.render(match, result.player, language)}<p>${escapeHtml([match.eventName, match.round].filter(Boolean).join(' · '))}</p>` : ''}${reflection(`match.${key}`)}</article>`;
         }).join('')}` : ''}<article class="notebook-entry"><h3>${copy.coach}</h3>${bilingual ? `<div class="notebook-bilingual">${readField(copy.jaOriginal, fields['coach.ja'])}${readField(copy.enVersion, fields['coach.en'])}</div>` : readField(copy.jaOriginal, fields['coach.ja'])}</article>`;
       status.textContent = '';
     }

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import Rich from '../notebook-rich-text.js';
 
 const value = { format: 'lk-rich-v1', ops: [{ insert: '\n\n' }, { insert: 'Synthetic <unsafe> text', attributes: { bold: true, italic: true } }, { insert: '\n', attributes: { list: 'bullet' } }, { insert: 'Next item' }, { insert: '\n', attributes: { list: 'ordered' } }] };
+assert.ok(Rich.valid(Rich.practiceTemplate()));
+assert.equal(Rich.practiceTemplate().ops.filter(op => op.attributes?.list === 'bullet').length, 3);
 assert.ok(Rich.valid(value));
 assert.equal(Rich.text(value), '\n\nSynthetic <unsafe> text\nNext item');
 assert.ok(Rich.html(value).includes('<ul><li><em><strong>Synthetic &lt;unsafe&gt; text</strong></em></li></ul>'));
