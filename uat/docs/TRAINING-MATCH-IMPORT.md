@@ -47,8 +47,12 @@ matchDate,player1,player1Sets,player2,player2Sets,division,matchFormat,player1Na
   A request failure restores the controls and preserves the preview for retry.
 
 The 15 October UAT fix addresses the misleading “Ready” preview with a blank
-source and the silent disabled state after edits. Regression checks use entirely
-synthetic records and intercepted requests; no real import is performed.
+source and the silent disabled state after edits. Release **`8bfbf14`**, Actions
+**`38595746238`**, passed all verification suites, **52 browser tests** and
+**17 live checks without retry**. Separate live JA/EN checks at 320/390/1440 px
+verified the actual Submit click with all three synthetic changes intercepted per
+case, zero real writes and zero overflow/page errors. The mobile screenshot was
+visually reviewed. Production remains `baacdb0`; no actual records changed.
 
 The downloadable template uses the example above. Tests use synthetic approved
 records and intercepted submissions only; this example is not an authorized
