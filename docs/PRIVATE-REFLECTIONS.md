@@ -1,6 +1,6 @@
 # Private player notebook
 
-## Code-only production promotion — approved (2026-10-14)
+## Code-only production promotion — live (2026-10-14)
 
 The user explicitly approved promoting the accumulated UAT **code**, while
 excluding reflection-data promotion. This includes the limited rich editor,
@@ -18,7 +18,21 @@ remain enforced. Only an intentional player edit changes a stored field.
 synchronized. No migration or ordinary data-promotion script is run.** Existing
 PROD notes remain the source for actual writing; UAT/PROD stay independent.
 Verification uses in-memory Worker fixtures and intercepted synthetic browser
-documents/writes only. Current release/deployment status is in `AGENTS.md`.
+documents/writes only.
+
+Release **`233294d`** passed UAT Actions **`38505702225`** (all verification suites,
+**41 browser tests** and **13 live checks**) before the approved fast-forward
+from `c1ea726` to production. Production Actions **`38506115215`** passed the
+pre-deploy suites and deployment. Shared Worker version is
+**`c90566ec-cca9-4821-9545-d706177e57a8`**; no security secrets changed.
+Cache-busted production build confirms `233294d`. All **13 separate production
+checks passed without retry**, using fully intercepted synthetic player/Admin
+sessions/documents/saves in JA/EN at 320/390/1440 px. The fictional mobile
+template was visually reviewed; overflow/page errors were zero. Anonymous
+ordinary/private/Admin reads remain 401 in UAT and PROD. No actual notebook was
+read/written, no account/password reset occurred and no data-promotion script
+ran. Actual password login/save remains the players' acceptance check. Use
+production for ongoing writing; this release does not synchronize notebooks.
 
 ## Player-specific dated practice templates — UAT update (2026-10-14)
 
