@@ -2,7 +2,8 @@ const { test, expect } = require('@playwright/test');
 
 const WORKER_BASE = process.env.WORKER_BASE_URL || 'https://little-kings-api.little-kings.workers.dev';
 
-test('deployed UAT exposes only authenticated data boundaries', async ({ page, request, baseURL }) => {
+test('deployed site exposes only authenticated data boundaries', async ({ page, request, baseURL }) => {
+  const environment = new URL(baseURL).pathname.split('/').includes('uat') ? 'uat' : 'prod';
   const expectedCommit = process.env.EXPECTED_COMMIT;
   if (expectedCommit) {
     await expect.poll(async () => {
@@ -13,8 +14,8 @@ test('deployed UAT exposes only authenticated data boundaries', async ({ page, r
   }
 
   for (const endpoint of ['/api/public-data', '/api/admin-data', '/api/pending']) {
-    const response = await request.get(`${WORKER_BASE}${endpoint}?environment=uat`);
-    expect(response.status(), `${endpoint} must reject anonymous UAT access`).toBe(401);
+    const response = await request.get(`${WORKER_BASE}${endpoint}?environment=${environment}`);
+    expect(response.status(), `${endpoint} must reject anonymous ${environment} access`).toBe(401);
   }
 
   const apiRequests = [];
@@ -35,10 +36,10 @@ test('deployed UAT exposes only authenticated data boundaries', async ({ page, r
   await expect(page.locator('select[name=role] option')).toHaveCount(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
 
-  const privateResponse = await request.get(`${WORKER_BASE}/api/reflections/day?environment=uat&date=2026-10-11`);
+  const privateResponse = await request.get(`${WORKER_BASE}/api/reflections/day?environment=${environment}&date=2099-12-31`);
   expect(privateResponse.status()).toBe(401);
   for (const path of ['players', 'dates?playerId=LK-0080', 'day?playerId=LK-0080&date=2099-12-31']) {
-    const url = new URL(`${WORKER_BASE}/api/reflections/admin/${path}`); url.searchParams.set('environment', 'uat');
+    const url = new URL(`${WORKER_BASE}/api/reflections/admin/${path}`); url.searchParams.set('environment', environment);
     expect((await request.get(url.toString())).status()).toBe(401);
   }
   const prodResponse = await request.get(`${WORKER_BASE}/api/reflections/directory?environment=prod`);

@@ -37,8 +37,8 @@ const dateIsValid = date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.te
 const validId = id => typeof id === 'string' && /^LK-\d{4}$/.test(id);
 const own = (match, id) => match.player1Id === id || match.player2Id === id;
 
-async function matchesForDay(readCollection, playerId, date, currentNames = false) {
-  const [training, tournaments, events, players = [], opponents = []] = await Promise.all((currentNames ? ['matches', 'tournament-matches', 'tournaments', 'players', 'external-opponents'] : ['matches', 'tournament-matches', 'tournaments']).map(readCollection));
+async function matchesForDay(readCollection, playerId, date) {
+  const [training, tournaments, events, players, opponents] = await Promise.all(['matches', 'tournament-matches', 'tournaments', 'players', 'external-opponents'].map(readCollection));
   const identities = new Map([...opponents.map(person => [person.externalOpponentId, person]), ...players.map(person => [person.playerId, person])]);
   const matches = [];
   for (const [source, records] of [['training', training], ['tournament', tournaments]]) {
@@ -47,7 +47,7 @@ async function matchesForDay(readCollection, playerId, date, currentNames = fals
       const first = match.player1Id === playerId, ownSets = Number(first ? match.player1Sets : match.player2Sets), otherSets = Number(first ? match.player2Sets : match.player1Sets);
       const complete = Number(match.player1Sets) >= 3 || Number(match.player2Sets) >= 3;
       const opponentId = first ? match.player2Id : match.player1Id, opponent = identities.get(opponentId);
-      matches.push({ key: `${source}:${source === 'training' ? match.matchId : match.tournamentMatchId}`, source, opponentName: opponent?.displayName || (first ? match.player2Name : match.player1Name) || opponentId, ...(currentNames ? { opponentId, opponentEnglishName: opponent?.englishName || '' } : {}), score: `${ownSets}-${otherSets}`, result: complete ? (ownSets > otherSets ? 'win' : 'loss') : 'incomplete', eventName: source === 'training' ? match.event || '' : events.find(event => event.tournamentId === match.tournamentId)?.name || '', round: match.round || '' });
+      matches.push({ key: `${source}:${source === 'training' ? match.matchId : match.tournamentMatchId}`, source, opponentName: opponent?.displayName || (first ? match.player2Name : match.player1Name) || opponentId, opponentId, opponentEnglishName: opponent?.englishName || '', score: `${ownSets}-${otherSets}`, result: complete ? (ownSets > otherSets ? 'win' : 'loss') : 'incomplete', eventName: source === 'training' ? match.event || '' : events.find(event => event.tournamentId === match.tournamentId)?.name || '', round: match.round || '' });
     }
   }
   return matches.sort((a, b) => a.key.localeCompare(b.key));
@@ -148,7 +148,7 @@ export async function handlePrivateReflections(request, env, environment) {
       const date = url.searchParams.get('date');
       if (!dateIsValid(date)) fail('Valid date required');
       const document = await readJson(redis, `${prefix}day:${playerId}:${date}`);
-      return respond({ ok: true, player: publicAccount(account, await playerFor(playerId)), date, document: document || { revision: 0, fields: {} }, matches: await matchesForDay(readCollection, playerId, date, environment === 'uat') });
+      return respond({ ok: true, player: publicAccount(account, await playerFor(playerId)), date, document: document || { revision: 0, fields: {} }, matches: await matchesForDay(readCollection, playerId, date) });
     }
 
     if (url.pathname === '/api/reflections/directory' && request.method === 'GET') {
@@ -207,7 +207,7 @@ export async function handlePrivateReflections(request, env, environment) {
     const date = url.searchParams.get('date');
     if (!dateIsValid(date)) fail('Valid date required');
     const dayKey = `${prefix}day:${actor.playerId}:${date}`;
-    const matches = await matchesForDay(readCollection, actor.playerId, date, environment === 'uat');
+    const matches = await matchesForDay(readCollection, actor.playerId, date);
     if (request.method === 'GET') return respond({ ok: true, date, document: await readJson(redis, dayKey) || { revision: 0, fields: {} }, matches });
     if (request.method === 'POST') {
       const body = await bodyOf(request);
@@ -221,9 +221,9 @@ export async function handlePrivateReflections(request, env, environment) {
       const entries = Object.entries(body.patch);
       if (!entries.length || entries.length > 100) fail('Invalid number of fields');
       for (const [field, value] of entries) {
-        // Shared Worker: rich values are a UAT-only rollout. PROD remains plain
-        // text until a separately approved rich-text production release.
-        if (!allowedFields.has(field) || !RichText.valid(value, field === 'activity' ? 160 : 8000) || (typeof value !== 'string' && (field === 'activity' || environment !== 'uat'))) fail('Invalid journal field or text length');
+        // Approved rich-text rollout: both environments keep the same restricted
+        // schema, ownership and revision checks. Legacy activity stays plain.
+        if (!allowedFields.has(field) || !RichText.valid(value, field === 'activity' ? 160 : 8000) || (typeof value !== 'string' && field === 'activity')) fail('Invalid journal field or text length');
       }
       if (JSON.stringify({ ...current?.fields, ...body.patch }).length > 250000) fail('Notebook day is too large', 413);
       const updatedAt = new Date().toISOString();

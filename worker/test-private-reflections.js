@@ -166,15 +166,36 @@ try {
   const prodOptions = { environment: 'prod', environmentValues: { PRIVATE_REFLECTION_PROD: 'true' } };
   const prodLogin = await call('/api/reflections/login', { ...prodOptions, body: { playerId: 'LK-0080', password: 'synthetic-password-only' } });
   assert.equal(prodLogin.status, 200);
-  assert.equal((await call(richDay, { ...prodOptions, token: prodLogin.value.token, body: { revision: 0, patch: { 'daily.en': rich } } })).status, 400, 'PROD rich writes remain disabled');
-  assert.deepEqual((await call(richDay, { ...prodOptions, token: prodLogin.value.token })).value.document.fields, {}, 'Rejected PROD rich write must not create a document');
+  const prodToken = prodLogin.value.token;
+  const prodRich = { format: 'lk-rich-v1', ops: [{ insert: 'Synthetic PROD formatted note', attributes: { italic: true } }, { insert: '\n', attributes: { list: 'ordered' } }] };
+  const legacyProdDay = { revision: 3, fields: { 'daily.en': '\n\nSynthetic existing PROD note\n\n', 'coach.ja': 'Synthetic existing PROD advice', activity: 'Synthetic historical activity' } };
+  setJson('prod:private-reflection:day:LK-0080:2026-10-10', legacyProdDay);
+  assert.deepEqual((await call(richDay, { ...prodOptions, token: prodToken })).value.document, legacyProdDay, 'Reading must not convert existing plain notes');
+  for (const patch of [{ activity: rich }, { 'daily.en': { ...rich, html: '<script>unsafe</script>' } }, { 'daily.en': { format: 'lk-rich-v1', ops: [{ insert: { image: 'https://evil.example' } }] } }, { 'daily.en': 'x'.repeat(8001) }]) {
+    assert.equal((await call(richDay, { ...prodOptions, token: prodToken, body: { revision: 3, patch } })).status, 400);
+    assert.deepEqual(getJson('prod:private-reflection:day:LK-0080:2026-10-10'), legacyProdDay);
+  }
+  for (const token of [undefined, site, admin, approver, a.token]) assert.equal((await call(richDay, { ...prodOptions, token, body: { revision: 3, patch: { 'daily.en': prodRich } } })).status, 401);
+  assert.equal((await call(richDay, { ...prodOptions, token: prodToken, body: { revision: 3, playerId: 'LK-0002', patch: { 'daily.en': prodRich } } })).status, 400);
+  assert.equal((await call(richDay, { ...prodOptions, token: prodToken, body: { revision: 3, patch: { 'daily.en': prodRich } } })).status, 200, 'Approved PROD rich writes use the existing guarded autosave');
+  const prodRichDocument = (await call(richDay, { ...prodOptions, token: prodToken })).value.document;
+  assert.deepEqual(prodRichDocument.fields, { ...legacyProdDay.fields, 'daily.en': prodRich });
+  assert.equal(prodRichDocument.revision, 4);
+  assert.equal((await call(richDay, { ...prodOptions, token: prodToken, body: { revision: 3, patch: { 'coach.ja': rich } } })).status, 409);
+  assert.deepEqual((await call(richDay, { token: a.token })).value.document.fields['daily.en'], rich, 'UAT remains independent');
+  assert.deepEqual((await call('/api/reflections/admin/day?playerId=LK-0080&date=2026-10-10', { ...prodOptions, token: admin })).value.document, prodRichDocument);
   assert.deepEqual((await call(day, { ...prodOptions, token: prodLogin.value.token })).value.document, stored);
-  const prodEvidence = (await call(day, { ...prodOptions, token: prodLogin.value.token })).value.matches.find(match => match.source === 'training');
-  assert.equal(prodEvidence.opponentName, 'Opponent C', 'Production snapshot name behavior stays unchanged'); assert.ok(!Object.hasOwn(prodEvidence, 'opponentEnglishName'));
+  const prodMatches = (await call(day, { ...prodOptions, token: prodToken })).value.matches;
+  assert.deepEqual(prodMatches, ownDay.value.matches, 'Approved PROD name lookup returns current identity names in both languages');
+  assert.ok(!JSON.stringify(prodMatches).includes('NOT PART OF MATCH RESPONSE'));
+  const prodExternalRecords = getJson('prod:external-opponents'); setJson('prod:external-opponents', []);
+  assert.equal((await call(day, { ...prodOptions, token: prodToken })).value.matches.find(match => match.source === 'tournament').opponentName, 'Tournament opponent');
+  setJson('prod:external-opponents', prodExternalRecords);
   assert.equal((await call(day, { ...prodOptions, token: a.token })).status, 401);
   assert.equal((await call(day, { token: prodLogin.value.token })).status, 401);
   for (const token of [undefined, site, approver, prodLogin.value.token]) assert.ok([401, 403].includes((await call(adminPaths[2], { ...prodOptions, token })).status));
   assert.deepEqual((await call(adminPaths[2], { ...prodOptions, token: admin })).value.document, stored);
+  assert.deepEqual((await call(adminPaths[2], { ...prodOptions, token: admin })).value.matches, prodMatches);
   assert.equal((await call(adminPaths[2], { ...prodOptions, token: admin, method: 'POST', body: {} })).status, 405);
   for (const path of ['/api/public-data', '/api/admin-data', '/api/pending']) {
     const result = await call(path, { ...prodOptions, token: admin });
