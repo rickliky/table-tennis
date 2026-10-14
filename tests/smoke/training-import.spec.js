@@ -18,6 +18,16 @@ for (const language of ['ja', 'en']) for (const width of [320, 1440]) test(`live
   await expect(page.locator('.admin-import-preview tbody tr')).toHaveClass('valid');
   await expect(page.locator('.admin-import-preview tbody')).toContainText('登録選手A');
   await expect(page.locator('.admin-import-mapping select')).toHaveCount(0);
+  await page.locator('[name="importSource"]').fill('');
+  await expect(page.locator('.admin-import-form > button')).toBeDisabled();
+  await expect(page.locator('.admin-import-submit-status')).toContainText(language === 'en' ? 'Enter a Source name' : '出典名を入力');
+  await page.locator('[name="importSource"]').fill('Synthetic restored source');
+  await expect(page.locator('.admin-import-form > button')).toBeEnabled();
+  await page.locator('[name="importText"]').fill(sample.replace(',3,', ',2,'));
+  await expect(page.locator('.admin-import-form > button')).toBeDisabled();
+  await expect(page.locator('.admin-import-submit-status')).toContainText(language === 'en' ? 'Click Preview import again' : 'もう一度');
+  expect(await preview(page, sample)).toBe(canonicalHash);
+  await expect(page.locator('.admin-import-form > button')).toBeEnabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
   const boxes = await page.locator('.admin-import-input,.admin-import-preview,[name="importText"]').evaluateAll(elements => elements.map(element => ({ left: element.getBoundingClientRect().left, right: element.getBoundingClientRect().right })));
   expect(boxes.every(box => box.left >= 0 && box.right <= width)).toBe(true);

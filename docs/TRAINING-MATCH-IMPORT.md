@@ -30,6 +30,26 @@ matchDate,player1,player1Sets,player2,player2Sets,division,matchFormat,player1Na
 - Preview alone writes nothing. Existing duplicate detection, repeat-safe batch
   IDs, incomplete-score warnings, and approval safeguards remain unchanged.
 
+## When Submit is disabled
+
+- **Source name is required**, including for pasted data (e.g. `Notebook 2026-10-03`).
+  Required settings are marked `*`. Uploaded files supply their filename if the
+  source is empty; pasted data does not invent a source.
+- The status beside Submit explains missing settings, blocked rows, duplicates,
+  or a review that needs refreshing. Valid rows alone are not sufficient.
+- After a successful preview, entering/correcting source, venue, verification
+  date or note updates readiness immediately; these fields do not alter the
+  resolved match identities/hash. Existing row/duplicate blockers still apply.
+- Changing CSV/TSV, session date, session ID or default match format requires
+  **Preview import again**. An older asynchronous preview cannot re-enable Submit
+  after those inputs change. Session date still must match the rows.
+- During submission, controls are locked to keep the reviewed batch unchanged.
+  A request failure restores the controls and preserves the preview for retry.
+
+The 15 October UAT fix addresses the misleading “Ready” preview with a blank
+source and the silent disabled state after edits. Regression checks use entirely
+synthetic records and intercepted requests; no real import is performed.
+
 The downloadable template uses the example above. Tests use synthetic approved
 records and intercepted submissions only; this example is not an authorized
 request to import an actual match. Release results are recorded in `AGENTS.md`.

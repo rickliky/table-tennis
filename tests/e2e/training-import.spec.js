@@ -1,6 +1,85 @@
 const { test, expect } = require('@playwright/test');
 const { header, sample, mockImport, openImport, preview } = require('./helpers/training-import');
 
+for (const language of ['en', 'ja']) test(`missing source explains disabled submit and filling it enables the reviewed batch (${language})`, async ({ page, context }) => {
+  const { writes } = await mockImport(context, language); await openImport(page);
+  const source = page.locator('[name="importSource"]'), submit = page.locator('.admin-import-form > button'), status = page.locator('.admin-import-submit-status');
+  await source.fill(''); const hash = await preview(page, sample);
+  await expect(submit).toBeDisabled();
+  await expect(status).toContainText(language === 'en' ? 'Enter a Source name' : '出典名を入力');
+  await expect(page.locator('.admin-import-preview > p')).not.toContainText(language === 'en' ? 'Ready for grouped approval.' : '一括承認申請できます。');
+  await source.fill('   '); await expect(submit).toBeDisabled();
+  await source.fill('Synthetic notebook'); await expect(submit).toBeEnabled();
+  await page.locator('[name="importVenue"]').fill('Synthetic venue'); await page.locator('[name="importNote"]').fill('Synthetic note');
+  await expect(submit).toBeEnabled(); await expect(page.locator('.admin-import-preview > header small')).toHaveText(hash);
+  page.on('dialog', dialog => dialog.accept()); await submit.click();
+  await expect.poll(() => writes.length).toBe(3);
+  expect(writes[0].after).toMatchObject({ sourceName: 'Synthetic notebook', note: 'Synthetic note' });
+  expect(writes[1].after).toMatchObject({ source: 'Synthetic notebook', venue: 'Synthetic venue' });
+});
+
+test('CSV and session edits invalidate review with guidance; invalid metadata cannot enable submit', async ({ page, context }) => {
+  const { writes } = await mockImport(context); await openImport(page); await preview(page, sample);
+  const submit = page.locator('.admin-import-form > button'), status = page.locator('.admin-import-submit-status');
+  await page.locator('[name="importText"]').fill(sample.replace(',3,', ',2,'));
+  await expect(submit).toBeDisabled(); await expect(status).toContainText('Click Preview import again');
+  await page.locator('[name="importSource"]').fill('Updated source'); await expect(submit).toBeDisabled();
+  await preview(page, sample); await expect(submit).toBeEnabled();
+  await page.locator('[name="importSessionId"]').fill('bad!'); await preview(page, sample);
+  await expect(submit).toBeDisabled(); await expect(status).toContainText('invalid session details');
+  await page.locator('[name="importSessionId"]').fill('LKS-20261003'); await preview(page, sample); await expect(submit).toBeEnabled();
+  await page.locator('[name="importMatchFormat"]').selectOption('Best of 3');
+  await expect(submit).toBeDisabled(); await expect(status).toContainText('Click Preview import again');
+  await preview(page, sample); await expect(submit).toBeEnabled();
+  await page.locator('[name="importDate"]').fill('2026-10-04'); await page.locator('[name="importDate"]').press('Tab');
+  await expect(submit).toBeDisabled(); await preview(page, sample);
+  await expect(page.locator('.admin-import-preview tbody')).toContainText('Row date differs'); await expect(submit).toBeDisabled();
+  expect(writes).toEqual([]);
+});
+
+test('edits during asynchronous hashing cannot restore an obsolete preview or enable submit', async ({ page, context }) => {
+  await mockImport(context);
+  await context.addInitScript(() => {
+    const digest = crypto.subtle.digest.bind(crypto.subtle);
+    crypto.subtle.digest = async (...args) => { window.hashStarted = true; await new Promise(resolve => { window.releaseHash = resolve; }); return digest(...args); };
+  });
+  await openImport(page); await page.locator('[name="importText"]').fill(sample);
+  await page.locator('.admin-import-input-actions .primary').click();
+  await expect.poll(() => page.evaluate(() => Boolean(window.hashStarted))).toBe(true);
+  await page.locator('[name="importText"]').fill(sample.replace('LK-0093', 'LK-9999'));
+  await page.evaluate(() => window.releaseHash());
+  await expect(page.locator('.admin-import-submit-status')).toContainText('Click Preview import again');
+  await expect(page.locator('.admin-import-form > button')).toBeDisabled();
+  await expect(page.locator('.admin-import-preview > header small')).toHaveCount(0);
+});
+
+test('duplicate batch stays blocked and partial pending batch retains resume guidance after source edits', async ({ page, context }) => {
+  const { data, pending, writes } = await mockImport(context); await openImport(page);
+  await preview(page, sample);
+  page.on('dialog', dialog => dialog.accept()); await page.locator('.admin-import-form > button').click();
+  await expect.poll(() => writes.length).toBe(3);
+  pending.push({ ...writes[0], status: 'pending' }); await openImport(page); await preview(page, sample);
+  await page.locator('[name="importSource"]').fill('Updated source');
+  await expect(page.locator('.admin-import-form > button')).toBeEnabled();
+  await expect(page.locator('.admin-import-preview > p')).toContainText('safely resume');
+  data.importBatches.push(writes[0].after); await openImport(page); await preview(page, sample);
+  await page.locator('[name="importSource"]').fill('Another source');
+  await expect(page.locator('.admin-import-form > button')).toBeDisabled();
+  await expect(page.locator('.admin-import-submit-status')).toContainText('already approved');
+});
+
+test('submit locks reviewed controls while requests are pending and restores them on failure', async ({ page, context }) => {
+  await mockImport(context); await openImport(page); await preview(page, sample);
+  let release; const paused = new Promise(resolve => { release = resolve; }); let started = false;
+  await page.route('**/api/change*', async route => { started = true; await paused; await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'Synthetic failure' }) }); });
+  page.on('dialog', dialog => dialog.accept()); await page.locator('.admin-import-form > button').click();
+  await expect.poll(() => started).toBe(true);
+  await expect(page.locator('[name="importSource"]')).toBeDisabled(); await expect(page.locator('[name="importText"]')).toBeDisabled();
+  await expect(page.locator('.admin-import-input-actions .primary')).toBeDisabled();
+  release(); await expect(page.locator('.admin-import-submit-status')).toContainText('Import stopped');
+  await expect(page.locator('[name="importSource"]')).toBeEnabled(); await expect(page.locator('.admin-import-form > button')).toBeEnabled();
+});
+
 test('pasted ID CSV ignores reference names and submits system snapshots with normalized date/format', async ({ page, context }) => {
   const { writes } = await mockImport(context); await openImport(page);
   const hash = await preview(page, sample);
