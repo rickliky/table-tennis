@@ -37,15 +37,17 @@ const dateIsValid = date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.te
 const validId = id => typeof id === 'string' && /^LK-\d{4}$/.test(id);
 const own = (match, id) => match.player1Id === id || match.player2Id === id;
 
-async function matchesForDay(readCollection, playerId, date) {
-  const [training, tournaments, events] = await Promise.all(['matches', 'tournament-matches', 'tournaments'].map(readCollection));
+async function matchesForDay(readCollection, playerId, date, currentNames = false) {
+  const [training, tournaments, events, players = [], opponents = []] = await Promise.all((currentNames ? ['matches', 'tournament-matches', 'tournaments', 'players', 'external-opponents'] : ['matches', 'tournament-matches', 'tournaments']).map(readCollection));
+  const identities = new Map([...opponents.map(person => [person.externalOpponentId, person]), ...players.map(person => [person.playerId, person])]);
   const matches = [];
   for (const [source, records] of [['training', training], ['tournament', tournaments]]) {
     for (const match of records) {
       if (match.matchDate !== date || !own(match, playerId) || (match.format && match.format !== 'Singles') || (source === 'training' && !/club|training|練習/i.test(`${match.event || ''} ${match.division || ''}`))) continue;
       const first = match.player1Id === playerId, ownSets = Number(first ? match.player1Sets : match.player2Sets), otherSets = Number(first ? match.player2Sets : match.player1Sets);
       const complete = Number(match.player1Sets) >= 3 || Number(match.player2Sets) >= 3;
-      matches.push({ key: `${source}:${source === 'training' ? match.matchId : match.tournamentMatchId}`, source, opponentName: (first ? match.player2Name : match.player1Name) || (first ? match.player2Id : match.player1Id), score: `${ownSets}-${otherSets}`, result: complete ? (ownSets > otherSets ? 'win' : 'loss') : 'incomplete', eventName: source === 'training' ? match.event || '' : events.find(event => event.tournamentId === match.tournamentId)?.name || '', round: match.round || '' });
+      const opponentId = first ? match.player2Id : match.player1Id, opponent = identities.get(opponentId);
+      matches.push({ key: `${source}:${source === 'training' ? match.matchId : match.tournamentMatchId}`, source, opponentName: opponent?.displayName || (first ? match.player2Name : match.player1Name) || opponentId, ...(currentNames ? { opponentId, opponentEnglishName: opponent?.englishName || '' } : {}), score: `${ownSets}-${otherSets}`, result: complete ? (ownSets > otherSets ? 'win' : 'loss') : 'incomplete', eventName: source === 'training' ? match.event || '' : events.find(event => event.tournamentId === match.tournamentId)?.name || '', round: match.round || '' });
     }
   }
   return matches.sort((a, b) => a.key.localeCompare(b.key));
@@ -146,7 +148,7 @@ export async function handlePrivateReflections(request, env, environment) {
       const date = url.searchParams.get('date');
       if (!dateIsValid(date)) fail('Valid date required');
       const document = await readJson(redis, `${prefix}day:${playerId}:${date}`);
-      return respond({ ok: true, player: publicAccount(account, await playerFor(playerId)), date, document: document || { revision: 0, fields: {} }, matches: await matchesForDay(readCollection, playerId, date) });
+      return respond({ ok: true, player: publicAccount(account, await playerFor(playerId)), date, document: document || { revision: 0, fields: {} }, matches: await matchesForDay(readCollection, playerId, date, environment === 'uat') });
     }
 
     if (url.pathname === '/api/reflections/directory' && request.method === 'GET') {
@@ -205,7 +207,7 @@ export async function handlePrivateReflections(request, env, environment) {
     const date = url.searchParams.get('date');
     if (!dateIsValid(date)) fail('Valid date required');
     const dayKey = `${prefix}day:${actor.playerId}:${date}`;
-    const matches = await matchesForDay(readCollection, actor.playerId, date);
+    const matches = await matchesForDay(readCollection, actor.playerId, date, environment === 'uat');
     if (request.method === 'GET') return respond({ ok: true, date, document: await readJson(redis, dayKey) || { revision: 0, fields: {} }, matches });
     if (request.method === 'POST') {
       const body = await bodyOf(request);

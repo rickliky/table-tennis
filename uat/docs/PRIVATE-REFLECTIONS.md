@@ -1,5 +1,16 @@
 # Private player notebook
 
+## Practice template and clearer match results — UAT update (2026-10-14)
+
+The user requested these refinements to the UAT notebook; production is not approved for this release.
+
+- Removed the Activity (optional) **input**. Existing saved activity is kept in storage, readable in historical Read/Admin views, and never erased during a reflection save.
+- Language field labels no longer include `(manual)` / `（手入力）`; the coach heading is simply **Coach feedback / コーチのアドバイス**. Player, Admin and fictional preview use the same wording. Translation remains manually entered and coach writing is not a coach-authenticated evaluation.
+- Jacelyn/LK-0080 and Kaitlyn/LK-0002 see the requested three-part template in previously uninitialized **English daily reflection** fields on non-Friday days with no recorded matches. Each bold heading (`Things to Improve`, `What I Practised Today`, `What I Noticed or Learned Today`) has one empty bullet. Japanese and coach fields are not auto-translated/filled. It is an editable starting document, not placeholder text and not a separate improvement box. It saves only after intentional editing; opening/focusing/changing language/Read/date does not create a saved note or date index. Existing strings/rich notes, intentionally cleared fields, Friday notes, match-day fields and future Japanese-only accounts are not overwritten or seeded.
+- Both participants have explicit **Winner / Loser** (`勝者 / 敗者`) labels beside their names on completed match cards, with gold/red emphasis and the player's perspective score. Incomplete records explicitly say no winner is recorded, never labelling a leading player a winner. Player Write/Read, Admin evidence and the fictional preview share `notebook-match.js`.
+- UAT Worker owner/Admin day reads resolve the opponent ID against the approved `players` and `external-opponents` collections and return current display/Romanized names only, falling back to the saved match name/ID if the identity is absent. No name is guessed and no approved match/profile is rewritten. Production remains on the prior snapshot-name API behavior until a separately approved rollout; only UAT uses the new lookup.
+- Tests use synthetic documents exclusively. Deployment and verified release IDs are recorded in `AGENTS.md`; no actual notebook body/account/credential or production data migration is part of this update.
+
 ## Limited rich-text editor — UAT rollout (2026-10-14)
 
 The user approved implementing limited formatting **in UAT only**. Production remains the verified plain-text release; no production rich-text rollout, translation, real-note import, account change or data migration is authorized.
