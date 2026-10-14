@@ -206,6 +206,11 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Always-Bilingual Reflection Match Cards (2026-10-14) — IMPLEMENTING IN UAT
+- User requested that reflection match cards **always show both Japanese and Romanized names**, with win/loss in **both Japanese and English**, regardless of the interface language. Scope remains UAT-only; production requires fresh approval.
+- Shared `notebook-match.js` now shows system display names first and stored Romanized names beneath for both participants, with fixed `勝ち / Win` and `負け / Loss` labels. Incomplete copy is also bilingual and claims no winner. Missing Romanized names are explicitly marked unrecorded, never automatically transliterated/invented. This applies to owner Write/Read, Admin evidence and the fictional preview; current-name Worker metadata already supports it, so no Worker/Redis/credential change is needed.
+- Expanded owner/Admin/preview/live smoke regressions cover simultaneous name/result display through language changes, missing names, escaping and 320/390/1440 px layouts. Verification/deployment is in progress; record the successful release/run before completion. No actual diary is used for testing.
+
 ### Notebook Practice Template + Match Results (2026-10-14) — LIVE IN UAT
 - User requested removal of the Activity (optional) input, removal of `(manual)`/`（手入力）` from language-field labels, a simple Coach feedback title without the entered-by-player suffix, the three-part practice template for Jacelyn/LK-0080 and Kaitlyn/LK-0002, and system names plus clear winner/loser labels on match days. Scope follows the active UAT-only release; production remains unchanged and requires fresh approval.
 - Activity editing is removed. Previously stored activity is not deleted or patched and remains readable in player Read/Admin history. Simplified bilingual language/coach labels also apply to Admin and the fictional preview; translation remains manual, and coach notes are still not authenticated coach evaluations.

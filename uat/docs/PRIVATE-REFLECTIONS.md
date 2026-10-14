@@ -1,5 +1,17 @@
 # Private player notebook
 
+## Always-bilingual match cards — UAT update (2026-10-14)
+
+At the user's request, reflection match cards always show the recorded Japanese
+display name followed by the stored Romanized name for **both players**, with
+`勝ち / Win` and `負け / Loss` result labels. Switching the interface language
+does not hide either name or result language. Incomplete status is bilingual and
+never claims a winner. An unavailable Romanized name is explicitly marked
+unrecorded, not guessed. Owner Write/Read, Admin evidence and the fictional
+preview share this rendering. Existing current-name API fields are reused;
+there is no Worker, profile, match, journal or credential change. This release
+is UAT-only; verified deployment results are recorded in `AGENTS.md`.
+
 ## Practice template and clearer match results — UAT update (2026-10-14)
 
 The user requested these refinements to the UAT notebook; production is not approved for this release.
