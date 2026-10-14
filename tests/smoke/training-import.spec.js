@@ -19,5 +19,8 @@ for (const language of ['ja', 'en']) for (const width of [320, 1440]) test(`live
   await expect(page.locator('.admin-import-preview tbody')).toContainText('登録選手A');
   await expect(page.locator('.admin-import-mapping select')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+  const boxes = await page.locator('.admin-import-input,.admin-import-preview,[name="importText"]').evaluateAll(elements => elements.map(element => ({ left: element.getBoundingClientRect().left, right: element.getBoundingClientRect().right })));
+  expect(boxes.every(box => box.left >= 0 && box.right <= width)).toBe(true);
+  expect(await page.locator('.admin-import-table-wrap').evaluate(element => element.scrollWidth >= element.clientWidth)).toBe(true);
   expect(writes).toEqual([]); expect(errors).toEqual([]);
 });

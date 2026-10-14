@@ -1267,6 +1267,9 @@ html[lang="ja"] .how-to-read::before { content:"▣ 見方・使い方"; }
 
 /* CSV / paste import center */
 .admin-import-center { display:grid; gap:14px; }
+.admin-import-center,.admin-import-form,.admin-import-form > section { min-width:0; }
+.admin-import-input > p { color:var(--muted); font:500 13px/1.7 "Noto Sans JP",sans-serif; margin:0; overflow-wrap:anywhere; }
+.admin-import-file input { max-width:100%; min-width:0; }
 .admin-import-hero { align-items:end; background:linear-gradient(110deg,#17191c,#21190a); border-left:4px solid var(--gold); display:flex; gap:20px; justify-content:space-between; padding:clamp(20px,4vw,42px); }
 .admin-import-hero h2 { color:var(--cream); font-size:clamp(34px,5vw,58px); margin:3px 0 7px; }.admin-import-hero span { color:var(--muted); font:600 12px/1.65 "Noto Sans JP",sans-serif; }.admin-import-hero aside { display:grid; text-align:right; }.admin-import-hero aside b { color:var(--gold); font:800 42px "Barlow Condensed",sans-serif; }.admin-import-hero aside small { color:var(--muted); font:700 9px "Noto Sans JP",sans-serif; }
 .admin-import-form { display:grid; gap:12px; }

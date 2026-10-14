@@ -25,6 +25,11 @@ test('CSV/TSV header order and absent/incorrect reference names do not change th
   expect(await preview(page, 'player1Name\tplayer2Name\tplayer2\tplayer1\tmatchDate\tplayer1Sets\tplayer2Sets\tdivision\tmatchFormat\nWrong reference A\tWrong reference B\tLK-0001\tLK-0093\t10/03/2026\t3\t1\tOpen\t"Best of 5"')).toBe(canonicalHash);
   expect(await preview(page, `${header},player1Name,player2Name\n10/3/2026,LK-0093,3,LK-0001,1,Open,'Best of 5',,`)).toBe(canonicalHash);
   await expect(page.locator('.admin-import-preview tbody tr')).toHaveClass('valid');
+  for (const width of [320, 390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const boxes = await page.locator('.admin-import-input,.admin-import-preview,[name="importText"]').evaluateAll(elements => elements.map(element => ({ left: element.getBoundingClientRect().left, right: element.getBoundingClientRect().right })));
+    expect(boxes.every(box => box.left >= 0 && box.right <= width)).toBe(true);
+  }
   expect(writes).toEqual([]);
 });
 
