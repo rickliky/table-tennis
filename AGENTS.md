@@ -206,10 +206,10 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
-### Always-Bilingual Reflection Match Cards (2026-10-14) — IMPLEMENTING IN UAT
+### Always-Bilingual Reflection Match Cards (2026-10-14) — LIVE IN UAT
 - User requested that reflection match cards **always show both Japanese and Romanized names**, with win/loss in **both Japanese and English**, regardless of the interface language. Scope remains UAT-only; production requires fresh approval.
 - Shared `notebook-match.js` now shows system display names first and stored Romanized names beneath for both participants, with fixed `勝ち / Win` and `負け / Loss` labels. Incomplete copy is also bilingual and claims no winner. Missing Romanized names are explicitly marked unrecorded, never automatically transliterated/invented. This applies to owner Write/Read, Admin evidence and the fictional preview; current-name Worker metadata already supports it, so no Worker/Redis/credential change is needed.
-- Expanded owner/Admin/preview/live smoke regressions cover simultaneous name/result display through language changes, missing names, escaping and 320/390/1440 px layouts. Verification/deployment is in progress; record the successful release/run before completion. No actual diary is used for testing.
+- Release **`9520c56`** is live in UAT; Actions **`38501911252`** passed syntax/JSON, Worker suites, migration validation, **41 browser tests**, deployment and all **seven live smoke checks**. Cache-busted UAT build confirms `9520c56`; production remains `c1ea726`. Owner/Admin/preview regressions cover simultaneous names/results through language changes, missing names and escaping; live intercepted-synthetic JA/EN checks pass at 320/390/1440 px with zero overflow/page errors. The live fictional 320 px match-card screenshot was visually reviewed. No actual diary, account, credential, Worker deployment or Redis change was involved. Ask user to review UAT; do not promote to PROD without fresh approval.
 
 ### Notebook Practice Template + Match Results (2026-10-14) — LIVE IN UAT
 - User requested removal of the Activity (optional) input, removal of `(manual)`/`（手入力）` from language-field labels, a simple Coach feedback title without the entered-by-player suffix, the three-part practice template for Jacelyn/LK-0080 and Kaitlyn/LK-0002, and system names plus clear winner/loser labels on match days. Scope follows the active UAT-only release; production remains unchanged and requires fresh approval.
