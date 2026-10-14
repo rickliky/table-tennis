@@ -145,3 +145,19 @@ test('production Admin can read notebooks; production Approver remains excluded'
   await expect(page.getByRole('button', { name: /PLAYER NOTEBOOKS|選手ノート/ })).toHaveCount(0);
   await expect(page.locator('#admin-notebook-content')).toHaveCount(0);
 });
+
+test('Admin reads structured formatting safely alongside legacy strings and orphan notes', async ({ page, context }) => {
+  const { requests } = await mock(context);
+  await context.route(`${API}/api/reflections/admin/day**`, route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, player: players[0], date: '2026-10-11', document: { revision: 1, fields: {
+    'daily.en': { format: 'lk-rich-v1', ops: [{ insert: '<img src=x> Synthetic bold', attributes: { bold: true } }, { insert: '\n' }, { insert: 'Synthetic bullet' }, { insert: '\n', attributes: { list: 'bullet' } }] },
+    'daily.ja': '\n\n合成の従来メモ\n\n',
+    'match.training:REMOVED.en': { format: 'lk-rich-v1', ops: [{ insert: 'Synthetic orphan italic', attributes: { italic: true } }, { insert: '\n' }] }
+  } }, matches: [] }) }));
+  await login(page); await expect(page.locator('#admin-notebook-content strong')).toContainText('Synthetic bold');
+  await expect(page.locator('#admin-notebook-content ul li')).toHaveText('Synthetic bullet');
+  await expect(page.locator('#admin-notebook-content em')).toHaveText('Synthetic orphan italic');
+  await expect(page.locator('#admin-notebook-content img,[contenteditable]')).toHaveCount(0);
+  for (const width of [320, 390, 1440]) { await page.setViewportSize({ width, height: 900 }); expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0); }
+  expect(requests.filter(request => request.path.startsWith('/api/reflections/admin/')).every(request => request.method === 'GET')).toBe(true);
+  await page.getByRole('button', { name: /SIGN OUT/ }).click(); await expect(page.locator('#admin-notebook-content')).toHaveCount(0);
+});

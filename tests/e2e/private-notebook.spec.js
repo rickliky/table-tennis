@@ -1,4 +1,6 @@
 const { test, expect } = require('@playwright/test');
+const { expectWriting, paste } = require('./helpers/notebook');
+const Rich = require('../../notebook-rich-text');
 const API = 'https://little-kings-api.little-kings.workers.dev';
 const players = [
   { playerId: 'LK-0080', displayName: '選手A', englishName: 'Player A', bilingual: true },
@@ -98,7 +100,7 @@ test('match/daily layout, manual bilingual coach block and autosave retain parag
   await expect(page.locator('.notebook-rest')).toContainText('Friday');
   await expect(page.locator('[data-field]')).toHaveCount(0); // no Friday writing prompt
   await page.locator('#notebook-date').fill('2026-10-11'); await page.locator('#notebook-date').press('Tab');
-  await expect(page.locator('[data-field="match.training:M-001.en"]')).toHaveValue('First paragraph.\n\nNext focus.');
+  await expectWriting(page.locator('[data-field="match.training:M-001.en"]'), 'First paragraph.\n\nNext focus.');
 });
 
 test('Friday is skipped in both directions; explicit rest dates have no inputs and saved Friday notes stay accessible', async ({ page, context }) => {
@@ -121,7 +123,7 @@ test('Friday is skipped in both directions; explicit rest dates have no inputs a
   await expect(page.locator('#notebook-date')).toHaveValue('2026-10-10');
   await page.locator('[data-step="-1"]').click();
   await expect(page.locator('#notebook-date')).toHaveValue('2026-10-08');
-  await expect(page.locator('[data-field="daily.en"]')).toHaveValue('Synthetic Thursday note before the rest day.');
+  await expectWriting(page.locator('[data-field="daily.en"]'), 'Synthetic Thursday note before the rest day.');
   await page.locator('#notebook-date').fill('2026-10-09'); await page.locator('#notebook-date').press('Tab');
   await expect(page.locator('.notebook-rest')).toContainText('お休み');
   await expect(page.locator('[data-field]')).toHaveCount(0);
@@ -132,7 +134,7 @@ test('Friday is skipped in both directions; explicit rest dates have no inputs a
   expect(requests.filter(request => request.body?.patch).length).toBeGreaterThan(0);
   expect(documents.has('LK-0080|2026-10-09')).toBe(false);
   await page.locator('#notebook-history').selectOption('2026-10-02');
-  await expect(page.locator('[data-field="daily.en"]')).toHaveValue('Synthetic historical Friday note.');
+  await expectWriting(page.locator('[data-field="daily.en"]'), 'Synthetic historical Friday note.');
   await expect(page.locator('.notebook-schedule')).toContainText(['Date arrows skip Fridays.', 'previously saved note']);
   await expect(page.locator('#notebook-history option[value="2026-10-02"]')).toHaveText('2026-10-02 (Friday)');
   await page.locator('[data-step="1"]').click(); await expect(page.locator('#notebook-date')).toHaveValue('2026-10-03');
@@ -171,7 +173,7 @@ test('failed autosave blocks date changes, retries, and reauthentication keeps u
   state.failSave = false; state.expire = true;
   await page.locator('#notebook-retry').click();
   await expect(page.locator('#notebook-reauth input[type=password]')).toBeVisible();
-  await expect(page.locator('[data-field="coach.ja"]')).toHaveValue('Unsynced synthetic note');
+  await expectWriting(page.locator('[data-field="coach.ja"]'), 'Unsynced synthetic note');
   await page.locator('#notebook-reauth input[type=password]').fill('synthetic-only-password');
   await page.locator('#notebook-reauth button').click();
   await expect(page.locator('#notebook-status')).toContainText('保存済み');
@@ -189,7 +191,7 @@ test('stale tabs retain both versions and require an explicit conflict choice', 
   await expect(other.locator('#notebook-conflict')).toContainText('Unsaved in second tab');
   await other.locator('#notebook-use-mine').click();
   await expect(other.locator('#notebook-status')).toContainText('保存済み');
-  await page.reload(); await expect(page.locator('[data-field="coach.ja"]')).toHaveValue('Unsaved in second tab');
+  await page.reload(); await expectWriting(page.locator('[data-field="coach.ja"]'), 'Unsaved in second tab');
 });
 
 test('future accounts are Japanese-only and selecting another player requires their password', async ({ page, context }) => {
@@ -254,7 +256,7 @@ test('a frozen-page return revalidates access before revealing notebook text', a
   await expect(page.locator('.notebook-dates')).not.toBeVisible();
   await page.locator('#notebook-reauth input[type=password]').fill('synthetic-only-password');
   await page.locator('#notebook-reauth button').click();
-  await expect(page.locator('[data-field="coach.ja"]')).toHaveValue('Synthetic frozen-page note');
+  await expectWriting(page.locator('[data-field="coach.ja"]'), 'Synthetic frozen-page note');
 });
 
 test('all writing is expanded and text areas fit long content on load, typing, resizing and language changes', async ({ page, context }) => {
@@ -265,7 +267,7 @@ test('all writing is expanded and text areas fit long content on load, typing, r
   await expect(page.locator('.notebook-day details')).toHaveCount(0);
   await expect(page.locator('.notebook-directory details:not([open])')).toHaveCount(0);
   const field = page.locator('[data-field="match.training:M-001.en"]');
-  await expect(field).toHaveValue(longText);
+  await expectWriting(field, longText);
   const fits = () => field.evaluate(element => element.clientHeight >= element.scrollHeight - 1 && element.scrollTop === 0);
   await expect.poll(fits).toBe(true);
   await field.fill(longText + '\n\nMore synthetic writing.');
@@ -278,7 +280,7 @@ test('all writing is expanded and text areas fit long content on load, typing, r
   await page.locator('#language-toggle').click(); await expect.poll(fits).toBe(true);
   await expect(page.locator('.notebook-privacy')).toContainText('club administrators');
   await expect(page.locator('.notebook-privacy')).not.toContainText('Infrastructure operators');
-  await page.reload(); await expect(field).toHaveValue(longText + '\n\nMore synthetic writing.'); await expect.poll(fits).toBe(true);
+  await page.reload(); await expectWriting(field, longText + '\n\nMore synthetic writing.'); await expect.poll(fits).toBe(true);
   await field.fill('Short note'); await expect.poll(() => field.evaluate(element => element.clientHeight)).toBeLessThan(200);
   await expect(page.locator('#notebook-status')).toContainText('Saved');
   await page.locator('.notebook-jump a[href="#notebook-coach"]').click();
@@ -311,7 +313,7 @@ test('Read mode preserves complete paragraphs, languages and orphan notes withou
   await page.locator('#notebook-history').selectOption('2026-10-11');
   await expect(page.locator('[data-read-field="daily.en"]')).toContainText('Synthetic reading paragraph');
   await page.locator('[data-mode="write"]').click();
-  await expect(page.locator('[data-field="daily.en"]')).toHaveValue(text);
+  await expectWriting(page.locator('[data-field="daily.en"]'), text);
   expect(requests.filter(request => request.body?.patch)).toHaveLength(0);
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('Synthetic reading paragraph');
   expect(errors).toEqual([]);
@@ -333,21 +335,21 @@ test('switching to Read waits for in-flight edits and blocks failures, expiry an
   await page.locator('[data-field="coach.ja"]').fill('Synthetic unsynced text');
   await page.locator('[data-mode="read"]').click();
   await expect(page.locator('[data-mode="write"]')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('[data-field="coach.ja"]')).toHaveValue('Synthetic unsynced text');
+  await expectWriting(page.locator('[data-field="coach.ja"]'), 'Synthetic unsynced text');
   await context.setOffline(true); await page.locator('[data-mode="read"]').click();
   await expect(page.locator('#notebook-status')).toContainText('オフライン');
-  await expect(page.locator('[data-field="coach.ja"]')).toHaveValue('Synthetic unsynced text');
+  await expectWriting(page.locator('[data-field="coach.ja"]'), 'Synthetic unsynced text');
   state.failSave = false; state.expire = true;
   await context.setOffline(false);
   await expect(page.locator('#notebook-reauth input[type=password]')).toBeVisible();
   await expect(page.locator('.notebook-tools')).not.toBeVisible();
   await page.locator('#notebook-reauth input[type=password]').fill('synthetic-only-password'); await page.locator('#notebook-reauth button').click();
-  await expect(page.locator('[data-field="coach.ja"]')).toHaveValue('Synthetic unsynced text');
+  await expectWriting(page.locator('[data-field="coach.ja"]'), 'Synthetic unsynced text');
   documents.set('LK-0080|2026-10-11', { revision: documents.get('LK-0080|2026-10-11').revision + 1, fields: { 'coach.ja': 'Newer synthetic server text' } });
   await page.locator('[data-field="coach.ja"]').fill('Conflicting synthetic local text');
   await page.locator('[data-mode="read"]').click();
   await expect(page.locator('#notebook-conflict')).toContainText('Newer synthetic server text');
-  await expect(page.locator('[data-field="coach.ja"]')).toHaveValue('Conflicting synthetic local text');
+  await expectWriting(page.locator('[data-field="coach.ja"]'), 'Conflicting synthetic local text');
   await expect(page.locator('[data-mode="write"]')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#notebook-use-mine').click(); await expect(page.locator('#notebook-status')).toContainText('保存済み');
   await page.locator('[data-mode="read"]').click(); await expect(page.locator('[data-read-field="coach.ja"]')).toHaveText('Conflicting synthetic local text');
@@ -361,7 +363,7 @@ test('month filtering never changes the open day; latest navigation is save-safe
   await expect(page.locator('#notebook-history option')).toHaveCount(3);
   await expect(page.locator('#notebook-date')).toHaveValue('2026-10-11');
   await page.locator('#notebook-history').selectOption('2026-09-30');
-  await expect(page.locator('[data-field="daily.en"]')).toHaveValue('Synthetic history for 2026-09-30');
+  await expectWriting(page.locator('[data-field="daily.en"]'), 'Synthetic history for 2026-09-30');
   state.failSave = true; page.on('dialog', dialog => dialog.accept());
   await page.locator('[data-field="daily.en"]').fill('Unsynced synthetic history edit');
   await page.locator('#notebook-latest').click();
@@ -372,7 +374,7 @@ test('month filtering never changes the open day; latest navigation is save-safe
   await expect(page.locator('#notebook-date')).toHaveValue('2026-10-02');
   await expect(page.locator('#notebook-history-month')).toHaveValue('');
   await page.locator('#notebook-date').fill('2027-01-02'); await page.locator('#notebook-date').press('Tab');
-  await expect(page.locator('[data-field="daily.en"]')).toHaveValue('');
+  await expectWriting(page.locator('[data-field="daily.en"]'), '');
   await page.locator('[data-field="daily.en"]').fill('Synthetic new-month note'); await expect(page.locator('#notebook-status')).toContainText('保存済み');
   await expect(page.locator('#notebook-history-month option[value="2027-01"]')).toBeAttached();
   await expect(page.locator('#notebook-history')).toHaveValue('2027-01-02');
@@ -396,4 +398,115 @@ test('Read mode is cleared or hidden on cross-tab sign-out and frozen-page expir
   await expect(page.locator('[data-read-field="daily.en"]')).toBeVisible();
   await page.evaluate(() => { const key = 'lk-private-reflection-session-uat', oldValue = localStorage.getItem(key); localStorage.removeItem(key); window.dispatchEvent(new StorageEvent('storage', { key, oldValue, newValue: null })); });
   await expect(page.locator('.notebook-directory')).toBeVisible(); await expect(page.locator('[data-read-field]')).toHaveCount(0);
+});
+
+test('restricted formatted paste round-trips safely through autosave, reload and Read without external resources', async ({ page, context }) => {
+  const { documents, requests } = await mock(context), resources = [], errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await context.route('https://clipboard-unsafe.test/**', route => { resources.push(route.request().url()); return route.abort(); });
+  await login(page);
+  const field = page.locator('[data-field="daily.en"]');
+  const html = '<h2>Practice</h2><p><strong>Learned</strong> <em>today</em>.</p><p><br></p><ul>\n<li>First item</li>\n<li>Second item</li>\n</ul><ol><li>Next focus</li></ol><p><a href="https://clipboard-unsafe.test/link">Link text</a></p><img src="https://clipboard-unsafe.test/image" onerror="window.clipboardExecuted=true"><iframe src="https://clipboard-unsafe.test/frame"></iframe><script>window.clipboardExecuted=true</script>';
+  await paste(field, html);
+  await expect(page.locator('#notebook-status')).toContainText('保存済み');
+  const saved = documents.get('LK-0080|2026-10-11').fields['daily.en'];
+  expect(Rich.valid(saved)).toBe(true); expect(saved.format).toBe('lk-rich-v1');
+  expect(JSON.stringify(saved)).not.toMatch(/https:|script|iframe|onerror|<h2>/);
+  expect(Rich.text(saved)).toContain('First item\nSecond item');
+  await page.reload(); await expect(field.locator('strong')).toHaveText('Learned'); await expect(field.locator('em')).toHaveText('today');
+  await page.locator('[data-mode="read"]').click();
+  const reading = page.locator('[data-read-field="daily.en"]');
+  await expect(reading.locator('strong')).toHaveText('Learned'); await expect(reading.locator('em')).toHaveText('today');
+  await expect(reading.locator('ul li')).toHaveCount(2); await expect(reading.locator('ol li')).toHaveText('Next focus');
+  await expect(reading.locator('img,iframe,script,a,table,h2')).toHaveCount(0);
+  for (const width of [320, 390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+  }
+  expect(resources).toEqual([]); expect(errors).toEqual([]);
+  expect(await page.evaluate(() => window.clipboardExecuted)).toBeUndefined();
+  expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('Next focus');
+  expect(requests.filter(request => request.body?.patch).every(request => Object.keys(request.body.patch).length === 1)).toBe(true);
+});
+
+test('toolbar bold/italic/lists and undo/redo preserve legacy text; unchanged mode/language switches do not rewrite it', async ({ page, context }) => {
+  const { documents, requests } = await mock(context), original = 'Synthetic practice\nNext focus';
+  documents.set('LK-0080|2026-10-11', { revision: 4, fields: { 'daily.en': original, 'coach.ja': '\n\n合成のアドバイス\n\n' } });
+  await login(page);
+  await page.locator('#language-toggle').click(); await page.locator('[data-mode="read"]').click(); await page.locator('[data-mode="write"]').click();
+  expect(requests.filter(request => request.body?.patch)).toHaveLength(0);
+  expect(documents.get('LK-0080|2026-10-11').fields['coach.ja']).toBe('\n\n合成のアドバイス\n\n');
+  const field = page.locator('[data-field="daily.en"]'), host = page.locator('[data-rich-field="daily.en"]');
+  await field.evaluate(element => window.Quill.find(element.parentElement).setSelection(0, 9));
+  await host.getByRole('button', { name: 'Bold', exact: true }).click(); await expect(field.locator('strong')).toHaveText('Synthetic');
+  await host.getByRole('button', { name: 'Italic', exact: true }).click(); await expect(field.locator('em')).toHaveText('Synthetic');
+  await host.getByRole('button', { name: 'Bullet list', exact: true }).click(); await expect(field.locator('li[data-list="bullet"]')).toHaveCount(1);
+  await host.getByRole('button', { name: 'Numbered list', exact: true }).click(); await expect(field.locator('li[data-list="ordered"]')).toHaveCount(1);
+  await host.getByRole('button', { name: 'Undo', exact: true }).click(); await expect(field.locator('li[data-list="bullet"]')).toHaveCount(1);
+  await host.getByRole('button', { name: 'Redo', exact: true }).click(); await expect(field.locator('li[data-list="ordered"]')).toHaveCount(1);
+  await expect(page.locator('#notebook-status')).toContainText('Saved');
+  expect(Rich.text(documents.get('LK-0080|2026-10-11').fields['daily.en'])).toBe(original);
+  await expectWriting(field, original);
+  for (const button of await host.locator('button').all()) expect(await button.evaluate(element => element.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
+});
+
+test('formatted in-flight/offline/conflicting edits remain intact, and conflict choices display formatting', async ({ page, context }) => {
+  const { documents, state } = await mock(context); await login(page);
+  const field = page.locator('[data-field="coach.ja"]'); state.delay = 800;
+  await paste(field, '<p><strong>合成の未同期文章</strong></p><ul><li>合成項目</li></ul>');
+  await expect(page.locator('#notebook-status')).toContainText('保存中');
+  await field.press('End'); await field.press('ArrowRight'); await field.press('A');
+  await page.locator('[data-mode="read"]').click(); await expect(page.locator('[data-read-field="coach.ja"] strong')).toHaveText('合成の未同期文章');
+  state.delay = 0; await page.locator('[data-mode="write"]').click();
+  await context.setOffline(true); await paste(field, '<p><em>Offline synthetic formatting</em></p>');
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('[data-mode="read"]').click(); await expect(page.locator('[data-mode="write"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(field.locator('em')).toContainText('Offline synthetic formatting');
+  await context.setOffline(false); await expect(page.locator('#notebook-status')).toContainText('保存済み');
+  const current = documents.get('LK-0080|2026-10-11');
+  documents.set('LK-0080|2026-10-11', { revision: current.revision + 1, fields: { ...current.fields, 'coach.ja': { format: 'lk-rich-v1', ops: [{ insert: 'Synthetic server version', attributes: { bold: true } }, { insert: '\n' }] } } });
+  await paste(field, '<p><em>Synthetic local version</em></p>');
+  await page.locator('[data-mode="read"]').click(); await expect(page.locator('#notebook-conflict strong')).toContainText(['coach.ja', 'Synthetic server version']);
+  await expect(page.locator('#notebook-conflict em').filter({ hasText: 'Synthetic local version' })).toHaveCount(1);
+  await page.locator('#notebook-use-mine').click(); await expect(page.locator('#notebook-status')).toContainText('保存済み');
+  await page.locator('[data-mode="read"]').click(); await expect(page.locator('[data-read-field="coach.ja"] em').filter({ hasText: 'Synthetic local version' })).toHaveCount(1);
+});
+
+test('plain/Markdown paste stays literal; excessive input preserves prior text and composition blocks navigation', async ({ page, context }) => {
+  const { documents, requests } = await mock(context); await login(page);
+  const field = page.locator('[data-field="daily.en"]');
+  await paste(field, '', '\n\n**Literal Markdown**\n- literal list\n\n');
+  await expect(page.locator('#notebook-status')).toContainText('保存済み');
+  await expectWriting(field, '\n\n**Literal Markdown**\n- literal list\n\n');
+  expect(typeof documents.get('LK-0080|2026-10-11').fields['daily.en']).toBe('string');
+  await paste(field, '', 'x'.repeat(8001));
+  await expect(page.locator('[data-rich-field="daily.en"] .notebook-editor-message')).toContainText('8,000');
+  await expectWriting(field, '\n\n**Literal Markdown**\n- literal list\n\n');
+  await paste(field, '<div>'.repeat(100) + 'Deep synthetic paste' + '</div>'.repeat(100));
+  await expectWriting(field, '\n\n**Literal Markdown**\n- literal list\n\n');
+  requests.length = 0; page.on('dialog', dialog => dialog.accept());
+  await field.evaluate(element => element.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
+  await field.fill('日本語の合成入力');
+  await page.locator('[data-mode="read"]').click(); await expect(page.locator('[data-mode="write"]')).toHaveAttribute('aria-pressed', 'true');
+  expect(requests.filter(request => request.body?.patch)).toHaveLength(0);
+  await field.evaluate(element => element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true })));
+  await expect(page.locator('#notebook-status')).toContainText('保存済み');
+  expect(documents.get('LK-0080|2026-10-11').fields['daily.en']).toBe('日本語の合成入力');
+});
+
+test('cross-tab invalidation retains partially composed synthetic writing for same-player reauthentication', async ({ page, context }) => {
+  const { documents } = await mock(context); await login(page);
+  const field = page.locator('[data-field="coach.ja"]');
+  await field.evaluate(element => element.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
+  await field.fill('合成の入力途中');
+  await page.evaluate(() => {
+    const key = 'lk-private-reflection-session-uat', token = localStorage.getItem(key);
+    localStorage.removeItem(key); window.dispatchEvent(new StorageEvent('storage', { key, oldValue: token, newValue: null }));
+  });
+  await expect(page.locator('.notebook-day')).toBeHidden();
+  await expect(page.locator('#notebook-reauth input[type=password]')).toBeVisible();
+  await page.locator('#notebook-reauth input[type=password]').fill('synthetic-only-password'); await page.locator('#notebook-reauth button[type=submit]').click();
+  await expectWriting(field, '合成の入力途中');
+  await expect(page.locator('#notebook-status')).toContainText('保存済み');
+  expect(documents.get('LK-0080|2026-10-11').fields['coach.ja']).toBe('合成の入力途中');
 });

@@ -1,4 +1,5 @@
 import { requireRole } from './auth.js';
+import RichText from '../../notebook-rich-text.js';
 
 // A separate namespace: never part of collection exports or UAT-to-PROD overlays.
 export const privateReflectionsEnabled = (environment, env) => environment === 'uat' || env.PRIVATE_REFLECTION_PROD === 'true';
@@ -217,7 +218,11 @@ export async function handlePrivateReflections(request, env, environment) {
       for (const field of Object.keys(current?.fields || {})) if (/^match\.(training|tournament):[A-Za-z0-9_-]+\.(ja|en)$/.test(field) && (!field.endsWith('.en') || bilingualIds.has(actor.playerId))) allowedFields.add(field);
       const entries = Object.entries(body.patch);
       if (!entries.length || entries.length > 100) fail('Invalid number of fields');
-      for (const [field, value] of entries) if (!allowedFields.has(field) || typeof value !== 'string' || value.length > (field === 'activity' ? 160 : 8000)) fail('Invalid journal field or text length');
+      for (const [field, value] of entries) {
+        // Shared Worker: rich values are a UAT-only rollout. PROD remains plain
+        // text until a separately approved rich-text production release.
+        if (!allowedFields.has(field) || !RichText.valid(value, field === 'activity' ? 160 : 8000) || (typeof value !== 'string' && (field === 'activity' || environment !== 'uat'))) fail('Invalid journal field or text length');
+      }
       if (JSON.stringify({ ...current?.fields, ...body.patch }).length > 250000) fail('Notebook day is too large', 413);
       const updatedAt = new Date().toISOString();
       const result = await redis('EVAL', SAVE_SCRIPT, 4, accountsKey, dayKey, datesKey, sessionKey, actor.playerId, actor.version, body.revision, JSON.stringify(body.patch), updatedAt, date.replace(/-/g, ''), date);

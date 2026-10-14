@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { expectWriting, paste } = require('./helpers/notebook');
 const API = 'https://little-kings-api.little-kings.workers.dev';
 
 test('directory scales with cards, search and pagination; only a selected account has a login form', async ({ page, context }) => {
@@ -42,6 +43,23 @@ test('directory scales with cards, search and pagination; only a selected accoun
   expect(errors).toEqual([]);
 });
 
+test('fictional preview demonstrates formatting; supported pasted lists survive mode/language changes without persistence', async ({ page, context }) => {
+  const requests = [];
+  await context.route(`${API}/api/**`, route => { requests.push(route.request().url()); return route.abort(); });
+  await page.goto('/notebook-sample.html');
+  await expect(page.locator('[data-sample-read="coach.en"] strong')).toHaveText('Ready position');
+  await expect(page.locator('[data-sample-read="coach.en"] ol li')).toHaveCount(2);
+  await page.locator('[data-sample-mode="write"]').click();
+  const field = page.locator('[data-sample-field="daily.en"]');
+  await field.fill(''); await paste(field, '<p><strong>Synthetic formatted preview</strong></p><ul><li>Preview bullet</li></ul>');
+  await page.locator('#language-toggle').click(); await expect(field.locator('strong')).toHaveText('Synthetic formatted preview');
+  await page.locator('[data-sample-mode="read"]').click();
+  await expect(page.locator('[data-sample-read="daily.en"] ul li')).toHaveText('Preview bullet');
+  expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('Preview bullet');
+  await page.reload(); await expect(page.locator('.notebook-day')).not.toContainText('Preview bullet');
+  expect(requests).toEqual([]);
+});
+
 test('direct player links keep the password visible on phones and failed portraits use the standard fallback', async ({ page, context }) => {
   const players = [{ playerId: 'LK-0080', displayName: '合成選手', englishName: 'Synthetic Player', bilingual: true }];
   await context.route(`${API}/api/**`, route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, players }) }));
@@ -78,7 +96,7 @@ test('mock preview makes no API requests or private-session reads and never save
     await expect.poll(() => field.evaluate(element => element.clientHeight >= element.scrollHeight - 1)).toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
   }
-  await page.locator('#language-toggle').click(); await expect(field).toHaveValue(text);
+  await page.locator('#language-toggle').click(); await expectWriting(field, text);
   await page.locator('[data-sample-mode="read"]').click(); expect(await page.locator('[data-sample-read="match.a.en"]').textContent()).toBe(text);
   await expect(page.locator('.notebook-demo-warning')).toContainText('changes are not saved');
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('Synthetic preview typing');
