@@ -1561,6 +1561,7 @@ body.data-load-failed { overflow:hidden; }
 .notebook-match-evidence { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 12px; margin: 12px 0; }
 .notebook-match-side { display: grid; gap: 8px; text-align: center; min-width: 0; overflow-wrap: anywhere; }
 .notebook-match-side strong { font-size: 18px; line-height: 1.6; }
+.notebook-match-heading .notebook-romanized-name, .notebook-romanized-name { font-size: 13px; line-height: 1.6; color: #d0d3d8; overflow-wrap: anywhere; }
 .notebook-match-heading .notebook-match-score, .notebook-match-score { font-size: 24px; line-height: 1.6; white-space: nowrap; color: var(--cream); }
 .notebook-match-side.is-winner strong, .notebook-match-side.is-winner .notebook-result-label { color: var(--gold); }
 .notebook-match-side.is-loser strong, .notebook-match-side.is-loser .notebook-result-label { color: #e09288; }

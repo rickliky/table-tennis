@@ -60,6 +60,21 @@ test('fictional preview demonstrates formatting; supported pasted lists survive 
   expect(requests).toEqual([]);
 });
 
+test('preview match names and win/loss labels stay bilingual in either interface language', async ({ page }) => {
+  await page.goto('/notebook-sample.html'); await page.locator('#sample-day').selectOption('matches');
+  for (const language of ['ja', 'en']) {
+    await expect(page.locator('html')).toHaveAttribute('lang', language);
+    await expect(page.locator('.notebook-match-side strong')).toHaveText(['サンプル選手', 'サンプル対戦相手A', 'サンプル選手', 'サンプル対戦相手B']);
+    await expect(page.locator('.notebook-romanized-name')).toHaveText(['Sample Player', 'Sample Opponent A', 'Sample Player', 'Sample Opponent B']);
+    await expect(page.locator('.notebook-result-label')).toHaveText(['勝ち / Win', '負け / Loss', '負け / Loss', '勝ち / Win']);
+    for (const width of [320, 390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+    }
+    if (language === 'ja') await page.locator('#language-toggle').click();
+  }
+});
+
 test('direct player links keep the password visible on phones and failed portraits use the standard fallback', async ({ page, context }) => {
   const players = [{ playerId: 'LK-0080', displayName: '合成選手', englishName: 'Synthetic Player', bilingual: true }];
   await context.route(`${API}/api/**`, route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, players }) }));

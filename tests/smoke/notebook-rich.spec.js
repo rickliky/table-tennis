@@ -74,9 +74,10 @@ for (const language of ['ja', 'en']) for (const width of [320, 390, 1440]) {
     await page.locator('[data-mode="read"]').click(); await expect(page.locator('[data-read-field="daily.en"]')).toHaveText(language === 'en' ? 'Not written' : '未記入');
     expect(writes.length).toBe(beforeTemplate);
     await page.locator('#notebook-date').fill('2026-10-11'); await page.locator('#notebook-date').press('Tab');
-    await expect(page.locator('.notebook-result-label')).toHaveText(language === 'en' ? ['Winner', 'Loser', 'Loser', 'Winner'] : ['勝者', '敗者', '敗者', '勝者']);
-    await expect(page.locator('.notebook-match').first().locator('.is-loser')).toContainText(language === 'en' ? 'Current Synthetic Opponent' : '現在の合成選手名');
-    await expect(page.locator('.notebook-match-incomplete')).toContainText(language === 'en' ? 'no winner recorded' : '勝敗は未確定');
+    await expect(page.locator('.notebook-result-label')).toHaveText(['勝ち / Win', '負け / Loss', '負け / Loss', '勝ち / Win']);
+    await expect(page.locator('.notebook-match').first().locator('.notebook-match-side strong')).toHaveText(['合成テスト選手', '現在の合成選手名']);
+    await expect(page.locator('.notebook-match').first().locator('.notebook-romanized-name')).toHaveText(['Synthetic Test Player', 'Current Synthetic Opponent']);
+    await expect(page.locator('.notebook-match-incomplete')).toHaveText('未完了 / Incomplete — 勝敗は未確定 / no winner recorded');
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
     await page.goto('admin.html?tab=notebooks');
     await page.locator('select[name=role]').selectOption('admin'); await page.locator('input[type=password]').fill('synthetic-password'); await page.locator('button[type=submit]').click();

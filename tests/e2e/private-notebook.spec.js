@@ -562,7 +562,7 @@ test('practice templates never replace existing plain/rich notes, Friday notes o
   await expectWriting(page.locator('[data-field="daily.ja"]'), ''); await expect(page.locator('.notebook-template-hint')).toHaveCount(0);
 });
 
-test('match evidence uses localized system names and explicit winners/losers, never incomplete winners', async ({ page, context }) => {
+test('match evidence always shows both system names and bilingual results, never incomplete winners', async ({ page, context }) => {
   await mock(context);
   const matches = [
     { key: 'training:M-001', source: 'training', opponentId: 'LK-0003', opponentName: '現在の合成選手名', opponentEnglishName: 'Current Synthetic Opponent', score: '3-1', result: 'win' },
@@ -573,15 +573,21 @@ test('match evidence uses localized system names and explicit winners/losers, ne
   await login(page);
   const cards = page.locator('.notebook-match');
   await expect(cards.nth(0).locator('.is-winner')).toContainText('選手A'); await expect(cards.nth(0).locator('.is-loser')).toContainText('現在の合成選手名');
-  await expect(cards.nth(0).locator('.notebook-result-label')).toHaveText(['勝者', '敗者']);
-  await expect(cards.nth(1).locator('.notebook-result-label')).toHaveText(['敗者', '勝者']);
+  await expect(cards.nth(0).locator('.notebook-romanized-name')).toHaveText(['Player A', 'Current Synthetic Opponent']);
+  await expect(cards.nth(0).locator('.notebook-result-label')).toHaveText(['勝ち / Win', '負け / Loss']);
+  await expect(cards.nth(1).locator('.notebook-result-label')).toHaveText(['負け / Loss', '勝ち / Win']);
   await expect(cards.nth(1).locator('img')).toHaveCount(0);
   await expect(cards.nth(2).locator('.notebook-result-label')).toHaveCount(0); await expect(cards.nth(2)).toContainText('勝敗は未確定');
+  await expect(cards.nth(2)).toContainText('no winner recorded');
+  await expect(cards.nth(2).locator('.notebook-romanized-name').last()).toHaveText('ローマ字名未登録 / Romanized name not recorded');
   await page.locator('#language-toggle').click();
   await expect(cards.nth(0).locator('.is-winner')).toContainText('Player A'); await expect(cards.nth(0).locator('.is-loser')).toContainText('Current Synthetic Opponent');
-  await expect(cards.nth(0).locator('.notebook-result-label')).toHaveText(['Winner', 'Loser']);
+  await expect(cards.nth(0).locator('.notebook-match-side strong')).toHaveText(['選手A', '現在の合成選手名']);
+  await expect(cards.nth(0).locator('.notebook-result-label')).toHaveText(['勝ち / Win', '負け / Loss']);
   await expect(cards.nth(1).locator('.is-winner')).toContainText('Current Synthetic External');
-  await expect(cards.nth(2)).toContainText('Incomplete — no winner recorded');
+  await expect(cards.nth(2)).toContainText('未完了 / Incomplete — 勝敗は未確定 / no winner recorded');
   for (const width of [320, 390, 1440]) { await page.setViewportSize({ width, height: 900 }); expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0); }
-  await page.locator('[data-mode="read"]').click(); await expect(cards.nth(0).locator('.notebook-result-label')).toHaveText(['Winner', 'Loser']);
+  await page.locator('[data-mode="read"]').click(); await expect(cards.nth(0).locator('.notebook-result-label')).toHaveText(['勝ち / Win', '負け / Loss']);
+  await expect(cards.nth(0).locator('.notebook-match-side strong')).toHaveText(['選手A', '現在の合成選手名']);
+  await expect(cards.nth(0).locator('.notebook-romanized-name')).toHaveText(['Player A', 'Current Synthetic Opponent']);
 });

@@ -169,9 +169,11 @@ test('Admin match evidence uses current bilingual names and explicit result labe
     { key: 'training:M-2', source: 'training', opponentName: '合成の未完了相手', score: '2-1', result: 'incomplete' }
   ] }) }));
   await page.goto('/uat/admin.html'); await page.evaluate(() => localStorage.setItem('lk-language', 'en')); await login(page);
-  await expect(page.locator('#admin-notebook-content .notebook-result-label')).toHaveText(['Loser', 'Winner']);
+  await expect(page.locator('#admin-notebook-content .notebook-result-label')).toHaveText(['負け / Loss', '勝ち / Win']);
   await expect(page.locator('#admin-notebook-content .is-winner')).toContainText('Current Synthetic Opponent');
-  await expect(page.locator('#admin-notebook-content .notebook-match-incomplete')).toHaveText('Incomplete — no winner recorded');
+  await expect(page.locator('#admin-notebook-content .notebook-match-evidence').first().locator('.notebook-match-side strong')).toHaveText(['選手A', '現在の合成対戦相手']);
+  await expect(page.locator('#admin-notebook-content .notebook-match-evidence').first().locator('.notebook-romanized-name')).toHaveText(['Player A', 'Current Synthetic Opponent']);
+  await expect(page.locator('#admin-notebook-content .notebook-match-incomplete')).toHaveText('未完了 / Incomplete — 勝敗は未確定 / no winner recorded');
   await expect(page.locator('#admin-notebook-content h3')).toContainText(['Coach feedback']);
   await expect(page.locator('#admin-notebook-content h4')).not.toContainText(['(manual)']);
   await expect(page.locator('#admin-notebook-content [contenteditable],#admin-notebook-content textarea')).toHaveCount(0);
