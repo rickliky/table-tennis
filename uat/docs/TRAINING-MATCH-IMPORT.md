@@ -80,6 +80,24 @@ IDs and preserved session metadata. All changes were synthetic/intercepted;
 zero real API writes, overflow or page errors. A live mobile screenshot was
 visually reviewed. Production remains `baacdb0`; no real data was changed.
 
+## Reviewing changes on a phone
+
+The UAT review layout keeps grouped-batch and individual actions inside the
+screen. On phones, each field has a full-width field name and explicitly labelled
+Before/After values (or one Value for new/deleted-record details). IDs, source
+names, timestamps and long lists wrap instead of expanding or clipping the page.
+Desktop retains the table layout. The same evidence rendering is used in history
+and the pending-change panels within record editors; no approval rules change.
+
+Regression coverage uses synthetic records only, for Admin and Approver in JA/EN
+at 320/375/390/430/768/1440 px, including long values and action-error messages.
+Optional local WebKit check (Safari engine, not a physical iPhone test):
+
+```powershell
+npx playwright install webkit
+npx playwright test --config=playwright.config.js --browser=webkit tests/e2e/admin-review.spec.js
+```
+
 The downloadable template uses the example above. Tests use synthetic approved
 records and intercepted submissions only; this example is not an authorized
 request to import an actual match. Release results are recorded in `AGENTS.md`.
