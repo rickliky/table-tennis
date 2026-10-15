@@ -28,9 +28,9 @@ async function mockImport(context, language = 'en') {
   return { writes, requests, data, pending };
 }
 
-async function openImport(page, url = '/uat/admin.html?tab=import') {
+async function openImport(page, url = '/uat/admin.html?tab=import', { sourceName = 'Synthetic input only' } = {}) {
   await page.goto(url); await expect(page.locator('.admin-import-center')).toBeVisible();
-  await page.locator('[name="importSource"]').fill('Synthetic input only');
+  if (sourceName !== null) await page.locator('[name="importSource"]').fill(sourceName);
   await page.locator('[name="importDate"]').fill('2026-10-03'); await page.locator('[name="importDate"]').press('Tab');
   await expect(page.locator('[name="importSessionId"]')).toHaveValue('LKS-20261003');
 }

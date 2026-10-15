@@ -1,6 +1,56 @@
 const { test, expect } = require('@playwright/test');
 const { header, sample, mockImport, openImport, preview } = require('./helpers/training-import');
 
+for (const language of ['en', 'ja']) test(`automatic source follows the selected date without overwriting custom names (${language})`, async ({ page, context }) => {
+  const { writes } = await mockImport(context, language);
+  await openImport(page, '/uat/admin.html?tab=import', { sourceName: null });
+  const source = page.locator('[name="importSource"]'), date = page.locator('[name="importDate"]');
+  await expect(source).toHaveValue('Training matches 2026-10-03');
+  await preview(page, sample); await expect(page.locator('.admin-import-form > button')).toBeEnabled();
+  await date.fill('2026-10-04'); await date.press('Tab'); await expect(source).toHaveValue('Training matches 2026-10-04');
+  await expect(page.locator('[name="importSessionId"]')).toHaveValue('LKS-20261004');
+  await source.fill('My notebook page 2');
+  await date.fill('2026-10-03'); await date.press('Tab'); await expect(source).toHaveValue('My notebook page 2');
+  await source.fill(''); await date.fill('2026-10-04'); await date.press('Tab'); await expect(source).toHaveValue('Training matches 2026-10-04');
+  await date.fill('2026-10-03'); await date.press('Tab'); await preview(page, sample);
+  page.on('dialog', dialog => dialog.accept()); await page.locator('.admin-import-form > button').click();
+  await expect.poll(() => writes.length).toBe(3);
+  expect(writes[0].after.sourceName).toBe('Training matches 2026-10-03');
+  expect(writes[1].after.source).toBe('Training matches 2026-10-03');
+});
+
+test('file upload replaces only an automatic/empty source with the filename and preserves a custom source', async ({ page, context }) => {
+  await mockImport(context); await openImport(page, '/uat/admin.html?tab=import', { sourceName: null });
+  const source = page.locator('[name="importSource"]'), file = page.locator('input[type="file"]');
+  await file.setInputFiles({ name: 'notebook-page-1.csv', mimeType: 'text/csv', buffer: Buffer.from(sample) });
+  await expect(source).toHaveValue('notebook-page-1.csv');
+  await expect(page.locator('.admin-import-form > button')).toBeEnabled();
+  await source.fill('My custom source');
+  await file.setInputFiles({ name: 'notebook-page-2.csv', mimeType: 'text/csv', buffer: Buffer.from(sample) });
+  await expect(source).toHaveValue('My custom source');
+});
+
+test('additional approved-session batch keeps the same session ID and metadata, creates distinct matches and blocks old rows', async ({ page, context }) => {
+  const { data, writes } = await mockImport(context); await openImport(page, '/uat/admin.html?tab=import', { sourceName: null });
+  await preview(page, sample); page.on('dialog', dialog => dialog.accept()); await page.locator('.admin-import-form > button').click();
+  await expect.poll(() => writes.length).toBe(3);
+  // Model approval of the first batch using only intercepted synthetic records.
+  data.importBatches.push(writes[0].after); data.matches.push(writes[2].after);
+  const savedSession = { ...writes[1].after, source: 'Original notebook', venue: 'Original venue', coachGoal: 'Original goal', coachNote: 'Original note' };
+  data.sessions.push(savedSession);
+  await openImport(page, '/uat/admin.html?tab=import', { sourceName: null });
+  await preview(page, `${header}\n10/3/2026,LK-0093,3,LK-0002,0,Open,Best of 5`);
+  await expect(page.locator('.admin-import-form > button')).toBeEnabled();
+  await page.locator('.admin-import-form > button').click(); await expect.poll(() => writes.length).toBe(6);
+  expect(writes[3].after.sessionId).toBe('LKS-20261003'); expect(writes[4].action).toBe('update');
+  expect(writes[4].after).toEqual(savedSession); expect(writes[5].after.sessionId).toBe('LKS-20261003');
+  expect(writes[3].after.importBatchId).not.toBe(writes[0].after.importBatchId);
+  expect(writes[5].after.matchId).not.toBe(writes[2].after.matchId);
+  await openImport(page); await preview(page, sample);
+  await expect(page.locator('.admin-import-form > button')).toBeDisabled();
+  expect(data.matches).toEqual([writes[2].after]); // No approved record was mutated by preview or submission.
+});
+
 for (const language of ['en', 'ja']) test(`missing source explains disabled submit and filling it enables the reviewed batch (${language})`, async ({ page, context }) => {
   const { writes } = await mockImport(context, language); await openImport(page);
   const source = page.locator('[name="importSource"]'), submit = page.locator('.admin-import-form > button'), status = page.locator('.admin-import-submit-status');

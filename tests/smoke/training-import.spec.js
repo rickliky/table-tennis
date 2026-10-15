@@ -12,9 +12,11 @@ test.beforeAll(async ({ request, baseURL }) => {
 for (const language of ['ja', 'en']) for (const width of [320, 1440]) test(`live training import ignores reference columns (${language}, ${width}px)`, async ({ page, context }) => {
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.setViewportSize({ width, height: 900 });
-  const { writes } = await mockImport(context, language); await openImport(page, 'admin.html?tab=import');
+  const { writes } = await mockImport(context, language); await openImport(page, 'admin.html?tab=import', { sourceName: null });
+  await expect(page.locator('[name="importSource"]')).toHaveValue('Training matches 2026-10-03');
   const canonicalHash = await preview(page, `${header}\n2026-10-03,LK-0093,3,LK-0001,1,Open,Best of 5`);
   expect(await preview(page, sample)).toBe(canonicalHash);
+  await expect(page.locator('.admin-import-form > button')).toBeEnabled();
   await expect(page.locator('.admin-import-preview tbody tr')).toHaveClass('valid');
   await expect(page.locator('.admin-import-preview tbody')).toContainText('登録選手A');
   await expect(page.locator('.admin-import-mapping select')).toHaveCount(0);
