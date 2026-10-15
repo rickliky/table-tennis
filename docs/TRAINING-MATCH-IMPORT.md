@@ -72,7 +72,13 @@ visually reviewed. Production remains `baacdb0`; no actual records changed.
   session source/venue/coach metadata are retained. The source label itself does not
   determine session identity or duplicate detection.
 
-Automatic-source and same-session regression results are recorded in `AGENTS.md`.
+Automatic-source release **`f28abcf`**, Actions **`38669681829`**, passed all
+verification suites, **56 browser tests** and **17 live checks without retry**.
+Six separate deployed-source JA/EN cases at 320/390/1440 px verified automatic
+source submission and a second batch using the same approved session, distinct
+IDs and preserved session metadata. All changes were synthetic/intercepted;
+zero real API writes, overflow or page errors. A live mobile screenshot was
+visually reviewed. Production remains `baacdb0`; no real data was changed.
 
 The downloadable template uses the example above. Tests use synthetic approved
 records and intercepted submissions only; this example is not an authorized
