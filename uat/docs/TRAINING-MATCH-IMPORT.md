@@ -98,6 +98,13 @@ npx playwright install webkit
 npx playwright test --config=playwright.config.js --browser=webkit tests/e2e/admin-review.spec.js
 ```
 
+Review-layout release **`0a64a37`**, Actions **`38675395074`**, passed all
+verification suites, **61 browser tests** and **19 live checks without retry**.
+Five targeted WebKit tests, two live WebKit review checks and four live iPhone 13
+emulations (Admin/Approver × JA/EN) also passed. Synthetic-only mobile screenshots
+were visually reviewed; zero actual approvals/rejections, overflow or page errors.
+Physical-iPhone acceptance remains with the user. Production remains `baacdb0`.
+
 The downloadable template uses the example above. Tests use synthetic approved
 records and intercepted submissions only; this example is not an authorized
 request to import an actual match. Release results are recorded in `AGENTS.md`.
