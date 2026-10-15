@@ -2,7 +2,14 @@
 
 In Data Maintenance → Import, paste CSV/TSV or upload a UTF-8 file. Preview and
 resolve all blocked rows before submitting the normal grouped approval request.
-This format update is UAT-only until a separately approved production promotion.
+These improvements are live in **production and UAT**. The user's 15 October
+approval promoted code only; no matches, sessions, pending changes, import history
+or private notebooks were copied or modified.
+
+Production release **`41d1524`**, Actions **`38695768350`**, passed all verification
+suites, **61 browser tests**, deployment and **19 separate live production checks
+without retry**. Both JA/EN live review checks also passed in WebKit. Browser data
+and writes were synthetic/intercepted; no real import or approval/rejection ran.
 
 ```csv
 matchDate,player1,player1Sets,player2,player2Sets,division,matchFormat,player1Name,player2Name
@@ -55,7 +62,8 @@ source and the silent disabled state after edits. Release **`8bfbf14`**, Actions
 **17 live checks without retry**. Separate live JA/EN checks at 320/390/1440 px
 verified the actual Submit click with all three synthetic changes intercepted per
 case, zero real writes and zero overflow/page errors. The mobile screenshot was
-visually reviewed. Production remains `baacdb0`; no actual records changed.
+visually reviewed. At that UAT-only checkpoint production remained `baacdb0`;
+the code-only production release above now supersedes it. No actual records changed.
 
 ## Additional matches for an existing session
 
@@ -78,11 +86,12 @@ Six separate deployed-source JA/EN cases at 320/390/1440 px verified automatic
 source submission and a second batch using the same approved session, distinct
 IDs and preserved session metadata. All changes were synthetic/intercepted;
 zero real API writes, overflow or page errors. A live mobile screenshot was
-visually reviewed. Production remains `baacdb0`; no real data was changed.
+visually reviewed. At that UAT-only checkpoint production remained `baacdb0`;
+the code-only production release above now supersedes it. No real data was changed.
 
 ## Reviewing changes on a phone
 
-The UAT review layout keeps grouped-batch and individual actions inside the
+The review layout keeps grouped-batch and individual actions inside the
 screen. On phones, each field has a full-width field name and explicitly labelled
 Before/After values (or one Value for new/deleted-record details). IDs, source
 names, timestamps and long lists wrap instead of expanding or clipping the page.
@@ -103,7 +112,8 @@ verification suites, **61 browser tests** and **19 live checks without retry**.
 Five targeted WebKit tests, two live WebKit review checks and four live iPhone 13
 emulations (Admin/Approver × JA/EN) also passed. Synthetic-only mobile screenshots
 were visually reviewed; zero actual approvals/rejections, overflow or page errors.
-Physical-iPhone acceptance remains with the user. Production remains `baacdb0`.
+Physical-iPhone acceptance remains with the user. That UAT checkpoint preceded
+the code-only production release above.
 
 The downloadable template uses the example above. Tests use synthetic approved
 records and intercepted submissions only; this example is not an authorized
@@ -113,5 +123,6 @@ UAT release **`4b5e90e`**, Actions **`38580250951`**, passed all verification
 suites, **46 browser tests** and **17 live checks without retry**. Import checks
 cover JA/EN at 320/1440 px with mocked Admin/data and zero actual writes; mobile
 screenshots were visually reviewed. Input/preview panels fit the viewport, and
-the wide results table scrolls internally. Production remains `baacdb0`; no
-matches, sessions, imports or private notebooks were modified.
+the wide results table scrolls internally. That UAT checkpoint preceded the
+code-only production release above; no matches, sessions, imports or private
+notebooks were modified.
