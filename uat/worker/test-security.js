@@ -86,7 +86,27 @@ try {
   assert.equal((await call('/api/public-data', { environment: 'prod', environmentValues: { SECURE_PROD: 'true' } })).status, 401, 'the production security switch must require authentication');
   assert.equal((await call('/api/session', { token: `${siteToken}tampered` })).status, 401, 'tampered sessions must be rejected');
 
-  console.log('Worker security tests passed.');
+  // Separate approved imports append matches to one session, without replacing its metadata.
+  const sessionRecord = { sessionId: 'LKS-20261003', sessionDate: '2026-10-03', sessionType: 'Club Training', matchFormat: 'Best of 5', source: 'Original notebook', venue: 'Original venue', coachGoal: 'Original goal', coachNote: 'Original note' };
+  const firstMatch = { matchId: 'LKM-SYNTHETIC-FIRST', matchDate: '2026-10-03', sessionId: sessionRecord.sessionId, player1Id: 'LK-0001', player2Id: 'LK-0002', player1Sets: 3, player2Sets: 1 };
+  for (const [index, hashCharacter] of ['a', 'b'].entries()) {
+    const inputHash = hashCharacter.repeat(64), importBatchId = `IMP-${inputHash.slice(0, 16).toUpperCase()}`, batchId = `BATCH-${importBatchId}`;
+    const match = { ...firstMatch, matchId: index ? 'LKM-SYNTHETIC-SECOND' : firstMatch.matchId, player2Sets: index ? 2 : 1, importBatchId };
+    const imported = { importBatchId, inputHash, importType: 'trainingMatches', sessionId: sessionRecord.sessionId, sessionDate: sessionRecord.sessionDate, sourceName: 'Training matches 2026-10-03', rowCount: 1, matchIds: [match.matchId] };
+    for (const [entityType, targetId, after, action] of [
+      ['importBatch', importBatchId, imported, 'create'],
+      ['session', sessionRecord.sessionId, sessionRecord, index ? 'update' : 'create'],
+      ['match', match.matchId, match, 'create']
+    ]) assert.equal((await call('/api/change', { method: 'POST', token: adminToken, body: { entityType, targetId, after, action, batchId } })).status, 200);
+    assert.equal((await call('/api/approve-batch', { method: 'POST', token: approverToken, body: { batchId, decision: 'accept' } })).status, 200);
+    assert.deepEqual(JSON.parse(store.get('uat:sessions')), [sessionRecord], 'same-session imports must preserve one session and its metadata');
+    assert.equal(JSON.parse(store.get('uat:matches')).length, index + 1, 'later imports must append, not replace earlier matches');
+  }
+  assert.deepEqual(JSON.parse(store.get('uat:matches'))[0], { ...firstMatch, importBatchId: 'IMP-AAAAAAAAAAAAAAAA' });
+  assert.equal(JSON.parse(store.get('uat:import-batches')).length, 2, 'each import has independent batch history');
+  assert.deepEqual(JSON.parse(store.get('prod:sessions')), [], 'synthetic UAT approvals must not touch production');
+
+  console.log('Worker security and same-session incremental import tests passed.');
 } finally {
   globalThis.fetch = originalFetch;
 }

@@ -32,9 +32,12 @@ matchDate,player1,player1Sets,player2,player2Sets,division,matchFormat,player1Na
 
 ## When Submit is disabled
 
-- **Source name is required**, including for pasted data (e.g. `Notebook 2026-10-03`).
-  Required settings are marked `*`. Uploaded files supply their filename if the
-  source is empty; pasted data does not invent a source.
+- **Source name is filled automatically** as `Training matches YYYY-MM-DD` using
+  the selected session date. You can edit it. The generated label follows date
+  changes until you customize it; custom labels are never overwritten by a date
+  change. Uploaded files replace only the generated/empty label with their filename.
+  Required settings are marked `*`; explicitly clearing the source still blocks
+  submission until it is supplied (or changing the date regenerates an empty label).
 - The status beside Submit explains missing settings, blocked rows, duplicates,
   or a review that needs refreshing. Valid rows alone are not sufficient.
 - After a successful preview, entering/correcting source, venue, verification
@@ -53,6 +56,23 @@ source and the silent disabled state after edits. Release **`8bfbf14`**, Actions
 verified the actual Submit click with all three synthetic changes intercepted per
 case, zero real writes and zero overflow/page errors. The mobile screenshot was
 visually reviewed. Production remains `baacdb0`; no actual records changed.
+
+## Additional matches for an existing session
+
+- Reuse **the exact same Session ID**. The default for 3 October 2026 is
+  `LKS-20261003`, no matter how many separate import batches you submit. If the
+  original session uses a custom ID, enter that same ID again.
+- **Approve the first batch before submitting the next for that session.** The
+  current pending-change system keeps one pending request per session ID; two
+  unapproved batches can otherwise compete for that shared session request.
+- Paste **only the additional matches**, not the old rows again. Each distinct
+  resolved import has a separate batch ID/history and new deterministic match IDs;
+  exact approved/pending duplicates remain blocked.
+- Additional approved matches join the same session. Existing matches and nonblank
+  session source/venue/coach metadata are retained. The source label itself does not
+  determine session identity or duplicate detection.
+
+Automatic-source and same-session regression results are recorded in `AGENTS.md`.
 
 The downloadable template uses the example above. Tests use synthetic approved
 records and intercepted submissions only; this example is not an authorized
