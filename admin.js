@@ -136,6 +136,14 @@
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[character]);
   function createDiff(before, after) { const keys = new Set([...Object.keys(before || {}), ...Object.keys(after || {})]); return [...keys].filter(key => key === 'gradeHistory' || JSON.stringify(before?.[key]) !== JSON.stringify(after?.[key])).map(field => ({ field, before: before?.[field] ?? '', after: after?.[field] ?? '' })); }
   function computeDiff(change) { if (change.diff && change.diff.length) return change.diff; if (change.changedFields && change.before && change.after) { return change.changedFields.filter(f => f !== 'gradeHistory').map(f => ({ field: f, before: change.before[f] ?? '', after: change.after[f] ?? '' })).filter(d => JSON.stringify(d.before) !== JSON.stringify(d.after)); } if (change.before && change.after) return createDiff(change.before, change.after); return []; }
+  function labelReviewTable(table) {
+    const headings=table.querySelectorAll('thead th'),labels=language==='en'?(headings.length===3?['Field','Before','After']:['Field','Value']):(headings.length===3?['項目','変更前','変更後']:['項目','値']);
+    table.setAttribute('role','table');
+    headings.forEach((heading,index)=>{heading.textContent=labels[index];heading.scope='col';heading.setAttribute('role','columnheader');});
+    table.querySelectorAll('tr').forEach(row=>row.setAttribute('role','row'));
+    table.querySelectorAll('tbody tr').forEach(row=>[...row.children].forEach((cell,index)=>{cell.dataset.label=labels[index];cell.setAttribute('role','cell');}));
+    return table;
+  }
   async function loadPendingChanges() { try { const result = await window.LKData.request('/api/pending'); allChanges = result.changes || []; pendingChanges = allChanges.filter(c => c.status === 'pending'); } catch { allChanges = []; pendingChanges = []; } }
   function findPendingChange(entityType, targetId) { return pendingChanges.find(c => c.entityType === entityType && c.targetId === targetId); }
   const reflectionEntityTypes = new Set(['sessionFeedback', 'matchFeedback']);
@@ -167,13 +175,13 @@
       const thead = el('thead'); const thr = el('tr'); thr.append(text('th', 'Field / 項目'), text('th', 'Before / 変更前'), text('th', 'After / 変更後')); thead.append(thr); table.append(thead);
       const tbody = el('tbody'); table.append(tbody);
       diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : displayValue(d.field, d.before)), text('td', d.after === '' || d.after == null ? '—' : displayValue(d.field, d.after))); tbody.append(row); });
-      box.append(table);
+      box.append(labelReviewTable(table));
     } else if (change.action === 'create' && change.after) {
       const table = el('table', { className: 'admin-pending-table' });
       const thead = el('thead'); const thr = el('tr'); thr.append(text('th', 'Field / 項目'), text('th', 'Value / 値')); thead.append(thr); table.append(thead);
       const tbody = el('tbody'); table.append(tbody);
       Object.entries(change.after).forEach(([key, value]) => { if (value === '' || value === null || value === undefined || key === 'gradeHistory') return; const row = el('tr'); row.append(text('td', key), text('td', displayValue(key, value))); tbody.append(row); });
-      box.append(table);
+      box.append(labelReviewTable(table));
     } else if (change.action === 'delete') {
       box.append(text('p', 'Record will be deleted upon approval. / 承認後にレコードが削除されます。', 'admin-pending-info-note'));
     }
@@ -1462,7 +1470,7 @@
             thr.append(text('th', 'Field'), text('th', 'Before'), text('th', 'After'));
             const tbody = el('tbody'); table.append(tbody);
             diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : String(d.before)), text('td', d.after === '' || d.after == null ? '—' : String(d.after))); tbody.append(row); });
-            const diffSection = el('div', { className: 'admin-pending-diff' }); diffSection.append(table); card.append(diffSection);
+            const diffSection = el('div', { className: 'admin-pending-diff' }); diffSection.append(labelReviewTable(table)); card.append(diffSection);
           }
           section.append(card);
         });
@@ -1535,7 +1543,7 @@
           thr1.append(text('th', 'Field'), text('th', 'Value'));
           const tbody = el('tbody'); table.append(tbody);
           Object.entries(change.before).forEach(([key, value]) => { if (value === '' || value === null || value === undefined) return; const row = el('tr'); row.append(text('td', key), text('td', String(value))); tbody.append(row); });
-          deleted.append(table); card.append(deleted);
+          deleted.append(labelReviewTable(table)); card.append(deleted);
         } else if (change.after) {
           const diff = computeDiff(change);
           if (diff.length) {
@@ -1548,7 +1556,7 @@
               row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : displayValue(d.field, d.before)), text('td', d.after === '' || d.after == null ? '—' : displayValue(d.field, d.after)));
               tbody.append(row);
             });
-            diffSection.append(table); card.append(diffSection);
+            diffSection.append(labelReviewTable(table)); card.append(diffSection);
           } else if (change.action === 'create') {
             const detail = el('div', { className: 'admin-pending-detail' }); detail.append(text('p', 'New record / 新規レコード', 'admin-pending-section-title'));
             const table = el('table', { className: 'admin-pending-table' }); const thead3 = el('thead'); const thr3 = el('tr'); thead3.append(thr3); table.append(thead3);
@@ -1558,7 +1566,7 @@
               if (value === '' || value === null || value === undefined) return;
               const row = el('tr'); row.append(text('td', key), text('td', displayValue(key, value))); tbody.append(row);
             });
-            detail.append(table); card.append(detail);
+            detail.append(labelReviewTable(table)); card.append(detail);
           } else {
             card.append(text('p', 'No changes detected. / 変更は検出されませんでした。', 'admin-empty'));
           }
@@ -1650,7 +1658,7 @@
               thr.append(text('th', 'Field'), text('th', 'Before'), text('th', 'After'));
               const tbody = el('tbody'); table.append(tbody);
             diff.forEach(d => { const row = el('tr'); row.className = 'admin-pending-diff-row'; row.append(text('td', d.field), text('td', d.before === '' || d.before == null ? '—' : displayValue(d.field, d.before)), text('td', d.after === '' || d.after == null ? '—' : displayValue(d.field, d.after))); tbody.append(row); });
-              diffSection.append(table); card.append(diffSection);
+              diffSection.append(labelReviewTable(table)); card.append(diffSection);
             }
             if (currentRole === 'admin' && (c.before || c.after)) {
               const corrective=el('div',{className:'admin-history-corrective'}),status=text('span','','admin-pending-action-status');
