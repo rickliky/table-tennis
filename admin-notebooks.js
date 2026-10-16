@@ -91,11 +91,11 @@
         : readField(copy.jaOriginal, fields[`${prefix}.ja`]);
       const matchKeys = [...new Set(Object.keys(fields).filter(key => /^match\.(training|tournament):[A-Za-z0-9_-]+\.(en|ja)$/.test(key)).map(key => key.slice(6, -3)))];
       content.innerHTML = `<header class="admin-notebook-day-title"><h3>${escapeHtml(name(result.player))} · ${escapeHtml(dateLabel(result.date))}</h3>${result.document.updatedAt ? `<p>${copy.updated}: ${escapeHtml(new Date(result.document.updatedAt).toLocaleString(language === 'en' ? 'en-GB' : 'ja-JP', { timeZone: 'Asia/Tokyo', weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }))}</p>` : ''}</header>
-        ${fields.activity ? readField(copy.activity, fields.activity) : ''}<article class="notebook-entry"><h3>${copy.daily}</h3>${reflection('daily')}</article>
+        <article class="notebook-entry"><h3>${copy.daily}</h3>${reflection('daily')}</article>
         ${matchKeys.length ? `<h3>${copy.matches}</h3>${matchKeys.map(key => {
           const match = result.matches.find(match => match.key === key);
           return `<article class="notebook-entry"><h3>${match ? copy[match.source] : `${copy.missing} · ${escapeHtml(key)}`}</h3>${match ? `${window.LKNotebookMatch.render(match, result.player, language)}<p>${escapeHtml([match.eventName, match.round].filter(Boolean).join(' · '))}</p>` : ''}${reflection(`match.${key}`)}</article>`;
-        }).join('')}` : ''}<article class="notebook-entry"><h3>${copy.coach}</h3>${bilingual ? `<div class="notebook-bilingual">${readField(copy.jaOriginal, fields['coach.ja'])}${readField(copy.enVersion, fields['coach.en'])}</div>` : readField(copy.jaOriginal, fields['coach.ja'])}</article>`;
+        }).join('')}` : ''}${fields.activity ? readField(copy.activity, fields.activity) : ''}<article class="notebook-entry"><h3>${copy.coach}</h3>${bilingual ? `<div class="notebook-bilingual">${readField(copy.jaOriginal, fields['coach.ja'])}${readField(copy.enVersion, fields['coach.en'])}</div>` : readField(copy.jaOriginal, fields['coach.ja'])}</article>`;
       status.textContent = '';
     }
     async function day(signal) {

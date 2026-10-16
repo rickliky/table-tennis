@@ -41,7 +41,7 @@
       'daily.en': 'I tried to remember my ready position between points.', 'daily.ja': 'ポイントの間に、基本姿勢を意識しました。',
       'match.a.en': 'I returned short serves more carefully in this match. I sometimes rushed when the score was close.\n\nNext time, I want to take one calm breath before receiving.',
       'match.a.ja': 'この試合では短いサーブを丁寧に返せました。競った場面では、少し焦ることがありました。\n\n次はレシーブの前に、一度落ち着いて呼吸したいです。',
-      'match.b.en': 'Long serves were difficult to receive. When I watched the contact more closely, I made a better return.\n\nI want to practise receiving long serves in the next session.',
+      'match.b.en': Rich.matchTemplate({ englishName: 'Sample Player' }, { opponentEnglishName: 'Sample Opponent B', score: '1-3' }),
       'match.b.ja': '長いサーブのレシーブが難しかったです。相手が打つ瞬間をよく見ると、うまく返せました。\n\n次の練習で、長いサーブのレシーブを練習したいです。',
       'coach.ja': '1. サーブの長さをよく見て、足を動かしましょう。\n\n2. 競った場面でも、いつもの準備を大切にしましょう。',
       'coach.en': '1. Watch the length of the serve and move your feet.\n\n2. Keep your usual preparation routine, even when the score is close.'
@@ -68,8 +68,9 @@
       <div class="notebook-dates"><label>${t('sampleDay')}<select id="sample-day">${['daily', 'matches', 'rest'].map(value => `<option value="${value}" ${value === day ? 'selected' : ''}>${t(value === 'daily' ? 'dailyDay' : value === 'matches' ? 'matchDay' : 'restDay')}</option>`).join('')}</select></label></div>
       <div class="notebook-modes" role="group" aria-label="${t('mode')}">${['write', 'read'].map(value => `<button type="button" data-sample-mode="${value}" aria-pressed="${mode === value}">${t(value)}</button>`).join('')}</div>${mode === 'read' ? `<p class="notebook-read-hint">${t('readHint')}</p>` : ''}
       <div class="notebook-savebar notebook-demo-warning" role="status">${t('warning')}</div><section class="notebook-day">${day === 'rest' ? `<section class="notebook-entry"><h2>${t('rest')}</h2></section>` : `
+      <section id="sample-daily" class="notebook-entry"><h2>${t('daily')}</h2>${reflection('daily')}</section>
       ${day === 'matches' ? `<section class="notebook-matches"><h2>${t('matches')} · 2</h2>${['a', 'b'].map((value, index) => `<article class="notebook-match"><header class="notebook-match-heading"><small>${t('training')}</small>${window.LKNotebookMatch.render({ score: index ? '1-3' : '3-2', result: index ? 'loss' : 'win', opponentName: words.ja[index ? 'opponentB' : 'opponentA'], opponentEnglishName: words.en[index ? 'opponentB' : 'opponentA'] }, { displayName: words.ja.player, englishName: words.en.player }, language)}</header>${reflection(`match.${value}`)}</article>`).join('')}</section>` : ''}
-      <section class="notebook-entry"><h2>${t('daily')}</h2>${reflection('daily')}</section><section class="notebook-entry"><h2>${t('coach')}</h2><p>${t('coachHint')}</p><div class="notebook-bilingual">${field('coach.ja', 'coachJapanese')}${field('coach.en', 'coachEnglish')}</div></section>`}</section>
+      <section class="notebook-entry"><h2>${t('coach')}</h2><p>${t('coachHint')}</p><div class="notebook-bilingual">${field('coach.ja', 'coachJapanese')}${field('coach.en', 'coachEnglish')}</div></section>`}</section>
       <aside class="notebook-invitation"><h2>${t('invitation')}</h2><a class="notebook-preview-link" href="feedback.html">${t('back')} <span aria-hidden="true">→</span></a></aside>`;
     app.querySelectorAll('[data-sample-host]').forEach(host => {
       const key = host.dataset.sampleHost;

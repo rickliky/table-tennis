@@ -91,5 +91,18 @@
       { insert: '\n', attributes: { list: 'bullet' } }
     ])] };
   }
-  return Object.freeze({ format, valid, text, delta, fromDelta, html, practiceTemplate });
+  function matchTemplate(player, match) {
+    const ownName = player?.englishName || player?.displayName || player?.playerId;
+    const opponentName = match?.opponentEnglishName || match?.opponentName || match?.opponentId;
+    const score = String(match?.score || '').match(/^(\d+)\s*-\s*(\d+)$/);
+    if (!ownName || !opponentName || !score) return '';
+    const result = { format, ops: [{ insert: `Match: ${String(ownName).replace(/[\r\n]+/g, ' ')} ${score[1]} - ${score[2]} ${String(opponentName).replace(/[\r\n]+/g, ' ')}\n\n` },
+      ...['What I Did Well:', 'Things to Improve:'].flatMap((heading, index) => [
+        ...(index ? [{ insert: '\n' }] : []),
+        { insert: heading, attributes: { bold: true } }, { insert: '\n' },
+        { insert: '\n', attributes: { list: 'bullet' } }
+      ])] };
+    return valid(result) ? result : '';
+  }
+  return Object.freeze({ format, valid, text, delta, fromDelta, html, practiceTemplate, matchTemplate });
 });

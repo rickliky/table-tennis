@@ -9,7 +9,10 @@ const players = [
 ];
 async function mock(context) {
   const requests = [], documents = new Map(), tokens = new Map();
-  const state = { failSave: false, expire: false, delay: 0 };
+  const state = { failSave: false, expire: false, delay: 0, matchDate: '2026-10-11', matches: [
+    { key: 'training:M-001', source: 'training', opponentName: '<img src=x onerror=alert(1)> Opponent', score: '3-1', result: 'win', eventName: 'Club training' },
+    { key: 'tournament:TM-001', source: 'tournament', opponentName: 'Tournament opponent', score: '1-2', result: 'incomplete', eventName: 'Tournament' }
+  ] };
   await context.route(`${API}/api/**`, async route => {
     const request = route.request(), url = new URL(request.url()), path = url.pathname, body = request.postData() ? request.postDataJSON() : null;
     const token = (request.headers().authorization || '').replace(/^Bearer /, ''), player = tokens.get(token);
@@ -29,10 +32,7 @@ async function mock(context) {
     if (path === '/api/reflections/day') {
       const date = url.searchParams.get('date'), key = `${player.playerId}|${date}`;
       const current = documents.get(key) || { revision: 0, fields: {} };
-      if (!body) return respond(200, { ok: true, date, document: current, matches: date === '2026-10-11' ? [
-        { key: 'training:M-001', source: 'training', opponentName: '<img src=x onerror=alert(1)> Opponent', score: '3-1', result: 'win', eventName: 'Club training' },
-        { key: 'tournament:TM-001', source: 'tournament', opponentName: 'Tournament opponent', score: '1-2', result: 'incomplete', eventName: 'Tournament' }
-      ] : [] });
+      if (!body) return respond(200, { ok: true, date, document: current, matches: date === state.matchDate ? state.matches : [] });
       if (state.delay) await new Promise(resolve => setTimeout(resolve, state.delay));
       if (state.failSave) return respond(503, { ok: false });
       if (current.revision !== body.revision) return respond(409, { ok: false, document: current });
@@ -87,7 +87,9 @@ test('match/daily layout, manual bilingual coach block and autosave retain parag
   await page.locator('[data-field="match.training:M-001.en"]').fill('First paragraph.\n\nNext focus.');
   await page.locator('[data-field="coach.ja"]').fill('1. 合成テスト\n2. 次の項目');
   await expect(page.locator('#notebook-status')).toContainText('保存済み');
-  expect(documents.get('LK-0080|2026-10-11').fields['match.training:M-001.en']).toBe('First paragraph.\n\nNext focus.');
+  const savedMatch = documents.get('LK-0080|2026-10-11').fields['match.training:M-001.en'];
+  expect(Rich.text(savedMatch)).toBe('First paragraph.\n\nNext focus.');
+  expect(Rich.valid(savedMatch)).toBe(true); // Replacing a rich starter may retain its final bullet formatting.
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('First paragraph');
   await page.locator('#language-toggle').click();
   await expect(page.locator('[data-field="coach.en"]')).toBeVisible();
@@ -509,6 +511,61 @@ test('cross-tab invalidation retains partially composed synthetic writing for sa
   await expectWriting(field, '合成の入力途中');
   await expect(page.locator('#notebook-status')).toContainText('保存済み');
   expect(documents.get('LK-0080|2026-10-11').fields['coach.ja']).toBe('合成の入力途中');
+});
+
+for (const id of ['LK-0080', 'LK-0002']) test(`match templates for ${id} follow daily reflection, stay unsaved until edited and preserve explicit clears`, async ({ page, context }) => {
+  const { documents, requests, state } = await mock(context); await login(page, id);
+  const first = page.locator('[data-field="match.training:M-001.en"]'), second = page.locator('[data-field="match.tournament:TM-001.en"]');
+  const template = Rich.matchTemplate(players.find(player => player.playerId === id), state.matches[0]);
+  const isDailyFirst = () => page.evaluate(() => Boolean(document.querySelector('#notebook-daily').compareDocumentPosition(document.querySelector('#notebook-matches')) & Node.DOCUMENT_POSITION_FOLLOWING));
+  expect(await isDailyFirst()).toBe(true);
+  await expectWriting(first, Rich.text(template)); await expect(first.locator('strong')).toHaveText(['What I Did Well:', 'Things to Improve:']);
+  await expect(first.locator('li[data-list="bullet"]')).toHaveCount(2); await expect(first.locator('img')).toHaveCount(0);
+  await expectWriting(second, Rich.text(Rich.matchTemplate(players.find(player => player.playerId === id), state.matches[1])));
+  await expectWriting(page.locator('[data-field="daily.en"]'), ''); await expectWriting(page.locator('[data-field="match.training:M-001.ja"]'), '');
+  await first.focus(); await page.locator('#notebook-date').focus(); await page.locator('#language-toggle').click();
+  await expectWriting(first, Rich.text(template)); expect(await isDailyFirst()).toBe(true);
+  await page.locator('[data-mode="read"]').click(); expect(await isDailyFirst()).toBe(true);
+  await expect(page.locator('[data-read-field="match.training:M-001.en"]')).toHaveText('Not written');
+  expect(requests.filter(request => request.body?.patch)).toHaveLength(0); expect(documents.has(`${id}|2026-10-11`)).toBe(false);
+  await page.locator('[data-mode="write"]').click();
+  await first.evaluate(element => { const editor = window.Quill.find(element.parentElement); editor.setSelection(editor.getText().indexOf('What I Did Well:') + 'What I Did Well:'.length + 1, 0); });
+  await first.pressSequentially('Synthetic match focus'); await page.locator('[data-mode="read"]').click();
+  await expect(page.locator('[data-read-field="match.training:M-001.en"] li').first()).toHaveText('Synthetic match focus');
+  expect(Object.keys(documents.get(`${id}|2026-10-11`).fields)).toEqual(['match.training:M-001.en']);
+  expect(Rich.valid(documents.get(`${id}|2026-10-11`).fields['match.training:M-001.en'])).toBe(true);
+  await page.reload(); await expect(first.locator('li').first()).toHaveText('Synthetic match focus');
+  await first.fill(''); await page.locator('[data-mode="read"]').click(); await page.reload(); await expectWriting(first, '');
+  await expectWriting(second, Rich.text(Rich.matchTemplate(players.find(player => player.playerId === id), state.matches[1])));
+});
+
+test('daily-first layout applies to recorded matches on other weekdays and to the fictional preview', async ({ page, context }) => {
+  const { requests, state } = await mock(context); await login(page);
+  for (const date of ['2026-10-08', '2026-10-12']) {
+    state.matchDate = date; await page.locator('#notebook-date').fill(date); await page.locator('#notebook-date').press('Tab');
+    await expect(page.locator('.notebook-match')).toHaveCount(2);
+    expect(await page.evaluate(() => Boolean(document.querySelector('#notebook-daily').compareDocumentPosition(document.querySelector('#notebook-matches')) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+  }
+  expect(requests.filter(request => request.body?.patch)).toHaveLength(0);
+  await page.goto('/notebook-sample.html'); await page.locator('#sample-day').selectOption('matches');
+  expect(await page.evaluate(() => Boolean(document.querySelector('#sample-daily').compareDocumentPosition(document.querySelector('.notebook-matches')) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+  await expect(page.locator('[data-sample-read="match.b.en"]')).toContainText('Match: Sample Player 1 - 3 Sample Opponent B');
+  await expect(page.locator('[data-sample-read="match.b.en"] strong')).toHaveText(['What I Did Well:', 'Things to Improve:']);
+});
+
+test('match templates preserve existing strings, rich notes, cleared fields and orphan notes, and exclude future accounts', async ({ page, context }) => {
+  const { documents, requests } = await mock(context);
+  const richNote = { format: 'lk-rich-v1', ops: [{ insert: 'Existing synthetic match note', attributes: { bold: true } }, { insert: '\n' }] };
+  const fields = { 'daily.en': '\nExisting daily\n', 'match.training:M-001.en': '', 'match.training:M-001.ja': '合成の既存ノート', 'match.tournament:TM-001.en': richNote, 'match.training:ORPHAN.en': 'Preserved orphan' };
+  documents.set('LK-0080|2026-10-11', { revision: 4, fields }); await login(page);
+  await expectWriting(page.locator('[data-field="match.training:M-001.en"]'), '');
+  await expect(page.locator('[data-field="match.tournament:TM-001.en"] strong')).toHaveText('Existing synthetic match note');
+  await expectWriting(page.locator('[data-field="match.training:ORPHAN.en"]'), 'Preserved orphan');
+  await page.locator('[data-mode="read"]').click(); await expect(page.locator('[data-read-field="daily.en"]')).toHaveText('Existing daily');
+  expect(documents.get('LK-0080|2026-10-11')).toEqual({ revision: 4, fields });
+  await page.locator('#notebook-lock').click(); await login(page, 'LK-0003');
+  await expectWriting(page.locator('[data-field="match.training:M-001.ja"]'), ''); await expect(page.locator('.notebook-template-hint')).toHaveCount(0);
+  expect(requests.filter(request => request.body?.patch)).toHaveLength(0);
 });
 
 for (const id of ['LK-0080', 'LK-0002']) test(`practice template for ${id} is unsaved until edited; labels and Activity input are simplified`, async ({ page, context }) => {

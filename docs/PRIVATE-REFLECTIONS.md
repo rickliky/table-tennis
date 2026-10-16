@@ -1,5 +1,44 @@
 # Private player notebook
 
+## Daily-first match days + match starters — UAT update (2026-10-16)
+
+Daily reflection always appears before the recorded-match reflections in player
+Write/Read and the fictional preview. Admin reading also starts with daily
+reflection; historical Activity remains readable after match notes. Nothing is
+deleted or moved between stored fields.
+
+For Jacelyn/LK-0080 and Kaitlyn/LK-0002, previously uninitialized English match
+fields show this editable rich-text starter (bold headings and empty bullets):
+
+```text
+Match: Player A Score A - Score B Player B
+
+What I Did Well:
+-
+
+Things to Improve:
+-
+```
+
+Names and scores come from the recorded match, with the notebook owner first and
+the owner's score first, consistent with the match card. Stored English names
+are preferred in this English field, otherwise stored display names/IDs are
+used; no transliteration or result is invented. Incomplete matches keep their
+recorded score and do not acquire a winner claim. Missing names/scores cannot
+generate a fabricated header.
+
+The starter is Write-only and is **not saved until edited**. Opening, focusing,
+changing language/mode/date or reading does not create notes/index entries.
+Existing plain/rich writing and intentionally cleared fields stay unchanged.
+Daily practice-day templates, Friday rest rules, manual Japanese/coach fields,
+future Japanese-only accounts and save/conflict/session safeguards are unchanged.
+The preview's second fictional match demonstrates the starter; it never uses
+real identities or saves writing.
+
+This update is **UAT-only** pending fresh production approval. No Worker deployment,
+Redis/private data migration, account/credential change or production operation
+is required or authorized. Verification uses synthetic/intercepted documents only.
+
 ## Code-only production promotion — live (2026-10-14)
 
 The user explicitly approved promoting the accumulated UAT **code**, while
@@ -130,7 +169,7 @@ The user chose to keep translation manual. No provider, API key, AI button, bill
 - Invitation in JA/EN now says setup is easy and asks interested players to let Jacelyn and Kaitlyn's daddy know. No self-signup or automatic account provisioning was introduced.
 - **`notebook-sample.html`** is a standalone, clearly labelled mock preview. `notebook-sample.js` contains only newly authored fictional player/opponent/reflection/coach examples, not notebook design samples or real journals. This explicit mock-preview exception is not runtime fallback data for real notebooks: it loads no API/auth/data client, reads no sessions, and sends no writing anywhere. Daily/match/Friday rest examples, manual bilingual fields, Read/Write toggles, auto-growing text boxes, reset, and return links work without a login. Changes live only in page memory and reset on reload; warnings say not to enter private information. Only `lk-language` preference persists.
 - Initial accounts: Jacelyn (`LK-0080`) and Kaitlyn (`LK-0002`). Their separately supplied passwords must never be committed. Optional remember-login is checked by default and lasts an absolute 56 days; uncheck on shared devices, in which case the session remains in the current page only. Lock revokes the server token.
-- Default Mon/Tue/Wed/Sat: one daily reflection. Thu/Sun: recorded-match cards (training and tournament clearly separated), plus an optional daily note. **Friday is always a rest day**: previous/next notebook-day arrows skip it; opening the page without an explicit date on a Tokyo Friday selects Thursday. Explicit Friday dates show a rest message without empty writing prompts. Previously saved Friday text remains accessible/editable through history or a direct date, never deleted or reassigned. No Worker date restriction or stored-data migration is introduced. Missing imports never generate invented results. Match cards use record-ID order, not a claimed play order.
+- Daily reflection comes first, followed by any recorded-match cards (training and tournament clearly separated), including Thu/Sun match days; daily and match writing remain optional. **Friday is always a rest day**: previous/next notebook-day arrows skip it; opening the page without an explicit date on a Tokyo Friday selects Thursday. Explicit Friday dates show a rest message without empty writing prompts. Previously saved Friday text remains accessible/editable through history or a direct date, never deleted or reassigned. No Worker date restriction or stored-data migration is introduced. Missing imports never generate invented results. Match cards use record-ID order, not a claimed play order.
 - Dates include their weekday in the current language in the player's selected-date label and saved history, and in Admin saved-date options/day headings. ISO dates remain the request/storage values; weekdays are calculated as calendar dates, independent of browser timezone. Admin last-saved timestamps show weekday/time in Asia/Tokyo.
 - One daily coach-feedback block, entered by the player. No ratings, approval/publishing, per-match coach inputs, or separate “Things to improve” field.
 - Only the two initial IDs have English reflection originals and manual Japanese versions, plus Japanese coach originals and manual English versions. Other enabled players write Japanese only; enforced by the Worker.
