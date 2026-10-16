@@ -15,6 +15,17 @@ for (const [id, headings] of [
 }
 assert.equal(Rich.practiceTemplate('LK-0003', '2026-10-13'), '');
 assert.equal(Rich.practiceTemplate('LK-0002', '2026-02-30'), '');
+const matchTemplate = Rich.matchTemplate({ englishName: 'Player A' }, { opponentEnglishName: 'Player B', score: '3-1' });
+assert.ok(Rich.valid(matchTemplate));
+assert.equal(Rich.text(matchTemplate), 'Match: Player A 3 - 1 Player B\n\nWhat I Did Well:\n\n\nThings to Improve:\n');
+assert.deepEqual(matchTemplate.ops.filter(op => op.attributes?.bold).map(op => op.insert), ['What I Did Well:', 'Things to Improve:']);
+assert.equal(matchTemplate.ops.filter(op => op.attributes?.list === 'bullet').length, 2);
+assert.ok(Rich.text(Rich.matchTemplate({ displayName: '合成選手' }, { opponentId: 'EXT-SYNTHETIC', score: '0-3' })).startsWith('Match: 合成選手 0 - 3 EXT-SYNTHETIC\n'));
+assert.ok(Rich.text(Rich.matchTemplate({ englishName: 'Player A' }, { opponentName: 'Incomplete opponent', score: '1-2' })).includes('1 - 2'));
+assert.ok(!Rich.html(Rich.matchTemplate({ englishName: '<img src=x>' }, { opponentName: '<script>synthetic</script>', score: '3-0' })).includes('<script>'));
+for (const match of [{ opponentName: 'Opponent' }, { score: '3-1' }, { opponentName: 'Opponent', score: 'unknown' }]) assert.equal(Rich.matchTemplate({ englishName: 'Player A' }, match), '');
+assert.equal(Rich.matchTemplate({}, { opponentName: 'Opponent', score: '3-1' }), '');
+assert.equal(Rich.matchTemplate({ englishName: 'x'.repeat(8000) }, { opponentName: 'Opponent', score: '3-1' }), '');
 assert.ok(Rich.valid(value));
 assert.equal(Rich.text(value), '\n\nSynthetic <unsafe> text\nNext item');
 assert.ok(Rich.html(value).includes('<ul><li><em><strong>Synthetic &lt;unsafe&gt; text</strong></em></li></ul>'));
