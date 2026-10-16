@@ -1,5 +1,26 @@
 # Private player notebook
 
+## Daily-first match reflections — production code-only release (2026-10-16)
+
+The user explicitly approved promoting the tested daily-first layout and the
+Jacelyn/Kaitlyn match starters **without changing any data**. These features are
+now live in production as well as UAT. Earlier UAT-only restrictions below are
+historical for this release; future promotions still need fresh approval.
+
+Production release **`459241a`**, Actions **`38836031628`**, passed all verification
+suites, **65 browser tests**, deployment and **19 separate live production checks
+without retry**. Four additional live WebKit checks covered both IDs in JA/EN at
+390 px, including daily-first order, unsaved starters, formatted edit/save/reload,
+Read/Admin and the fictional preview. All browser documents/saves were synthetic
+and intercepted; no real journal was read/written.
+
+**No notebook or ordinary data was copied, synchronized, imported, converted or
+rewritten. No accounts, credentials or sessions were changed.** No Worker
+deployment, security-secret change or database/promotion script was run. Existing
+writing and intentionally cleared fields are preserved, and starters remain
+display-only until edited. Refresh production to load the new code; UAT and
+production notebooks remain independent.
+
 ## Daily-first match days + match starters — UAT update (2026-10-16)
 
 Daily reflection always appears before the recorded-match reflections in player
@@ -35,16 +56,18 @@ future Japanese-only accounts and save/conflict/session safeguards are unchanged
 The preview's second fictional match demonstrates the starter; it never uses
 real identities or saves writing.
 
-This update is **UAT-only** pending fresh production approval. No Worker deployment,
-Redis/private data migration, account/credential change or production operation
-is required or authorized. Verification uses synthetic/intercepted documents only.
+This was an **UAT-only** checkpoint before the explicit code-only production
+approval recorded above. No Worker deployment, Redis/private data migration or
+account/credential change was required. Verification uses synthetic/intercepted
+documents only.
 
 Release **`b28ea23`**, Actions **`38834383494`**, passed all verification suites,
 **65 browser tests**, deployment and **19 live checks without retry**. Four new
 targeted tests passed in Chromium and WebKit; four additional live WebKit cases
 covered both IDs in JA/EN at 390 px. The live fictional iPhone preview was visually
-reviewed with zero overflow/API requests. Production remains `30a22d8`; no actual
-notebook or account data was read or changed. Please review UAT before promotion.
+reviewed with zero overflow/API requests. Production was then `30a22d8`; that
+checkpoint is superseded by the code-only release above. No actual notebook or
+account data was read or changed.
 
 ## Code-only production promotion — live (2026-10-14)
 
