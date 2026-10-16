@@ -39,6 +39,13 @@ This update is **UAT-only** pending fresh production approval. No Worker deploym
 Redis/private data migration, account/credential change or production operation
 is required or authorized. Verification uses synthetic/intercepted documents only.
 
+Release **`b28ea23`**, Actions **`38834383494`**, passed all verification suites,
+**65 browser tests**, deployment and **19 live checks without retry**. Four new
+targeted tests passed in Chromium and WebKit; four additional live WebKit cases
+covered both IDs in JA/EN at 390 px. The live fictional iPhone preview was visually
+reviewed with zero overflow/API requests. Production remains `30a22d8`; no actual
+notebook or account data was read or changed. Please review UAT before promotion.
+
 ## Code-only production promotion — live (2026-10-14)
 
 The user explicitly approved promoting the accumulated UAT **code**, while
