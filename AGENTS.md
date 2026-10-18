@@ -206,6 +206,11 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Incomplete Match Reflections (2026-10-18) — EXISTING BEHAVIOR VERIFIED
+- User requested incomplete matches be included in reflections in the same way. Inspection confirmed existing UAT/PROD Worker includes owned incomplete training/tournament singles, and player Write/Read/Admin use the same cards/editors; Jacelyn/Kaitlyn match starters already accept incomplete scores. No runtime change or production promotion is necessary.
+- Added synthetic Worker coverage in both environments for owner-second 1–2, tied 1–1 and tournament 0–0 matches: inclusion, no read-only template save, rich save/reload, unchanged scores/results, Admin parity and unrelated-match rejection. Two new browser regressions (both IDs) pass in Chromium and WebKit at 390 px: identical starter/headings/bullets, no open/language-only writes, exact match-only autosave fields, reload/Read and no winner/loser labels or overflow.
+- Incomplete stays explicitly bilingual and never claims a winner; completion/ranking rules are unchanged. No real notebook/match/player/account/credential read or write, Redis operation, Worker deployment, dataset sync or production push. Tests and documentation go to UAT only; existing production support needs no rollout. Guide: `docs/PRIVATE-REFLECTIONS.md`. If the user has a missing example, ask for its date/opponent and investigate recorded context without inspecting private writing.
+
 ### Daily-First Match Reflection Production Promotion (2026-10-16) — LIVE IN PRODUCTION, CODE ONLY
 - User explicitly requested **push only code to PROD, data unchanged**. This authorizes the tested daily-first layout and two-player match starter release only, not any reflection/ordinary dataset sync, real journal save, account/credential operation or unrelated pending setup.
 - Clean UAT tip `459241a` / Actions `38835488614` was successful before promotion. Compared production/UAT: frontend/schema-helper/template code, tests and documentation only; no dataset/static lookup, `worker/src` or deployment-workflow changes. The shared rich helper adds a frontend document builder, with existing storage validation unchanged, so **no Worker deployment or secret change** is needed/performed.
