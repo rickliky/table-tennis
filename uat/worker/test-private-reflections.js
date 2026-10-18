@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import worker from './src/index.js';
 import { SAVE_SCRIPT } from './src/private-reflections.js';
+import RichText from '../notebook-rich-text.js';
 
 const store = new Map(), hashes = new Map(), sorted = new Map();
 const hashFor = key => { if (!hashes.has(key)) hashes.set(key, new Map()); return hashes.get(key); };
@@ -202,6 +203,35 @@ try {
     assert.equal(result.status, 200);
     assert.ok(!JSON.stringify(result.value).includes('DO NOT EXPOSE'));
     assert.ok(!JSON.stringify(result.value).includes('synthetic coach comment'));
+  }
+  // Incomplete matches have the same owner/save/Admin workflow as completed
+  // matches, including ties and zero scores, without manufacturing a winner.
+  for (const environment of ['uat', 'prod']) {
+    const options = environment === 'prod' ? prodOptions : {};
+    const token = environment === 'prod' ? prodToken : a.token;
+    const date = '2026-10-12', path = `/api/reflections/day?date=${date}`;
+    setJson(`${environment}:matches`, [...getJson(`${environment}:matches`),
+      { matchId: 'M-INCOMPLETE', player1Id: 'LK-0003', player2Id: 'LK-0080', matchDate: date, player1Sets: 2, player2Sets: 1, event: 'Club training', format: 'Singles', resultStatus: 'RS-002' },
+      { matchId: 'M-TIED', player1Id: 'LK-0080', player2Id: 'LK-0003', matchDate: date, player1Sets: 1, player2Sets: 1, event: 'Club training', format: 'Singles' }
+    ]);
+    setJson(`${environment}:tournament-matches`, [...getJson(`${environment}:tournament-matches`),
+      { tournamentMatchId: 'TM-INCOMPLETE', player1Id: 'LK-0080', player2Id: 'EXT-0001', matchDate: date, player1Sets: 0, player2Sets: 0 }
+    ]);
+    const before = (await call(path, { ...options, token })).value;
+    assert.deepEqual(before.matches.map(match => [match.key, match.score, match.result]), [
+      ['tournament:TM-INCOMPLETE', '0-0', 'incomplete'], ['training:M-INCOMPLETE', '1-2', 'incomplete'], ['training:M-TIED', '1-1', 'incomplete']
+    ]);
+    assert.deepEqual(before.document, { revision: 0, fields: {} }, 'Reading incomplete matches must not save templates');
+    const patch = Object.fromEntries(before.matches.map(match => [`match.${match.key}.en`, RichText.matchTemplate(before.player || players[0], match)]));
+    assert.ok(Object.values(patch).every(value => RichText.valid(value) && RichText.text(value).includes('What I Did Well:')));
+    assert.equal((await call(path, { ...options, token, body: { revision: 0, patch } })).status, 200);
+    const saved = (await call(path, { ...options, token })).value;
+    assert.deepEqual(saved.document.fields, patch);
+    assert.deepEqual(saved.matches, before.matches, 'Saving reflections cannot change recorded scores/results');
+    const adminSaved = (await call(`/api/reflections/admin/day?playerId=LK-0080&date=${date}`, { ...options, token: admin })).value;
+    assert.deepEqual(adminSaved.document, saved.document);
+    assert.deepEqual(adminSaved.matches, saved.matches);
+    assert.equal((await call(path, { ...options, token, body: { revision: 1, patch: { 'match.training:M-B.en': 'another player/date' } } })).status, 400);
   }
   assert.equal((await call('/api/reflections/logout', { token: b.token, method: 'POST' })).status, 200);
   assert.equal((await call(day, { token: b.token })).status, 401);
