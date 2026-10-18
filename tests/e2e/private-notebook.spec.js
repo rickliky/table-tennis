@@ -631,6 +631,45 @@ test('practice templates never replace existing plain/rich notes, Friday notes o
   await expectWriting(page.locator('[data-field="daily.ja"]'), ''); await expect(page.locator('.notebook-template-hint')).toHaveCount(0);
 });
 
+for (const id of ['LK-0080', 'LK-0002']) test(`incomplete training and tournament reflections use the same templates and save/read workflow for ${id}`, async ({ page, context }) => {
+  const { requests, documents, state } = await mock(context);
+  const player = players.find(person => person.playerId === id);
+  state.matches = [
+    { key: 'training:M-INCOMPLETE', source: 'training', opponentName: 'Synthetic opponent', opponentEnglishName: 'Synthetic Opponent', score: '1-2', result: 'incomplete' },
+    { key: 'training:M-TIED', source: 'training', opponentName: 'Synthetic tied opponent', score: '1-1', result: 'incomplete' },
+    { key: 'tournament:TM-INCOMPLETE', source: 'tournament', opponentName: 'Synthetic tournament opponent', score: '0-0', result: 'incomplete' }
+  ];
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page, id);
+  const cards = page.locator('.notebook-match');
+  await expect(cards).toHaveCount(3);
+  await expect(page.locator('.notebook-result-label, .notebook-match .is-winner, .notebook-match .is-loser')).toHaveCount(0);
+  for (const [index, match] of state.matches.entries()) {
+    await expect(cards.nth(index).locator('.notebook-match-score')).toHaveText(match.score);
+    await expect(cards.nth(index).locator('.notebook-match-incomplete')).toContainText('Incomplete');
+    await expectWriting(page.locator(`[data-field="match.${match.key}.en"]`), Rich.text(Rich.matchTemplate(player, match)));
+    await expect(cards.nth(index).locator('[data-field$=".en"] li')).toHaveCount(2);
+  }
+  await page.locator('#language-toggle').click();
+  await expect(page.locator('#notebook-status')).toContainText('Write freely');
+  expect(requests.filter(request => request.body?.patch)).toHaveLength(0);
+  for (const [index, match] of state.matches.entries()) {
+    const field = `match.${match.key}.en`, note = `Synthetic incomplete reflection ${index + 1}.`;
+    await page.locator(`[data-field="${field}"]`).fill(note);
+    await expect.poll(() => Rich.text(documents.get(`${id}|2026-10-11`)?.fields[field])).toBe(note);
+  }
+  expect(requests.filter(request => request.body?.patch).flatMap(request => Object.keys(request.body.patch)).sort()).toEqual(state.matches.map(match => `match.${match.key}.en`).sort());
+  await page.reload();
+  await expect(cards).toHaveCount(3);
+  await page.locator('[data-mode="read"]').click();
+  for (const [index, match] of state.matches.entries()) {
+    await expect(page.locator(`[data-read-field="match.${match.key}.en"]`)).toHaveText(`Synthetic incomplete reflection ${index + 1}.`);
+    await expect(cards.nth(index).locator('.notebook-match-score')).toHaveText(match.score);
+  }
+  await expect(page.locator('.notebook-result-label, .notebook-match .is-winner, .notebook-match .is-loser')).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+});
+
 test('match evidence always shows both system names and bilingual results, never incomplete winners', async ({ page, context }) => {
   await mock(context);
   const matches = [

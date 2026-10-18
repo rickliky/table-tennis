@@ -1,5 +1,20 @@
 # Private player notebook
 
+## Incomplete matches — confirmed (2026-10-18)
+
+Incomplete recorded singles are included in reflections just like completed
+matches: the same editor, Jacelyn/Kaitlyn English starter, guarded autosave,
+reload, player Read and read-only Admin views. Recorded scores (including ties
+and 0–0) stay owner-first. Cards show **未完了 / Incomplete** without assigning a
+winner or loser; reflection eligibility does not change completed-match statistics.
+
+This is existing production/UAT behavior, not a new feature rollout. Added
+synthetic Worker tests for both environments and browser save/reload/Read tests
+for both player IDs; targeted Chromium and WebKit checks pass. No runtime code,
+Worker deployment, real notebook/match data, accounts or credentials changed.
+If a recorded incomplete match is missing, investigate its date, participant IDs
+and singles/training classification rather than inventing or rewriting a match.
+
 ## Daily-first match reflections — production code-only release (2026-10-16)
 
 The user explicitly approved promoting the tested daily-first layout and the
