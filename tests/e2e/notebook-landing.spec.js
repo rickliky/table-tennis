@@ -2,6 +2,78 @@ const { test, expect } = require('@playwright/test');
 const { expectWriting, paste } = require('./helpers/notebook');
 const API = 'https://little-kings-api.little-kings.workers.dev';
 
+test('fictional translation preview never sends text and requires an unchanged source and explicit confirmation', async ({ page, context }) => {
+  const requests = [], errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await context.addInitScript(() => localStorage.setItem('lk-language', 'en'));
+  await context.route(`${API}/api/**`, route => { requests.push(route.request().url()); return route.abort(); });
+  await context.route(/^https:\/\/(?:api\.openai\.com|chatgpt\.com)\//, route => { requests.push(route.request().url()); return route.abort(); });
+  await page.goto('/notebook-sample.html');
+  await expect(page.locator('.notebook-translation-notice')).toContainText('not AI translation');
+  await page.locator('#sample-day').selectOption('matches'); await page.locator('[data-sample-mode="write"]').click();
+  const source = page.locator('[data-sample-field="daily.en"]'), target = page.locator('[data-sample-field="daily.ja"]');
+  const control = page.locator('[data-demo-translation="daily.ja"]'), button = control.locator('[data-demo-preview]');
+  const sourceText = 'I tried to remember my ready position between points.';
+  await target.fill('Existing fictional target');
+  await button.click();
+  await expect(control.locator('[data-demo-review]')).toContainText('not a translation of your typing');
+  await expect(control.locator('[data-demo-review]')).toContainText('ポイントの間に、基本姿勢を意識しました。');
+  await expectWriting(source, sourceText); await expectWriting(target, 'Existing fictional target');
+  for (const width of [320, 390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+    const boxes = await control.locator('[data-demo-review], button').evaluateAll(nodes => nodes.filter(node => node.getClientRects().length).map(node => ({ left: node.getBoundingClientRect().left, right: node.getBoundingClientRect().right })));
+    expect(boxes.every(box => box.left >= 0 && box.right <= width)).toBe(true);
+  }
+  await control.locator('[data-demo-cancel]').click(); await expectWriting(target, 'Existing fictional target');
+  await button.click(); await page.locator('#language-toggle').click();
+  await expect(page.locator('[data-demo-translation="daily.ja"] [data-demo-review]')).toBeHidden();
+  await expectWriting(target, 'Existing fictional target'); await page.locator('#language-toggle').click();
+  await button.click(); await source.fill('Changed fictional source');
+  await expect(control.locator('[data-demo-apply]')).toBeDisabled();
+  await expect(control.locator('[data-demo-stale]')).toContainText('source or destination changed');
+  await control.locator('[data-demo-apply]').evaluate(node => { node.disabled = false; node.click(); });
+  await expectWriting(target, 'Existing fictional target');
+  await control.locator('[data-demo-cancel]').click(); await button.click();
+  await expect(control.locator('[data-demo-message]')).toContainText('requires the original sample text');
+  await source.fill(sourceText); await button.click();
+  await target.fill('Changed fictional destination');
+  await expect(control.locator('[data-demo-apply]')).toBeDisabled();
+  await control.locator('[data-demo-cancel]').click(); await button.click();
+  await control.locator('[data-demo-apply]').click();
+  await expectWriting(source, sourceText); await expectWriting(target, 'ポイントの間に、基本姿勢を意識しました。');
+  await expect(control.locator('[data-demo-message]')).toContainText('Nothing was sent or saved');
+  await page.locator('[data-sample-host="daily.ja"] [data-rich-action="undo"]').click();
+  await expectWriting(target, 'Changed fictional destination');
+  await page.locator('[data-sample-host="daily.ja"] [data-rich-action="redo"]').click();
+  await expectWriting(target, 'ポイントの間に、基本姿勢を意識しました。');
+  await page.locator('[data-sample-mode="read"]').click(); await expect(page.locator('[data-sample-read="daily.ja"]')).toHaveText('ポイントの間に、基本姿勢を意識しました。');
+  expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('Changed fictional destination');
+  await page.reload(); await expect(page.locator('[data-sample-read="daily.ja"]')).not.toContainText('Changed fictional destination');
+  expect(requests).toEqual([]); expect(errors).toEqual([]);
+});
+
+test('fictional coach translation preserves formatted example and is labelled in Japanese and English', async ({ page, context }) => {
+  const requests = [];
+  await context.route(`${API}/api/**`, route => { requests.push(route.request().url()); return route.abort(); });
+  await page.goto('/notebook-sample.html'); await page.locator('[data-sample-mode="write"]').click();
+  const source = page.locator('[data-sample-field="coach.ja"]'), target = page.locator('[data-sample-field="coach.en"]');
+  const control = page.locator('[data-demo-translation="coach.en"]');
+  await expect(control.locator('[data-demo-preview]')).toContainText('デモ');
+  const original = await source.innerHTML(); await target.fill('Fictional earlier English text');
+  await control.locator('[data-demo-preview]').click();
+  await expect(control.locator('[data-demo-review] strong')).toHaveText('Ready position');
+  await expect(control.locator('[data-demo-review] ol li')).toHaveCount(2);
+  await control.locator('[data-demo-apply]').click();
+  await expect(source).toHaveJSProperty('innerHTML', original);
+  await expect(target.locator('strong')).toHaveText('Ready position'); await expect(target.locator('li')).toHaveCount(2);
+  await page.locator('#language-toggle').click(); await expect(page.locator('[data-demo-preview="coach.en"]')).toContainText('Demo: preview English');
+  await page.locator('[data-sample-mode="read"]').click();
+  await expect(page.locator('[data-sample-read="coach.en"] strong')).toHaveText('Ready position');
+  await expect(page.locator('[data-sample-read="coach.en"] ol li')).toHaveCount(2);
+  expect(requests).toEqual([]);
+});
+
 test('directory scales with cards, search and pagination; only a selected account has a login form', async ({ page, context }) => {
   const requests = [], errors = [];
   page.on('pageerror', error => errors.push(error.message));

@@ -1,5 +1,31 @@
 # Private player notebook
 
+## Translation preparation — UAT only (2026-11-02)
+
+The user requested that implementation start and accepts using ChatGPT credits.
+This first stage is **not a working translator**: the UAT Write view shows
+disabled translation controls and explains that language versions remain manual.
+The fictional preview demonstrates review, cancel and explicit replacement with
+prewritten example translations. They are not AI-generated and are never based
+on arbitrary text typed into the sample. The original sample remains unchanged;
+changing source or destination after opening a preview disables its replacement.
+Sample changes stay in page memory and are not sent or saved.
+
+No notebook text, identity, password or token is sent to a translation provider.
+There is no provider endpoint, OAuth connection, API key, account or billing
+change. Real ChatGPT translation remains blocked until OpenAI confirms hosted
+app eligibility, account-use permissions and the required under-age data
+protection, with applicable consent. `store: false` alone is not Zero Data
+Retention. The user has not authorized purchasing credits or automatic billing.
+Production remains unchanged; any promotion requires fresh explicit approval.
+
+Browser tests use only fictional preview data and intercepted synthetic player
+sessions/documents. They verify disabled controls, no translation requests,
+source/destination change guards, cancellation, explicit replacement, rich-text
+formatting, undo/redo, JA/EN and mobile/desktop bounds. The deployed-source smoke
+test intercepts all notebook requests and blocks OpenAI requests. Current
+implementation and provider research: `docs/PRIVATE-REFLECTION-PLAN.md`.
+
 ## Incomplete matches — confirmed (2026-10-18)
 
 Incomplete recorded singles are included in reflections just like completed
@@ -205,7 +231,7 @@ Write/Read + history release `cba4b43` is live in UAT (Actions `38352136243`, al
 
 Landing cards + mock preview release `52032a7` is live in UAT (Actions `38355061345`, all 27 browser tests and live smoke passed). Live JA/EN landing/sample checks passed at 320/390/768/1440 px using 37 intercepted synthetic directory accounts: progressive cards/search, selected/direct sign-in, auto-height/full preview paragraphs, reset, Friday rest, no sample API/session reads or writing persistence, and zero overflow/page errors. Synthetic-only screenshots were visually reviewed. No real journals, accounts, Worker, or Upstash data changed; production remains unchanged.
 
-The user chose to keep translation manual. No provider, API key, AI button, billing, or transmission of writing to a translator is enabled. Notebook examples are design references only, not imported data.
+The live notebook continues to use manual translation. UAT translation-preparation controls and the fixed fictional preview are described at the top of this document; no provider, API key, live AI translation, billing, or transmission of writing to a translator is enabled. Notebook examples are design references only, not imported data.
 
 ## Access and layout
 
