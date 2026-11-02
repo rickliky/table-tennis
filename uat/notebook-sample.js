@@ -4,6 +4,7 @@
   // storage is used here; only the shared interface-language preference persists.
   const app = document.querySelector('#notebook-sample-app');
   const Rich = window.LKNotebookRich;
+  const Translation = window.LKNotebookTranslation;
   let editors = [];
   let language = localStorage.getItem('lk-language') === 'en' ? 'en' : 'ja', mode = 'read', day = 'daily';
   const words = {
@@ -64,7 +65,7 @@
     daily: { 'coach.en': 'coach.ja' },
     matches: { 'daily.ja': 'daily.en', 'match.a.ja': 'match.a.en', 'coach.en': 'coach.ja' }
   };
-  let documents = structuredClone(examples), translationPreview = null;
+  let documents = structuredClone(examples), translationPreview = null, translationSession = null;
   const t = key => words[language][key];
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
   const equal = (left, right) => JSON.stringify(left) === JSON.stringify(right);
@@ -80,18 +81,19 @@
   }
   const reflection = prefix => `<div class="notebook-bilingual">${field(`${prefix}.en`, 'english')}${field(`${prefix}.ja`, 'japanese')}</div>`;
   function closeTranslationPreview() {
+    translationSession?.cancel(); translationSession = null;
     translationPreview = null;
     app.querySelectorAll('[data-demo-review]').forEach(node => { node.hidden = true; node.replaceChildren(); });
   }
   function refreshTranslationPreview() {
     if (!translationPreview) return;
-    const { source, target, sourceValue, targetValue, container } = translationPreview;
-    const stale = !equal(documents[day][source], sourceValue) || !equal(documents[day][target] || '', targetValue);
+    const { container } = translationPreview;
+    const stale = !translationSession?.canAccept();
     container.querySelector('[data-demo-stale]').textContent = stale ? t('demoStale') : '';
     container.querySelector('[data-demo-apply]').disabled = stale;
   }
   function bindTranslationPreview() {
-    app.querySelectorAll('[data-demo-preview]').forEach(button => button.onclick = () => {
+    app.querySelectorAll('[data-demo-preview]').forEach(button => button.onclick = async () => {
       if (editors.some(editor => editor.composing)) return;
       const target = button.dataset.demoPreview, source = demoPairs[day]?.[target], container = button.parentElement;
       closeTranslationPreview();
@@ -99,7 +101,23 @@
       if (!source || !equal(documents[day][source], examples[day][source])) {
         container.querySelector('[data-demo-message]').textContent = t('demoResetSource'); return;
       }
-      translationPreview = { source, target, sourceValue: structuredClone(documents[day][source]), targetValue: structuredClone(documents[day][target] || ''), candidate: structuredClone(examples[day][target]), container };
+      const fixtureDay = day, direction = target.endsWith('.ja') ? 'en-ja' : 'ja-en';
+      const session = translationSession = Translation.create({
+        read: key => documents[day][key] || '', context: () => `${day}:${mode}`,
+        request: async request => {
+          if (day !== fixtureDay || request.direction !== direction || !equal(documents[day][source], examples[day][source]) || request.text !== Rich.text(examples[day][source])) throw new Error('Only unchanged fictional examples are available');
+          return structuredClone(examples[day][target]);
+        },
+        apply: (targetKey, candidate) => {
+          const editor = editors.find(item => item.root.getAttribute('data-sample-field') === targetKey);
+          if (!editor) throw new Error('Sample editor unavailable');
+          editor.quill.history.cutoff(); editor.quill.setContents(Rich.delta(candidate), 'user'); editor.quill.history.cutoff();
+        }
+      });
+      const result = await session.preview({ sourceKey: source, targetKey: target, direction });
+      if (session !== translationSession || !container.isConnected || result.status === 'cancelled') return;
+      if (result.status !== 'ready') { container.querySelector('[data-demo-message]').textContent = t(result.status === 'stale' ? 'demoStale' : 'demoResetSource'); return; }
+      translationPreview = { candidate: result.value, container };
       const review = container.querySelector('[data-demo-review]');
       review.innerHTML = `<section class="notebook-translation-review" role="region" aria-label="${t('demoReview')}"><h4>${t('demoReview')}</h4><p>${t('demoReviewHint')}</p><div class="notebook-rich-content">${Rich.html(translationPreview.candidate)}</div><p data-demo-stale role="status" aria-live="polite"></p><div class="notebook-translation-actions"><button type="button" data-demo-apply>${t('demoApply')}</button><button type="button" data-demo-cancel>${t('demoCancel')}</button></div></section>`;
       review.hidden = false;
@@ -108,17 +126,15 @@
         if (!translationPreview || editors.some(editor => editor.composing)) return;
         refreshTranslationPreview();
         if (container.querySelector('[data-demo-apply]').disabled) return;
-        const editor = editors.find(item => item.root.getAttribute('data-sample-field') === target);
-        if (!editor) return;
-        const candidate = translationPreview.candidate;
+        if (session.accept().status !== 'applied') return;
         closeTranslationPreview();
-        editor.quill.history.cutoff(); editor.quill.setContents(Rich.delta(candidate), 'user'); editor.quill.history.cutoff();
         container.querySelector('[data-demo-message]').textContent = t('demoApplied'); button.focus({ preventScroll: true });
       };
       container.querySelector('[data-demo-apply]').focus({ preventScroll: true });
     });
   }
   function render() {
+    translationSession?.cancel(); translationSession = null;
     translationPreview = null;
     editors.forEach(editor => editor.dispose()); editors = [];
     document.documentElement.lang = language;
