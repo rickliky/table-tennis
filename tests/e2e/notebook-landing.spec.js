@@ -2,6 +2,40 @@ const { test, expect } = require('@playwright/test');
 const { expectWriting, paste } = require('./helpers/notebook');
 const API = 'https://little-kings-api.little-kings.workers.dev';
 
+test('synthetic preview controller and OpenAI adapter work together without a live provider', async ({ page, context }) => {
+  const { requestOpenAITranslation } = await import('../../worker/src/openai-translation.js');
+  const calls = [], blocked = [];
+  await context.route(`${API}/api/**`, route => { blocked.push(route.request().url()); return route.abort(); });
+  await context.route(/^https:\/\/(?:api\.openai\.com|chatgpt\.com)\//, route => { blocked.push(route.request().url()); return route.abort(); });
+  await context.route('**/api-test/translate', async route => {
+    const body = route.request().postDataJSON(); calls.push(body);
+    const value = await requestOpenAITranslation(body, { apiKey: 'synthetic-key', model: 'synthetic-model', transport: async (url, init) => {
+      expect(url).toBe('https://api.openai.com/v1/responses');
+      expect(JSON.parse(init.body).store).toBe(false);
+      return Response.json({ status: 'completed', output: [{ type: 'message', role: 'assistant', content: [{ type: 'output_text', text: '合成の翻訳' }] }] });
+    } });
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, value }) });
+  });
+  await page.goto('/notebook-sample.html');
+  const result = await page.evaluate(async () => {
+    const fields = { source: 'Synthetic source', target: 'Existing synthetic target' }, writes = [];
+    const session = window.LKNotebookTranslation.create({
+      read: key => fields[key], context: () => 'synthetic-day',
+      request: async ({ text, direction }) => (await (await fetch('/api-test/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, direction }) })).json()).value,
+      apply: (key, value) => { fields[key] = value; writes.push(key); }
+    });
+    const preview = await session.preview({ sourceKey: 'source', targetKey: 'target', direction: 'en-ja' });
+    const before = { ...fields }, writesBefore = [...writes];
+    const applied = session.accept();
+    return { preview, before, writesBefore, applied, after: fields, writes };
+  });
+  expect(calls).toEqual([{ text: 'Synthetic source', direction: 'en-ja' }]);
+  expect(result.preview).toEqual({ status: 'ready', value: '合成の翻訳' });
+  expect(result.before).toEqual({ source: 'Synthetic source', target: 'Existing synthetic target' }); expect(result.writesBefore).toEqual([]);
+  expect(result.applied).toEqual({ status: 'applied' }); expect(result.after).toEqual({ source: 'Synthetic source', target: '合成の翻訳' }); expect(result.writes).toEqual(['target']);
+  expect(blocked).toEqual([]); expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('Synthetic source');
+});
+
 test('fictional translation preview never sends text and requires an unchanged source and explicit confirmation', async ({ page, context }) => {
   const requests = [], errors = [];
   page.on('pageerror', error => errors.push(error.message));
