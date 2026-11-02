@@ -5,7 +5,9 @@
 The user chose to prepare the **separately billed OpenAI API**, not hosted
 ChatGPT Plus sign-in. This preparation does not use Plus credits and authorizes
 neither purchases nor billing/credit changes. The user declined to submit the
-Sign in with ChatGPT interest form; do not submit it or repeatedly ask.
+Sign in with ChatGPT interest form and later declined sending a Support inquiry;
+do not submit either or repeatedly ask. Continue with offline/mock work without
+assuming that privacy approval has been granted.
 
 This is **not a working translator**. The UAT Write view still shows disabled
 controls and language versions remain manual. The sample displays fixed fictional
@@ -31,11 +33,19 @@ model-specific prompt-caching/retention behavior and costs. Obtain explicit
 approval before any billing setup, purchasing or transmitting real writing.
 Complete a separately reviewed UAT integration with ownership checks, rate and
 spending safeguards, secure server-side secrets, cancellation/retry behavior,
-user-facing disclosure and quality tests. The prototype currently converts rich
-content to plain text for its request; formatting/list preservation still needs
-design and testing. Preview cancellation currently ignores late results; it does
-not abort a hypothetical request already sent. An instruction to treat input as text is not a guarantee
-against prompt injection or inaccurate output. Keep originals and require review.
+user-facing disclosure and quality tests. For synthetic tests, the preview now
+signals cancellation to a cooperative request and rejects late results even when
+the callback ignores it. Cancellation cannot undo text already transmitted or
+guarantee a provider stops processing it. No live request is wired to this signal.
+
+The prototype sends only plain text to its injected callback and, when a plain
+candidate has exactly matching line and blank-line boundaries, restores simple
+whole-line bold/italic and list formatting locally. A changed line layout or
+mixed inline styling produces no candidate rather than silently losing formats.
+This is mock-tested preparation, **not** proof a real model preserves meaning,
+order or formatting; mixed styles and real-model quality remain unresolved.
+An instruction to treat input as text is not a guarantee against prompt injection
+or inaccurate output. Keep originals and require review.
 Production promotion requires fresh explicit approval.
 
 Browser and Worker tests use only fictional examples and intercepted synthetic

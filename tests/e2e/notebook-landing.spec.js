@@ -21,18 +21,35 @@ test('synthetic preview controller and OpenAI adapter work together without a li
     const fields = { source: 'Synthetic source', target: 'Existing synthetic target' }, writes = [];
     const session = window.LKNotebookTranslation.create({
       read: key => fields[key], context: () => 'synthetic-day',
-      request: async ({ text, direction }) => (await (await fetch('/api-test/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, direction }) })).json()).value,
+      request: async ({ text, direction }, { signal }) => (await (await fetch('/api-test/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, direction }), signal })).json()).value,
       apply: (key, value) => { fields[key] = value; writes.push(key); }
     });
     const preview = await session.preview({ sourceKey: 'source', targetKey: 'target', direction: 'en-ja' });
     const before = { ...fields }, writesBefore = [...writes];
     const applied = session.accept();
-    return { preview, before, writesBefore, applied, after: fields, writes };
+    let aborted = false;
+    const delayed = window.LKNotebookTranslation.create({
+      read: key => fields[key], context: () => 'synthetic-day',
+      request: (input, { signal }) => new Promise((resolve, reject) => signal.addEventListener('abort', () => { aborted = true; reject(new Error('Synthetic cancellation')); }, { once: true })),
+      apply: () => { throw new Error('Cancelled preview must never apply'); }
+    });
+    const cancelledPreview = delayed.preview({ sourceKey: 'source', targetKey: 'target', direction: 'en-ja' });
+    delayed.cancel();
+    const richFields = { source: { format: 'lk-rich-v1', ops: [{ insert: 'Synthetic heading', attributes: { bold: true } }, { insert: '\n' }, { insert: 'Synthetic bullet' }, { insert: '\n', attributes: { list: 'bullet' } }] }, target: 'Existing rich target' };
+    const richSession = window.LKNotebookTranslation.create({
+      read: key => richFields[key], context: () => 'synthetic-day', request: async () => '見出し\n合成の箇条書き', apply: (key, value) => { richFields[key] = value; }
+    });
+    const formattedPreview = await richSession.preview({ sourceKey: 'source', targetKey: 'target', direction: 'en-ja' });
+    const formattedBefore = richFields.target, formattedApplied = richSession.accept();
+    return { preview, before, writesBefore, applied, after: fields, writes, aborted, cancelled: await cancelledPreview, formattedPreview, formattedBefore, formattedApplied, formattedAfter: richFields.target };
   });
   expect(calls).toEqual([{ text: 'Synthetic source', direction: 'en-ja' }]);
   expect(result.preview).toEqual({ status: 'ready', value: '合成の翻訳' });
   expect(result.before).toEqual({ source: 'Synthetic source', target: 'Existing synthetic target' }); expect(result.writesBefore).toEqual([]);
   expect(result.applied).toEqual({ status: 'applied' }); expect(result.after).toEqual({ source: 'Synthetic source', target: '合成の翻訳' }); expect(result.writes).toEqual(['target']);
+  expect(result.aborted).toBe(true); expect(result.cancelled).toEqual({ status: 'cancelled' });
+  expect(result.formattedPreview).toEqual({ status: 'ready', value: { format: 'lk-rich-v1', ops: [{ insert: '見出し', attributes: { bold: true } }, { insert: '\n' }, { insert: '合成の箇条書き' }, { insert: '\n', attributes: { list: 'bullet' } }] } });
+  expect(result.formattedBefore).toBe('Existing rich target'); expect(result.formattedApplied).toEqual({ status: 'applied' }); expect(result.formattedAfter).toEqual(result.formattedPreview.value);
   expect(blocked).toEqual([]); expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('Synthetic source');
 });
 
