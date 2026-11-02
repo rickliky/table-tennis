@@ -46,6 +46,13 @@ passes only source text and language direction to its request callback—not fie
 keys or notebook context. The deployed-source smoke test intercepts notebook
 requests and blocks OpenAI. Details: `docs/PRIVATE-REFLECTION-PLAN.md`.
 
+UAT behavior release **`a04a8fe`**, Actions **`41394753002`**, passed syntax,
+Worker/operations suites, **73 browser tests** and **21 live UAT checks**.
+Separate live WebKit checks passed the JA/EN fictional preview and disabled
+real-notebook controls without retry, with synthetic intercepted sessions. The
+cache-busted build confirmed `a04a8fe`; production remains `8eaae02`. No Worker,
+private writing, account, provider, billing or production change occurred.
+
 Earlier UAT preview release **`f4959eb`**, Actions **`41391854540`**, passed all verification
 suites, **72 browser tests** and **21 live checks without retry**. Separate live
 JA/EN translation checks passed in Chromium and WebKit, with all notebook API
