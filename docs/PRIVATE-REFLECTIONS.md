@@ -26,6 +26,15 @@ formatting, undo/redo, JA/EN and mobile/desktop bounds. The deployed-source smok
 test intercepts all notebook requests and blocks OpenAI requests. Current
 implementation and provider research: `docs/PRIVATE-REFLECTION-PLAN.md`.
 
+UAT release **`f4959eb`**, Actions **`41391854540`**, passed all verification
+suites, **72 browser tests** and **21 live checks without retry**. Separate live
+JA/EN translation checks passed in Chromium and WebKit, with all notebook API
+responses intercepted and no OpenAI requests. The live fictional mobile preview
+was visually reviewed and made no API requests. Cache-busted build info confirms
+the UAT release; production remains `8eaae02`. No real diary or account was
+accessed or changed; no Worker deployment, Redis mutation, billing change or
+production promotion occurred.
+
 ## Incomplete matches — confirmed (2026-10-18)
 
 Incomplete recorded singles are included in reflections just like completed
