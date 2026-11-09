@@ -1,5 +1,46 @@
 # Private player notebook
 
+## Private opponent preparation — UAT (2026-11-09)
+
+The user requested opponent-specific preparation based on past reflections,
+confirmed **“English Back-Translation”** and **“Japanese Translation（日本語訳）”**
+are headings inside notes, and chose a **private, non-AI** implementation.
+No provider, API key, automatic translation or external inference is involved.
+
+- Player profile → Opponents offers **Private match preparation**, with an
+  opponent selector. It includes recorded incomplete and tournament singles,
+  even if that opponent has no completed training match. The normal charts and
+  completion/ranking rules remain unchanged.
+- The link opens `opponent-prep.html`, a separate page without analytics or
+  third-party scripts. It requires the viewed player's private notebook session;
+  a remembered session is revalidated and must match the profile, otherwise the
+  player's password is required. Signing in on this page is memory-only. Site,
+  Admin or Approver sessions alone cannot read private notes.
+- Only saved **match** fields verified by the private API as involving the
+  selected opponent are considered, from the latest 12 recorded meeting dates;
+  up to 30 excerpt cards are displayed. Incomplete matches remain incomplete.
+  Daily notes and daily coach feedback are not claimed to describe a particular
+  opponent. The existing private APIs and owner authorization are unchanged.
+- English selects the named English Back-Translation section; Japanese selects
+  the named Japanese Translation section. Both language fields are checked for
+  headings, duplicate sections are removed, and unmarked originals or another
+  language are never substituted. The local parser supports plain/Markdown and
+  restricted rich text, but free-form headings and section boundaries may not
+  be recognized or may truncate excerpts. If no named section is found, an
+  explicit empty state appears rather than guessing. Source-date links allow
+  the owner to check full context; no actual translation is performed.
+- The plan highlights a possible next focus using simple keyword selection and
+  exact excerpts, followed by general practice/match prompts. It is **not** a
+  generative synthesis, a verified coach evaluation, an opponent weakness, a
+  win-probability prediction or a guarantee of winning. Review it with a coach.
+- Data is read only after an explicit action and owner validation. Text remains
+  in the page's memory, not browser storage or an exported dataset, and is
+  cleared on hide, cross-tab session changes, navigation or page backgrounding.
+  Language changes revalidate the player session before showing notes again.
+  There is no notebook write, Worker runtime change or data synchronization.
+  The shared Worker is not deployed for this feature; UAT and PROD data remain
+  independent. Automated checks and screenshots use intercepted fictional data.
+
 ## Incomplete matches — confirmed (2026-10-18)
 
 Incomplete recorded singles are included in reflections just like completed
