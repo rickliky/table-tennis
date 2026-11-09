@@ -15,9 +15,10 @@ test.beforeAll(async ({ request, baseURL }) => {
 for (const language of ['en', 'ja']) for (const width of [320, 1440]) {
   test(`live private opponent preparation uses only synthetic data (${language}, ${width}px)`, async ({ page, context, baseURL }) => {
     const errors = [], apiCalls = [], external = [], origin = new URL(baseURL).origin;
+    const location = new URL(baseURL), environment = location.pathname.split('/').includes('uat') || ['localhost', '127.0.0.1'].includes(location.hostname) ? 'uat' : 'prod';
     page.on('pageerror', error => errors.push(error.message));
     await page.setViewportSize({ width, height:900 });
-    await context.addInitScript(language => { localStorage.setItem('lk-language', language); localStorage.setItem('lk-private-reflection-session-uat', 'synthetic-owner-token'); }, language);
+    await context.addInitScript(({ language, environment }) => { localStorage.setItem('lk-language', language); localStorage.setItem(`lk-private-reflection-session-${environment}`, 'synthetic-owner-token'); }, { language, environment });
     await page.route('**/*', async route => {
       const req = route.request(), url = new URL(req.url());
       if (url.origin === origin) return route.continue();
@@ -37,7 +38,7 @@ for (const language of ['en', 'ja']) for (const width of [320, 1440]) {
     await expect(page.locator('.opponent-prep-card')).toContainText(language === 'en' ? 'Incomplete' : '未完了');
     await expect(page.locator('body')).not.toContainText('UNRELATED_PRIVATE_NOTE');
     expect(apiCalls.map(call => call.path)).toEqual(['/api/reflections/session','/api/reflections/dates','/api/reflections/day']);
-    expect(apiCalls.every(call => call.method === 'GET' && call.environment === 'uat')).toBe(true);
+    expect(apiCalls.every(call => call.method === 'GET' && call.environment === environment)).toBe(true);
     expect(external).toEqual([]); expect(errors).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     await page.locator('#prep-hide').click(); await expect(page.locator('.opponent-prep-card')).toHaveCount(0);

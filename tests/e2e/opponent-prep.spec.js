@@ -217,6 +217,22 @@ test('a day response cannot attribute another opponent’s note to the selected 
   await expect(page.locator('body')).not.toContainText('NOT_THE_SELECTED_OPPONENT');
 });
 
+test('production uses the production notebook session and never the UAT session', async ({ page }) => {
+  const state = await mock(page, { remembered:'private-other' });
+  await page.addInitScript(() => localStorage.setItem('lk-private-reflection-session-prod', 'private-owner'));
+  await page.route('https://prod-prep.test/**', async route => {
+    const url = new URL(route.request().url());
+    const response = await route.fetch({ url:`http://127.0.0.1:4173${url.pathname}${url.search}` });
+    await route.fulfill({ response });
+  });
+  await page.goto(`https://prod-prep.test${prepUrl}`);
+  await page.locator('#prep-open').click();
+  await expect(page.locator('.opponent-prep-card')).toHaveCount(3);
+  const calls = state.requests.filter(item => item.path.startsWith('/api/reflections/'));
+  expect(calls.every(item => item.environment === 'prod' && item.token === 'private-owner')).toBe(true);
+  expect(await page.evaluate(key => localStorage.getItem(key), privateKey)).toBe('private-other');
+});
+
 for (const language of ['en', 'ja']) test(`private preparation fits supported screen sizes (${language})`, async ({ page }) => {
   await mock(page, { remembered:'private-owner', language });
   await page.goto(prepUrl); await page.locator('#prep-open').click(); await expect(page.locator('.opponent-prep-card')).toHaveCount(3);
