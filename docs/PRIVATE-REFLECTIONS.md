@@ -2,9 +2,9 @@
 
 ## Private opponent preparation — completeness update (2026-11-09)
 
-This update is intended for UAT first. Production's earlier release still has the
-12-date / 30-card and short-excerpt limits until this change is reviewed and
-explicitly approved for production. UAT and production notebooks are independent.
+This update is live in UAT. Production's earlier release still has the 12-date /
+30-card and short-excerpt limits until this change is reviewed and explicitly
+approved for production. UAT and production notebooks are independent.
 
 The user requested opponent-specific preparation based on past reflections,
 confirmed **“English Back-Translation”** and **“Japanese Translation（日本語訳）”**
@@ -56,6 +56,17 @@ No provider, API key, automatic translation or external inference is involved.
   There is no notebook write, Worker runtime change or data synchronization.
   The shared Worker is not deployed for this feature; UAT and PROD data remain
   independent. Automated checks and screenshots use intercepted fictional data.
+
+UAT behavior release **`2496f91`** passed Actions **`42578339348`**, including
+all 84 browser tests, deployment and 24 live checks. The full browser suite also
+passed locally in WebKit; a separate UAT rerun passed all 24 checks without retry,
+and all five opponent-preparation smoke checks passed in WebKit. Additional
+390 px deployed-source synthetic checks covered failed-date retry, older dates,
+complete sections, missing-heading full fields, language switch and hide, with
+zero overflow or third-party requests. The deliberately simulated 503 produced
+an expected console error. All documents, sessions and API responses in notebook
+checks were fictional and intercepted; no actual notebook was read or written.
+No Worker, account, credential, dataset or production operation was performed.
 
 ## Incomplete matches — confirmed (2026-10-18)
 
