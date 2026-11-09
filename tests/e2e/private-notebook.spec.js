@@ -53,45 +53,6 @@ async function login(page, id = 'LK-0080', remember = true) {
   await expect(page.locator('#notebook-date')).toBeVisible();
 }
 
-for (const id of ['LK-0080', 'LK-0002']) test(`UAT translation controls for ${id} stay disabled and never send writing`, async ({ page, context }) => {
-  const { requests, documents } = await mock(context), external = [], errors = [];
-  page.on('pageerror', error => errors.push(error.message));
-  await context.route(/^https:\/\/(?:api\.openai\.com|chatgpt\.com)\//, route => { external.push(route.request().url()); return route.abort(); });
-  await login(page, id);
-  await expect(page.locator('#notebook-translation-availability')).toContainText('自動翻訳はまだ接続されていません');
-  await expect(page.locator('.notebook-translation-unavailable')).toHaveCount(4);
-  await expect(page.locator('#notebook-daily .notebook-translation-unavailable')).toBeDisabled();
-  await expect(page.locator('#notebook-matches .notebook-translation-unavailable')).toHaveCount(2);
-  await expect(page.locator('#notebook-coach .notebook-translation-unavailable')).toBeDisabled();
-  expect(requests.filter(request => request.body?.patch)).toHaveLength(0);
-  // Even if a visitor removes the disabled attribute, there is no request handler.
-  await page.locator('#notebook-daily .notebook-translation-unavailable').evaluate(button => { button.disabled = false; button.click(); });
-  await page.locator('#language-toggle').click();
-  await expect(page.locator('#notebook-translation-availability')).toContainText('No writing is sent for translation');
-  await expect(page.locator('.notebook-translation-unavailable').first()).toBeDisabled();
-  const link = page.locator('#notebook-translation-availability a');
-  await expect(link).toHaveAttribute('target', '_blank'); await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-  for (const width of [320, 390, 1440]) {
-    await page.setViewportSize({ width, height: 900 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
-    const bounds = await page.locator('#notebook-translation-availability, .notebook-translation-unavailable').evaluateAll(nodes => nodes.map(node => ({ left: node.getBoundingClientRect().left, right: node.getBoundingClientRect().right })));
-    expect(bounds.every(box => box.left >= 0 && box.right <= width)).toBe(true);
-  }
-  await page.locator('[data-field="daily.ja"]').fill('Synthetic manual version');
-  await expect(page.locator('#notebook-status')).toContainText('Saved');
-  expect(Rich.text(documents.get(`${id}|2026-10-11`).fields['daily.ja'])).toBe('Synthetic manual version');
-  expect(Object.keys(documents.get(`${id}|2026-10-11`).fields)).toEqual(['daily.ja']);
-  await page.locator('[data-mode="read"]').click();
-  await expect(page.locator('.notebook-translation-unavailable, #notebook-translation-availability')).toHaveCount(0);
-  expect(requests.some(request => /translat/i.test(request.path))).toBe(false);
-  expect(external).toEqual([]); expect(errors).toEqual([]);
-});
-
-test('Japanese-only player accounts do not receive unavailable translation controls', async ({ page, context }) => {
-  await mock(context); await login(page, 'LK-0003');
-  await expect(page.locator('.notebook-translation-unavailable, #notebook-translation-availability')).toHaveCount(0);
-});
-
 test('private directory has no club gate/data request; player login restores for eight weeks and locks', async ({ page, context }) => {
   const { requests } = await mock(context), errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/feedback.html?player=LK-0080');

@@ -201,13 +201,6 @@ export async function handlePrivateReflections(request, env, environment) {
     if (url.searchParams.has('player') || url.searchParams.has('playerId')) fail('Identity is determined by your session', 403);
     if (url.pathname === '/api/reflections/session' && request.method === 'GET') return respond({ ok: true, expires: actor.expires, player: publicAccount(account, await playerFor(actor.playerId)) });
     if (url.pathname === '/api/reflections/logout' && request.method === 'POST') { await redis('DEL', sessionKey); return respond({ ok: true }); }
-    if (url.pathname === '/api/reflections/translate') {
-      // Hard stop, independent of secrets and environment variables. Remove only
-      // in a separately reviewed UAT change after the required privacy approval.
-      // Do not parse the body or call any provider while preparing the API.
-      if (environment !== 'uat' || request.method !== 'POST') fail('Not found', 404);
-      fail('Translation is not enabled', 503);
-    }
     const datesKey = `${prefix}dates:${actor.playerId}`;
     if (url.pathname === '/api/reflections/dates' && request.method === 'GET') return respond({ ok: true, dates: await redis('ZREVRANGE', datesKey, 0, -1) || [] });
     if (url.pathname !== '/api/reflections/day') fail('Not found', 404);

@@ -29,8 +29,6 @@
       reflection: 'My reflection', reflectionHint: 'What happened, what did you learn, and what will you focus on next?', english: 'English original', japanese: 'Japanese version',
       coach: 'Coach feedback', coachHint: 'Advice received from the coach, not a coach-authenticated evaluation. Preserve paragraphs and numbered points.',
       coachJapanese: 'Japanese original', coachEnglish: 'English version', translation: 'Translation is manual. Write or paste each language version below.',
-      translationUnavailable: 'Automatic translation is not connected yet. No writing is sent for translation; please continue to enter each language manually.',
-      translationPreview: 'Try the fictional translation preview (opens a new tab)', translateJapanese: 'Translate to Japanese — unavailable', translateEnglish: 'Translate to English — unavailable',
       templateHint: 'Practice-day template — saved only after you edit it.',
       matchTemplateHint: 'Match reflection template — saved only after you edit it.',
       daily: 'Daily reflection', recorded: 'Recorded matches', matchHint: 'All entries are open. Text boxes grow with your writing. Match order follows record IDs, not verified play order.', jump: 'Go to',
@@ -57,8 +55,6 @@
       reflection: '自分の振り返り', reflectionHint: '起きたこと、学んだこと、次に意識したいことを書きましょう。', english: '英語の原文', japanese: '日本語版',
       coach: 'コーチのアドバイス', coachHint: 'コーチから受けたアドバイスです。コーチ本人のログインや評価ではありません。段落や番号をそのまま残せます。',
       coachJapanese: '日本語の原文', coachEnglish: '英語版', translation: '翻訳は手入力です。各言語の文章を入力・貼り付けできます。',
-      translationUnavailable: '自動翻訳はまだ接続されていません。翻訳のために文章が送信されることはありません。引き続き各言語を手入力してください。',
-      translationPreview: '架空の翻訳プレビューを試す（新しいタブで開きます）', translateJapanese: '日本語に翻訳 — 利用準備中', translateEnglish: '英語に翻訳 — 利用準備中',
       templateHint: '練習日のテンプレート — 編集した後に保存されます。',
       matchTemplateHint: '試合の振り返りテンプレート — 編集した後に保存されます。',
       daily: '1日の振り返り', recorded: '登録済み試合', matchHint: 'すべての欄を開いて表示します。入力欄は文章に合わせて広がります。記録ID順で、実際の試合順とは限りません。', jump: '移動',
@@ -206,16 +202,10 @@
   function editorValue(key) {
     return dirty.has(key) ? dirty.get(key) : fieldTemplate(key) || documentValue.fields[key] || '';
   }
-  function translationControl(key) {
-    if (environment !== 'uat' || !player.bilingual) return '';
-    const coach = key === 'coach.en';
-    if (!coach && key !== 'daily.ja' && !/^match\..+\.ja$/.test(key)) return '';
-    return `<button type="button" class="notebook-translation-unavailable" disabled aria-describedby="notebook-translation-availability">${t(coach ? 'translateEnglish' : 'translateJapanese')}</button>`;
-  }
   function field(key, label, hint = '') {
     const value = dirty.has(key) ? dirty.get(key) : documentValue.fields[key] || '';
     if (viewMode === 'read') return readField(key, label, value);
-    return `<section class="notebook-field"><span>${escapeHtml(label)}</span>${hint ? `<small>${hint}</small>` : ''}${fieldTemplate(key) ? `<small class="notebook-template-hint">${t(key === 'daily.en' ? 'templateHint' : 'matchTemplateHint')}</small>` : ''}<div data-rich-field="${escapeHtml(key)}" data-rich-label="${escapeHtml(label)}"></div>${translationControl(key)}</section>`;
+    return `<section class="notebook-field"><span>${escapeHtml(label)}</span>${hint ? `<small>${hint}</small>` : ''}${fieldTemplate(key) ? `<small class="notebook-template-hint">${t(key === 'daily.en' ? 'templateHint' : 'matchTemplateHint')}</small>` : ''}<div data-rich-field="${escapeHtml(key)}" data-rich-label="${escapeHtml(label)}"></div></section>`;
   }
   function readField(key, label, value) {
     return `<section class="notebook-read-field"><h3>${escapeHtml(label)}</h3>${typeof value === 'string' ? `<p data-read-field="${escapeHtml(key)}" ${value ? '' : 'class="empty"'}>${escapeHtml(value || t('blank'))}</p>` : `<div data-read-field="${escapeHtml(key)}" class="notebook-rich-content">${Rich.html(value)}</div>`}</section>`;
@@ -239,7 +229,7 @@
       <nav class="notebook-dates" ${requiresLogin ? 'hidden' : ''} aria-label="${t('date')}"><button type="button" data-step="-1" aria-label="${t('previous')}">←</button><label>${t('date')}<span id="notebook-date-label" class="notebook-date-label">${escapeHtml(dateLabel(date))}</span><input id="notebook-date" type="date" min="2000-01-01" max="2100-12-31" aria-describedby="notebook-date-label" value="${date}"></label><button type="button" data-step="1" aria-label="${t('next')}">→</button></nav>
       <section class="notebook-tools" ${requiresLogin ? 'hidden' : ''}><div class="notebook-modes" role="group" aria-label="${t('mode')}">${['write', 'read'].map(mode => `<button type="button" data-mode="${mode}" aria-pressed="${mode === viewMode}">${t(mode)}</button>`).join('')}</div>${viewMode === 'read' ? `<p class="notebook-read-hint">${t('readHint')}</p>` : ''}<div class="notebook-history-tools"><label>${t('month')}<select id="notebook-history-month"></select></label><label>${t('history')}<select id="notebook-history"></select></label><button type="button" id="notebook-latest">${t('latest')}</button></div><p id="notebook-history-empty">${t('noSavedDates')}</p></section>
       <div class="notebook-savebar"><p id="notebook-status" role="status" aria-live="polite"></p><button id="notebook-retry" type="button">${t('retry')}</button></div><section id="notebook-reauth">${requiresLogin ? loginForm(player, true) : ''}</section><section id="notebook-conflict"></section>
-      <section class="notebook-day" ${requiresLogin ? 'hidden' : ''}><p class="notebook-schedule">${t('schedule')}</p>${restDay ? `<section class="notebook-entry notebook-rest"><h2>${t('rest')}</h2><p>${t('restHint')}</p></section>` : `${friday ? `<p class="notebook-schedule">${t('fridaySaved')}</p>` : ''}${environment === 'uat' && player.bilingual && viewMode === 'write' ? `<aside id="notebook-translation-availability" class="notebook-translation-notice"><p>${t('translationUnavailable')}</p><a class="notebook-preview-link" href="notebook-sample.html" target="_blank" rel="noopener noreferrer">${t('translationPreview')} <span aria-hidden="true">↗</span></a></aside>` : ''}<nav class="notebook-jump" aria-label="${t('jump')}"><a href="#notebook-daily">${t('daily')}</a>${matches.length ? `<a href="#notebook-matches">${t('recorded')}</a>` : ''}<a href="#notebook-coach">${t('coach')}</a></nav>
+      <section class="notebook-day" ${requiresLogin ? 'hidden' : ''}><p class="notebook-schedule">${t('schedule')}</p>${restDay ? `<section class="notebook-entry notebook-rest"><h2>${t('rest')}</h2><p>${t('restHint')}</p></section>` : `${friday ? `<p class="notebook-schedule">${t('fridaySaved')}</p>` : ''}<nav class="notebook-jump" aria-label="${t('jump')}"><a href="#notebook-daily">${t('daily')}</a>${matches.length ? `<a href="#notebook-matches">${t('recorded')}</a>` : ''}<a href="#notebook-coach">${t('coach')}</a></nav>
       <section id="notebook-daily" class="notebook-entry"><h2>${t('daily')}</h2>${matchDay && !matches.length ? `<p>${t('noMatches')}</p>` : ''}${reflectionFields('daily')}</section>
       ${matches.length ? `<section id="notebook-matches" class="notebook-matches"><h2>${t('recorded')} · ${matches.length}</h2><p>${t(viewMode === 'read' ? 'matchReadHint' : 'matchHint')}</p>${matchCards}</section>` : ''}
       ${orphanKeys.map(key => `<article class="notebook-match"><h3>${t('missing')} · ${escapeHtml(key)}</h3><div>${reflectionFields(`match.${key}`)}</div></article>`).join('')}
