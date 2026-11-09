@@ -25,10 +25,8 @@ setJson('prod:tournament-matches', getJson('uat:tournament-matches'));
 setJson('prod:external-opponents', getJson('uat:external-opponents'));
 
 const originalFetch = globalThis.fetch;
-let providerCalls = 0;
 globalThis.fetch = async (input, options = {}) => {
   const url = new URL(input), parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
-  if (url.hostname === 'api.openai.com') { providerCalls++; throw new Error('Synthetic tests must not reach OpenAI'); }
   if (parts[0] === 'get') return Response.json({ result: store.get(parts[1]) || null });
   if (parts[0] === 'set') { store.set(parts[1], options.body); return Response.json({ result: 'OK' }); }
   const [command, ...args] = JSON.parse(options.body);
@@ -87,21 +85,6 @@ try {
   assert.equal((await call('/api/reflections/login', { body: { playerId: 'LK-0080', password: 'wrong-password' } })).status, 401);
   const login = async id => (await call('/api/reflections/login', { body: { playerId: id, password: 'synthetic-password-only' } })).value;
   const a = await login('LK-0080'), b = await login('LK-0002'), c = await login('LK-0003');
-  const translationBody = { text: 'Synthetic private text only', direction: 'en-ja' };
-  const pretendConfigured = { OPENAI_API_KEY: 'synthetic-key', PRIVATE_TRANSLATION_ENABLED: 'true', PRIVATE_TRANSLATION_ZDR_CONFIRMED: 'true' };
-  const beforeTranslation = JSON.stringify([...store]);
-  for (const token of [undefined, site, admin, approver]) assert.equal((await call('/api/reflections/translate', { token, body: translationBody, environmentValues: pretendConfigured })).status, 401);
-  const disabledTranslation = await call('/api/reflections/translate', { token: a.token, body: translationBody, environmentValues: pretendConfigured });
-  assert.equal(disabledTranslation.status, 503); assert.equal(disabledTranslation.headers.get('cache-control'), 'no-store');
-  assert.ok(!JSON.stringify(disabledTranslation.value).includes(translationBody.text)); assert.ok(!JSON.stringify(disabledTranslation.value).includes(pretendConfigured.OPENAI_API_KEY));
-  const unreadBody = new Request('https://worker.test/api/reflections/translate?environment=uat', { method: 'POST', headers: { Origin: 'https://rickliky.github.io', Authorization: `Bearer ${a.token}`, 'Content-Type': 'application/json' }, body: 'not valid JSON' });
-  assert.equal((await worker.fetch(unreadBody, { ...env, ...pretendConfigured })).status, 503);
-  assert.equal(unreadBody.bodyUsed, false, 'Disabled translation must not parse or consume the request body');
-  assert.equal((await call('/api/reflections/translate?playerId=LK-0002', { token: a.token, body: translationBody, environmentValues: pretendConfigured })).status, 403);
-  assert.equal((await call('/api/reflections/translate', { token: a.token, method: 'GET', environmentValues: pretendConfigured })).status, 404);
-  assert.equal((await call('/api/reflections/translate', { token: a.token, body: translationBody, origin: 'https://evil.example', environmentValues: pretendConfigured })).status, 403);
-  assert.equal(JSON.stringify([...store]), beforeTranslation, 'Disabled translation must not write journal, rate or session data');
-  assert.equal(providerCalls, 0, 'No configuration can enable the prepared endpoint');
   assert.ok(Math.abs(a.expires - Date.now() - 56 * 86400000) < 2000);
   for (const token of [undefined, site, admin, approver, `${a.token}tampered`]) assert.equal((await call(day, { token })).status, 401);
   assert.equal((await call('/api/admin-data', { token: a.token })).status, 401);
@@ -185,8 +168,6 @@ try {
   const prodLogin = await call('/api/reflections/login', { ...prodOptions, body: { playerId: 'LK-0080', password: 'synthetic-password-only' } });
   assert.equal(prodLogin.status, 200);
   const prodToken = prodLogin.value.token;
-  assert.equal((await call('/api/reflections/translate', { ...prodOptions, token: prodToken, body: translationBody, environmentValues: { ...prodOptions.environmentValues, ...pretendConfigured } })).status, 404);
-  assert.equal(providerCalls, 0, 'Production must not reach a translation provider');
   const prodRich = { format: 'lk-rich-v1', ops: [{ insert: 'Synthetic PROD formatted note', attributes: { italic: true } }, { insert: '\n', attributes: { list: 'ordered' } }] };
   const legacyProdDay = { revision: 3, fields: { 'daily.en': '\n\nSynthetic existing PROD note\n\n', 'coach.ja': 'Synthetic existing PROD advice', activity: 'Synthetic historical activity' } };
   setJson('prod:private-reflection:day:LK-0080:2026-10-10', legacyProdDay);

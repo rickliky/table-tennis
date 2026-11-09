@@ -4,7 +4,6 @@
   // storage is used here; only the shared interface-language preference persists.
   const app = document.querySelector('#notebook-sample-app');
   const Rich = window.LKNotebookRich;
-  const Translation = window.LKNotebookTranslation;
   let editors = [];
   let language = localStorage.getItem('lk-language') === 'en' ? 'en' : 'ja', mode = 'read', day = 'daily';
   const words = {
@@ -17,12 +16,7 @@
       english: 'English original', japanese: 'Japanese version', coachJapanese: 'Japanese original', coachEnglish: 'English version',
       activity: 'Activity', blank: 'Not written', opponentA: 'Sample Opponent A', opponentB: 'Sample Opponent B', training: 'Training · fictional match', win: 'Win', loss: 'Loss',
       rest: 'Friday — no practice or reflection needed.', privacyTitle: 'How real notebooks work', privacy: 'A real notebook requires the player’s own password. The player and club administrators can read it; other members and Approvers cannot. This preview contains only mock data.',
-      manual: 'Language versions are entered manually. This preview does not use a translation service.', invitation: 'Want to try private reflections? Setup is easy — just let Jacelyn and Kaitlyn’s daddy know.',
-      demoNotice: 'Translation preview: fixed fictional examples only. This is not AI translation; nothing is sent or saved. Do not enter private information.',
-      demoJapanese: 'Demo: preview Japanese', demoEnglish: 'Demo: preview English', demoReview: 'Fictional translation preview',
-      demoReviewHint: 'This is a prewritten example, not a translation of your typing. Using it replaces this sample language version; the original stays unchanged.',
-      demoApply: 'Use this example', demoCancel: 'Cancel', demoStale: 'The source or destination changed. Cancel and preview again before replacing it.',
-      demoResetSource: 'This fixed example requires the original sample text. Reset the examples to try it again.', demoApplied: 'Example applied in this preview only. Nothing was sent or saved.'
+      manual: 'Language versions are entered manually. This preview does not use a translation service.', invitation: 'Want to try private reflections? Setup is easy — just let Jacelyn and Kaitlyn’s daddy know.'
     },
     ja: {
       title: '選手ノートのサンプル', badge: '架空のデータのみ', intro: '架空の選手の例で、1日の振り返り・試合メモ・コーチのアドバイスを体験できます。',
@@ -33,12 +27,7 @@
       english: '英語の原文', japanese: '日本語版', coachJapanese: '日本語の原文', coachEnglish: '英語版',
       activity: '活動内容', blank: '未記入', opponentA: 'サンプル対戦相手A', opponentB: 'サンプル対戦相手B', training: '練習 · 架空の試合', win: '勝ち', loss: '負け',
       rest: '金曜日 — 練習・振り返りはお休みです。', privacyTitle: '実際のノートの使い方', privacy: '実際のノートには本人の選手パスワードが必要です。本人とクラブ管理者が読めます。他のメンバーや承認者は読めません。このサンプルは架空のデータだけを使っています。',
-      manual: '各言語の文章は手入力です。このサンプルは翻訳サービスを使いません。', invitation: 'プライベートな振り返りを試してみませんか？設定は簡単です。ジェイスとケイツのお父さんに声をかけてください。',
-      demoNotice: '翻訳プレビューは、あらかじめ用意した架空の例だけです。AI翻訳ではなく、送信・保存もされません。個人情報は入力しないでください。',
-      demoJapanese: 'デモ：日本語の例を見る', demoEnglish: 'デモ：英語の例を見る', demoReview: '架空の翻訳プレビュー',
-      demoReviewHint: 'これは事前に用意した例で、入力した文章の翻訳ではありません。「この例を使う」とサンプルの言語版を置き換えます。原文は変わりません。',
-      demoApply: 'この例を使う', demoCancel: 'キャンセル', demoStale: '原文または翻訳先が変更されました。キャンセルしてから、もう一度プレビューしてください。',
-      demoResetSource: 'この例を使うには、元のサンプル文章が必要です。サンプルをリセットして再度お試しください。', demoApplied: 'このプレビュー内で例を適用しました。送信・保存はされていません。'
+      manual: '各言語の文章は手入力です。このサンプルは翻訳サービスを使いません。', invitation: 'プライベートな振り返りを試してみませんか？設定は簡単です。ジェイスとケイツのお父さんに声をかけてください。'
     }
   };
   const examples = {
@@ -59,89 +48,23 @@
     },
     rest: {}
   };
-  // Canned outputs are available only for their unchanged, fictional sources.
-  // This demo never calls a translator or sends the text entered in an editor.
-  const demoPairs = {
-    daily: { 'coach.en': 'coach.ja' },
-    matches: { 'daily.ja': 'daily.en', 'match.a.ja': 'match.a.en', 'coach.en': 'coach.ja' }
-  };
-  let documents = structuredClone(examples), translationPreview = null, translationSession = null;
+  let documents = structuredClone(examples);
   const t = key => words[language][key];
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
-  const equal = (left, right) => JSON.stringify(left) === JSON.stringify(right);
-  function demoControl(key) {
-    if (!demoPairs[day]?.[key]) return '';
-    return `<div class="notebook-translation-demo" data-demo-translation="${escapeHtml(key)}"><button type="button" data-demo-preview="${escapeHtml(key)}">${t(key.endsWith('.ja') ? 'demoJapanese' : 'demoEnglish')}</button><p data-demo-message role="status" aria-live="polite"></p><div data-demo-review hidden></div></div>`;
-  }
   function field(key, label) {
     const value = documents[day][key] || '';
     return mode === 'write'
-      ? `<section class="notebook-field"><span>${t(label)}</span><div data-sample-host="${key}" data-rich-label="${t(label)}"></div>${demoControl(key)}</section>`
+      ? `<section class="notebook-field"><span>${t(label)}</span><div data-sample-host="${key}" data-rich-label="${t(label)}"></div></section>`
       : `<section class="notebook-read-field"><h3>${t(label)}</h3>${typeof value === 'string' ? `<p data-sample-read="${key}">${escapeHtml(value || t('blank'))}</p>` : `<div data-sample-read="${key}" class="notebook-rich-content">${Rich.html(value)}</div>`}</section>`;
   }
   const reflection = prefix => `<div class="notebook-bilingual">${field(`${prefix}.en`, 'english')}${field(`${prefix}.ja`, 'japanese')}</div>`;
-  function closeTranslationPreview() {
-    translationSession?.cancel(); translationSession = null;
-    translationPreview = null;
-    app.querySelectorAll('[data-demo-review]').forEach(node => { node.hidden = true; node.replaceChildren(); });
-  }
-  function refreshTranslationPreview() {
-    if (!translationPreview) return;
-    const { container } = translationPreview;
-    const stale = !translationSession?.canAccept();
-    container.querySelector('[data-demo-stale]').textContent = stale ? t('demoStale') : '';
-    container.querySelector('[data-demo-apply]').disabled = stale;
-  }
-  function bindTranslationPreview() {
-    app.querySelectorAll('[data-demo-preview]').forEach(button => button.onclick = async () => {
-      if (editors.some(editor => editor.composing)) return;
-      const target = button.dataset.demoPreview, source = demoPairs[day]?.[target], container = button.parentElement;
-      closeTranslationPreview();
-      app.querySelectorAll('[data-demo-message]').forEach(node => { node.textContent = ''; });
-      if (!source || !equal(documents[day][source], examples[day][source])) {
-        container.querySelector('[data-demo-message]').textContent = t('demoResetSource'); return;
-      }
-      const fixtureDay = day, direction = target.endsWith('.ja') ? 'en-ja' : 'ja-en';
-      const session = translationSession = Translation.create({
-        read: key => documents[day][key] || '', context: () => `${day}:${mode}`,
-        request: async request => {
-          if (day !== fixtureDay || request.direction !== direction || !equal(documents[day][source], examples[day][source]) || request.text !== Rich.text(examples[day][source])) throw new Error('Only unchanged fictional examples are available');
-          return structuredClone(examples[day][target]);
-        },
-        apply: (targetKey, candidate) => {
-          const editor = editors.find(item => item.root.getAttribute('data-sample-field') === targetKey);
-          if (!editor) throw new Error('Sample editor unavailable');
-          editor.quill.history.cutoff(); editor.quill.setContents(Rich.delta(candidate), 'user'); editor.quill.history.cutoff();
-        }
-      });
-      const result = await session.preview({ sourceKey: source, targetKey: target, direction });
-      if (session !== translationSession || !container.isConnected || result.status === 'cancelled') return;
-      if (result.status !== 'ready') { container.querySelector('[data-demo-message]').textContent = t(result.status === 'stale' ? 'demoStale' : 'demoResetSource'); return; }
-      translationPreview = { candidate: result.value, container };
-      const review = container.querySelector('[data-demo-review]');
-      review.innerHTML = `<section class="notebook-translation-review" role="region" aria-label="${t('demoReview')}"><h4>${t('demoReview')}</h4><p>${t('demoReviewHint')}</p><div class="notebook-rich-content">${Rich.html(translationPreview.candidate)}</div><p data-demo-stale role="status" aria-live="polite"></p><div class="notebook-translation-actions"><button type="button" data-demo-apply>${t('demoApply')}</button><button type="button" data-demo-cancel>${t('demoCancel')}</button></div></section>`;
-      review.hidden = false;
-      container.querySelector('[data-demo-cancel]').onclick = () => { closeTranslationPreview(); button.focus({ preventScroll: true }); };
-      container.querySelector('[data-demo-apply]').onclick = () => {
-        if (!translationPreview || editors.some(editor => editor.composing)) return;
-        refreshTranslationPreview();
-        if (container.querySelector('[data-demo-apply]').disabled) return;
-        if (session.accept().status !== 'applied') return;
-        closeTranslationPreview();
-        container.querySelector('[data-demo-message]').textContent = t('demoApplied'); button.focus({ preventScroll: true });
-      };
-      container.querySelector('[data-demo-apply]').focus({ preventScroll: true });
-    });
-  }
   function render() {
-    translationSession?.cancel(); translationSession = null;
-    translationPreview = null;
     editors.forEach(editor => editor.dispose()); editors = [];
     document.documentElement.lang = language;
     document.querySelector('#language-toggle').textContent = language === 'en' ? '日本語' : 'ENGLISH';
     document.querySelector('#sample-back').textContent = t('back');
     app.innerHTML = `<header class="feedback-hero"><div><p class="eyebrow">${t('badge')}</p><h1>${t('title')}</h1><p>${t('intro')}</p></div><details open class="notebook-privacy"><summary>${t('privacyTitle')}</summary><p>${t('privacy')}</p></details></header>
-      <div class="notebook-identity"><strong>${t('player')}</strong><button type="button" id="sample-reset">${t('reset')}</button></div><p class="notebook-notice">${t('manual')} ${window.LKNotebookEditor.hint(language)}</p><p class="notebook-translation-notice">${t('demoNotice')}</p>
+      <div class="notebook-identity"><strong>${t('player')}</strong><button type="button" id="sample-reset">${t('reset')}</button></div><p class="notebook-notice">${t('manual')} ${window.LKNotebookEditor.hint(language)}</p>
       <div class="notebook-dates"><label>${t('sampleDay')}<select id="sample-day">${['daily', 'matches', 'rest'].map(value => `<option value="${value}" ${value === day ? 'selected' : ''}>${t(value === 'daily' ? 'dailyDay' : value === 'matches' ? 'matchDay' : 'restDay')}</option>`).join('')}</select></label></div>
       <div class="notebook-modes" role="group" aria-label="${t('mode')}">${['write', 'read'].map(value => `<button type="button" data-sample-mode="${value}" aria-pressed="${mode === value}">${t(value)}</button>`).join('')}</div>${mode === 'read' ? `<p class="notebook-read-hint">${t('readHint')}</p>` : ''}
       <div class="notebook-savebar notebook-demo-warning" role="status">${t('warning')}</div><section class="notebook-day">${day === 'rest' ? `<section class="notebook-entry"><h2>${t('rest')}</h2></section>` : `
@@ -151,9 +74,8 @@
       <aside class="notebook-invitation"><h2>${t('invitation')}</h2><a class="notebook-preview-link" href="feedback.html">${t('back')} <span aria-hidden="true">→</span></a></aside>`;
     app.querySelectorAll('[data-sample-host]').forEach(host => {
       const key = host.dataset.sampleHost;
-      editors.push(window.LKNotebookEditor.mount({ host, label: host.dataset.richLabel, language, field: key, attribute: 'data-sample-field', value: documents[day][key] || '', onChange: value => { documents[day][key] = value; refreshTranslationPreview(); } }));
+      editors.push(window.LKNotebookEditor.mount({ host, label: host.dataset.richLabel, language, field: key, attribute: 'data-sample-field', value: documents[day][key] || '', onChange: value => { documents[day][key] = value; } }));
     });
-    bindTranslationPreview();
     app.querySelector('#sample-day').onchange = event => { if (editors.some(editor => editor.composing)) { event.target.value = day; return; } day = event.target.value; render(); };
     app.querySelectorAll('[data-sample-mode]').forEach(button => button.onclick = () => { if (editors.some(editor => editor.composing)) return; mode = button.dataset.sampleMode; render(); app.querySelector(`[data-sample-mode="${mode}"]`).focus({ preventScroll: true }); });
     app.querySelector('#sample-reset').onclick = () => { documents = structuredClone(examples); render(); app.querySelector('#sample-reset').focus({ preventScroll: true }); };

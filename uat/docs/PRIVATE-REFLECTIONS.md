@@ -1,83 +1,5 @@
 # Private player notebook
 
-## OpenAI API translation preparation — UAT only (2026-11-02)
-
-The user chose to prepare the **separately billed OpenAI API**, not hosted
-ChatGPT Plus sign-in. This preparation does not use Plus credits and authorizes
-neither purchases nor billing/credit changes. The user declined to submit the
-Sign in with ChatGPT interest form and later declined sending a Support inquiry;
-do not submit either or repeatedly ask. Continue with offline/mock work without
-assuming that privacy approval has been granted.
-
-This is **not a working translator**. The UAT Write view still shows disabled
-controls and language versions remain manual. The sample displays fixed fictional
-examples, not AI output or translations of arbitrary typing. Preview, cancel and
-explicit replacement occur in memory; a changed source or destination blocks
-replacement. No sample writing is sent or saved.
-
-The UAT source now also prepares an OpenAI Responses API adapter. It has no
-default network transport, never runs from the notebook, and is tested only with
-injected synthetic responses. A proposed Worker route is hard-disabled in code:
-even with pretend secrets/flags it does not parse the body or call a provider.
-**The shared Worker has not been deployed for this preparation**, so that route
-is not available on the live service. The real-notebook buttons are not connected
-to the adapter. No OpenAI API key, model, billing, account or provider connection
-has been configured and no private writing has been sent to OpenAI.
-
-Before any real translation, independently confirm and implement the required
-OpenAI Zero Data Retention for the actual API organization/project, selected
-model and features when processing data of children under 13 or the applicable
-digital-consent age; `store: false` alone is **not** ZDR. Review applicable
-guardian/coach consent, provider terms, privacy and safety requirements, actual
-model-specific prompt-caching/retention behavior and costs. Obtain explicit
-approval before any billing setup, purchasing or transmitting real writing.
-Complete a separately reviewed UAT integration with ownership checks, rate and
-spending safeguards, secure server-side secrets, cancellation/retry behavior,
-user-facing disclosure and quality tests. For synthetic tests, the preview now
-signals cancellation to a cooperative request and rejects late results even when
-the callback ignores it. Cancellation cannot undo text already transmitted or
-guarantee a provider stops processing it. No live request is wired to this signal.
-
-The prototype sends only plain text to its injected callback and, when a plain
-candidate has exactly matching line and blank-line boundaries, restores simple
-whole-line bold/italic and list formatting locally. A changed line layout or
-mixed inline styling produces no candidate rather than silently losing formats.
-This is mock-tested preparation, **not** proof a real model preserves meaning,
-order or formatting; mixed styles and real-model quality remain unresolved.
-An instruction to treat input as text is not a guarantee against prompt injection
-or inaccurate output. Keep originals and require review.
-Production promotion requires fresh explicit approval.
-
-Browser and Worker tests use only fictional examples and intercepted synthetic
-sessions/documents. They verify the hard stop, no implicit provider transport,
-bounded request/response handling, sanitized errors, stale-result/cancel guards,
-explicit replacement and unchanged fictional preview. The browser controller
-passes only source text and language direction to its request callback—not field
-keys or notebook context. The deployed-source smoke test intercepts notebook
-requests and blocks OpenAI. Details: `docs/PRIVATE-REFLECTION-PLAN.md`.
-
-UAT behavior release **`b085c55`**, Actions **`41401450021`**, passed syntax,
-Worker/operations suites, **73 browser tests** and **21 live checks**. Six local
-targeted cases passed in both Chromium and WebKit; the two JA/EN deployed WebKit
-checks also passed without retry. No real notebook, provider call, Worker deploy,
-Redis operation, account/billing change or production promotion occurred.
-
-UAT behavior release **`a04a8fe`**, Actions **`41394753002`**, passed syntax,
-Worker/operations suites, **73 browser tests** and **21 live UAT checks**.
-Separate live WebKit checks passed the JA/EN fictional preview and disabled
-real-notebook controls without retry, with synthetic intercepted sessions. The
-cache-busted build confirmed `a04a8fe`; production remains `8eaae02`. No Worker,
-private writing, account, provider, billing or production change occurred.
-
-Earlier UAT preview release **`f4959eb`**, Actions **`41391854540`**, passed all verification
-suites, **72 browser tests** and **21 live checks without retry**. Separate live
-JA/EN translation checks passed in Chromium and WebKit, with all notebook API
-responses intercepted and no OpenAI requests. The live fictional mobile preview
-was visually reviewed and made no API requests. Cache-busted build info confirms
-the UAT release; production remains `8eaae02`. No real diary or account was
-accessed or changed; no Worker deployment, Redis mutation, billing change or
-production promotion occurred.
-
 ## Incomplete matches — confirmed (2026-10-18)
 
 Incomplete recorded singles are included in reflections just like completed
@@ -283,7 +205,7 @@ Write/Read + history release `cba4b43` is live in UAT (Actions `38352136243`, al
 
 Landing cards + mock preview release `52032a7` is live in UAT (Actions `38355061345`, all 27 browser tests and live smoke passed). Live JA/EN landing/sample checks passed at 320/390/768/1440 px using 37 intercepted synthetic directory accounts: progressive cards/search, selected/direct sign-in, auto-height/full preview paragraphs, reset, Friday rest, no sample API/session reads or writing persistence, and zero overflow/page errors. Synthetic-only screenshots were visually reviewed. No real journals, accounts, Worker, or Upstash data changed; production remains unchanged.
 
-The live notebook continues to use manual translation. UAT translation-preparation controls and the fixed fictional preview are described at the top of this document; no provider, API key, live AI translation, billing, or transmission of writing to a translator is enabled. Notebook examples are design references only, not imported data.
+The user chose to keep translation manual. No provider, API key, AI button, billing, or transmission of writing to a translator is enabled. Notebook examples are design references only, not imported data.
 
 ## Access and layout
 
