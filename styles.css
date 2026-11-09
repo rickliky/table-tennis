@@ -763,10 +763,50 @@ body.access-locked,body.modal-open { overflow:hidden; }
 .opponent-matrix td.positive { background:rgba(214,165,22,.12); }
 .opponent-matrix td.negative { background:rgba(140,66,58,.16); }
 .opponent-matrix td.empty { color:#555; }
+/* Private notes never appear on the member-facing profile itself. */
+.private-opponent-preparation { align-items:end; background:linear-gradient(110deg,#17191c,#101214); border:1px solid rgba(84,184,209,.4); display:grid; gap:16px; grid-template-columns:minmax(0,1fr) minmax(180px,.65fr) auto; margin-top:18px; min-width:0; padding:20px; }
+.private-opponent-preparation[hidden] { display:none; }
+.private-opponent-preparation > * { min-width:0; }
+.private-opponent-preparation h3 { color:var(--cream); font-size:23px; margin:0 0 6px; }
+.private-opponent-preparation p,.private-opponent-preparation small { color:var(--muted); display:block; font:600 12px/1.6 "Noto Sans JP",sans-serif; margin:0; overflow-wrap:anywhere; }
+.private-opponent-preparation label { display:grid; gap:6px; }
+.private-opponent-preparation label span { color:var(--cream); font:700 12px "Noto Sans JP",sans-serif; }
+.private-opponent-preparation select { background:#090a0b; border:1px solid var(--gold); color:var(--cream); font:700 16px "Noto Sans JP",sans-serif; min-height:46px; padding:8px; width:100%; }
+.private-opponent-preparation a { align-items:center; display:inline-flex; justify-content:center; min-height:46px; text-align:center; }
+.opponent-prep-page { display:grid; gap:18px; max-width:1100px; min-width:0; }
+.opponent-prep-page > *,.opponent-prep-card > * { min-width:0; }
+.opponent-prep-page .feedback-hero h1 { overflow-wrap:anywhere; }
+.opponent-prep-selected { color:var(--gold); font-weight:700; margin-top:12px; overflow-wrap:anywhere; }
+.opponent-prep-back { align-items:center; color:var(--gold); display:inline-flex; font:700 12px "Noto Sans JP",sans-serif; min-height:44px; }
+.opponent-prep-notice,.opponent-prep-access,.opponent-prep-plan,.opponent-prep-evidence,.opponent-prep-message { background:#101214; border:1px solid var(--line); min-width:0; padding:clamp(16px,3vw,24px); }
+.opponent-prep-notice { border-left:4px solid #54b8d1; }
+.opponent-prep-notice p,.opponent-prep-access p,.opponent-prep-plan li,.opponent-prep-evidence > p,.opponent-prep-message { color:var(--cream); font:500 14px/1.7 "Noto Sans JP",sans-serif; overflow-wrap:anywhere; }
+.opponent-prep-notice p + p { margin-top:10px; }
+.opponent-prep-access h2,.opponent-prep-plan h2,.opponent-prep-evidence h2 { color:var(--cream); font-size:clamp(22px,3vw,30px); margin:0 0 10px; }
+.opponent-prep-access form { display:grid; gap:12px; margin-top:16px; max-width:440px; }
+.opponent-prep-access label { color:var(--cream); display:grid; font:700 13px "Noto Sans JP",sans-serif; gap:7px; }
+.opponent-prep-access input[type=password] { background:#090a0b; border:1px solid var(--line); color:var(--cream); font-size:16px; min-height:48px; padding:10px; width:100%; }
+.opponent-prep-access button,.opponent-prep-actions button { cursor:pointer; min-height:46px; padding:10px 16px; }
+.opponent-prep-actions button { background:transparent; border:1px solid var(--gold); color:var(--gold); }
+.opponent-prep-focus { background:rgba(84,184,209,.08); border-left:3px solid #54b8d1; margin:14px 0; padding:12px 14px; }
+.opponent-prep-focus strong { color:#8ed5e6; font:700 12px "Noto Sans JP",sans-serif; }
+.opponent-prep-focus p { color:var(--cream); font:600 15px/1.7 "Noto Sans JP",sans-serif; margin:6px 0; overflow-wrap:anywhere; }
+.opponent-prep-focus a { align-items:center; color:var(--gold); display:inline-flex; font:700 12px "Noto Sans JP",sans-serif; min-height:44px; }
+.opponent-prep-plan ol { margin:0; padding-left:22px; }
+.opponent-prep-plan li + li { margin-top:8px; }
+.opponent-prep-card { background:rgba(246,240,226,.035); border:1px solid var(--line); margin-top:14px; min-width:0; padding:16px; }
+.opponent-prep-card header { align-items:start; display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; }
+.opponent-prep-card header > div { display:grid; gap:4px; min-width:0; }
+.opponent-prep-card strong { color:var(--cream); font:700 16px "Noto Sans JP",sans-serif; overflow-wrap:anywhere; }
+.opponent-prep-card small,.opponent-prep-card > p { color:var(--muted); font:600 12px/1.5 "Noto Sans JP",sans-serif; overflow-wrap:anywhere; }
+.opponent-prep-card a { align-items:center; color:var(--gold); display:inline-flex; font:700 12px "Noto Sans JP",sans-serif; min-height:44px; }
+.opponent-prep-card ul { color:var(--cream); font:500 15px/1.75 "Noto Sans JP",sans-serif; margin:10px 0 0; overflow-wrap:anywhere; padding-left:22px; }
+.opponent-prep-card li + li { margin-top:8px; }
 @media (max-width:900px) {
   .opponent-trend-detail-grid { grid-template-columns:1fr; }
   .opponent-scoreline-card > div { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .opponent-milestones > div { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .private-opponent-preparation { grid-template-columns:1fr; }
 }
 @media (max-width:700px) {
   .opponent-trend-toolbar { align-items:stretch; flex-direction:column; }
