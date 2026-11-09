@@ -44,3 +44,35 @@ for (const language of ['en', 'ja']) for (const width of [320, 1440]) {
     await page.locator('#prep-hide').click(); await expect(page.locator('.opponent-prep-card')).toHaveCount(0);
   });
 }
+
+test('live preparation retains complete sections and older saved dates', async ({ page, context, baseURL }) => {
+  const location = new URL(baseURL), environment = location.pathname.split('/').includes('uat') || ['localhost', '127.0.0.1'].includes(location.hostname) ? 'uat' : 'prod';
+  const dates = Array.from({ length:16 }, (_, index) => new Date(Date.UTC(2025, 0, index + 1)).toISOString().slice(0, 10));
+  const calls = [], external = [];
+  await context.addInitScript(environment => { localStorage.setItem('lk-language', 'en'); localStorage.setItem(`lk-private-reflection-session-${environment}`, 'synthetic-owner-token'); }, environment);
+  await page.route('**/*', async route => {
+    const req = route.request(), url = new URL(req.url());
+    if (url.origin === location.origin) return route.continue();
+    if (url.origin !== new URL(API).origin || !url.pathname.startsWith('/api/')) { external.push(req.url()); return route.abort(); }
+    calls.push({ path:url.pathname, method:req.method(), date:url.searchParams.get('date'), environment:url.searchParams.get('environment') });
+    const send = body => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ ok:true, ...body }) });
+    if (url.pathname === '/api/reflections/session') return send({ player });
+    if (url.pathname === '/api/reflections/dates') return send({ dates:[...dates].reverse() });
+    if (url.pathname === '/api/reflections/day') {
+      const date = url.searchParams.get('date'), key = `training:SYNTHETIC-${date.replace(/-/g, '')}`;
+      const note = date === dates.at(-1) ? 'Saved match writing without the requested heading.' : 'English Back-Translation\nFirst point.\nSecond point.\nThird point.\nFourth point.\n**Serve placement**\nFifth point.\nJapanese Translation（日本語訳）\n日本語の例です。';
+      return send({ date, document:{ revision:1, fields:{ [`match.${key}.en`]:note } }, matches:[{ key, source:'training', opponentId:'LK-0002', opponentName:'架空の相手', score:'1-2', result:'incomplete' }] });
+    }
+    return route.fulfill({ status:404, contentType:'application/json', body:'{"ok":false}' });
+  });
+  await page.goto('opponent-prep.html?player=LK-0080&opponent=LK-0002');
+  await page.locator('#prep-open').click();
+  await expect(page.locator('.opponent-prep-card')).toHaveCount(16);
+  const oldest = page.locator('.opponent-prep-card').filter({ hasText:dates[0] });
+  await expect(oldest.locator('.opponent-prep-section')).toContainText('Fourth point.');
+  await expect(oldest.locator('.opponent-prep-section')).toContainText('Fifth point.');
+  await expect(page.locator('.opponent-prep-missing')).toHaveCount(1);
+  expect(calls.filter(call => call.path === '/api/reflections/day')).toHaveLength(16);
+  expect(calls.every(call => call.method === 'GET' && call.environment === environment)).toBe(true);
+  expect(external).toEqual([]);
+});

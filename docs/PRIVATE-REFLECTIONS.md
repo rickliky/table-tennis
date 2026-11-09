@@ -1,6 +1,10 @@
 # Private player notebook
 
-## Private opponent preparation — UAT (2026-11-09)
+## Private opponent preparation — completeness update (2026-11-09)
+
+This update is intended for UAT first. Production's earlier release still has the
+12-date / 30-card and short-excerpt limits until this change is reviewed and
+explicitly approved for production. UAT and production notebooks are independent.
 
 The user requested opponent-specific preparation based on past reflections,
 confirmed **“English Back-Translation”** and **“Japanese Translation（日本語訳）”**
@@ -16,21 +20,33 @@ No provider, API key, automatic translation or external inference is involved.
   a remembered session is revalidated and must match the profile, otherwise the
   player's password is required. Signing in on this page is memory-only. Site,
   Admin or Approver sessions alone cannot read private notes.
-- Only saved **match** fields verified by the private API as involving the
-  selected opponent are considered, from the latest 12 recorded meeting dates;
-  up to 30 excerpt cards are displayed. Incomplete matches remain incomplete.
-  Daily notes and daily coach feedback are not claimed to describe a particular
-  opponent. The existing private APIs and owner authorization are unchanged.
+- After owner authentication and explicit action, the page checks every valid
+  saved notebook date using the existing private API, with at most two day reads
+  in flight and no date or card cap. Each day response contains the owner's full
+  day; the page retains only match fields whose current recorded match involves
+  the selected opponent. Incomplete matches remain incomplete. Daily notes and
+  daily coach feedback are not attributed to an opponent. A saved date with no
+  currently recorded eligible match cannot be linked automatically, including
+  an orphaned match note. A date not in the saved-date index cannot be checked.
+- Scanning may take time for a long history. Progress and Cancel are shown. A
+  failed or unchecked date is reported rather than silently omitted; Retry
+  rechecks only those dates after revalidating the owner's session. A rate limit
+  or repeated errors stop the scan, and invalid indexed dates are reported.
+  Cancelling, backgrounding, navigation, sign-out or revocation clears results.
 - English selects the named English Back-Translation section; Japanese selects
   the named Japanese Translation section. Both language fields are checked for
   headings, duplicate sections are removed, and unmarked originals or another
-  language are never substituted. The local parser supports plain/Markdown and
-  restricted rich text, but free-form headings and section boundaries may not
-  be recognized or may truncate excerpts. If no named section is found, an
-  explicit empty state appears rather than guessing. Source-date links allow
-  the owner to check full context; no actual translation is performed.
+  language are not substituted for a missing section. Detected sections are
+  displayed in full as text, not three truncated excerpts. The local parser
+  supports plain/Markdown and restricted rich text, but free-form headings and
+  section boundaries can be ambiguous; text from an adjacent unrecognized
+  section may be included or the intended boundary may be missed. A matching
+  recorded meeting is still shown when its translation section is missing or
+  empty, or when no match-specific field is saved. Owners can expand complete
+  saved English/Japanese match fields, including supported rich formatting, or
+  open the notebook date to check context. No actual translation is performed.
 - The plan highlights a possible next focus using simple keyword selection and
-  exact excerpts, followed by general practice/match prompts. It is **not** a
+  a short excerpt, followed by general practice/match prompts. It is **not** a
   generative synthesis, a verified coach evaluation, an opponent weakness, a
   win-probability prediction or a guarantee of winning. Review it with a coach.
 - Data is read only after an explicit action and owner validation. Text remains

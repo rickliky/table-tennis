@@ -5,7 +5,6 @@
 })(globalThis, () => {
   'use strict';
 
-  const maxDates = 12, maxCards = 30;
   const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && value >= '2000-01-01' && value <= '2100-12-31' && Number.isFinite(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
 
   // Only named translation sections are eligible. Unmarked originals are not
@@ -22,18 +21,9 @@
   function otherHeading(line) {
     const value = line.normalize('NFKC').trim();
     const clean = value.replace(/^[^\p{L}\p{N}]+/u, '').replace(/^\d+[.)]\s*/, '').replace(/\*{1,3}/g, '').replace(/\s*:\s*$/, '').trim();
-    const subheading = /^(?:what\s+i\s+did\s+well|things\s+to\s+improve|next(?:\s+match|\s+time|\s+focus)?|よかったこと|改善点|次(?:の試合|に向けて))$/iu.test(clean);
-    if (subheading) return false;
-    if (/^(?:#{1,6}\s+|[-=_]{3,}\s*$)/u.test(value)) return true;
-    if (/^(?:(?:original|polished|refined|revised|improved)\s+english|english\s+(?:original|version|reflection|translation)|japanese\s+(?:original|version|reflection)|coach(?:'s)?\s+(?:feedback|advice|analysis)|original\s+reflection|コーチ(?:の)?(?:アドバイス|コメント)|英語の原文|日本語の原文)$/iu.test(clean)) return true;
-    // Markdown headings mark the end, except common subheadings inside the
-    // translated reflection itself. Rich-text emphasis is preserved as text.
-    if (/^\*\*[^*\n]{1,100}\*\*\s*:?\s*$/u.test(value)) {
-      if (/[.!?。！？]$/u.test(clean)) return false;
-      return true;
-    }
-    if (/^.{1,100}:\s*$/u.test(value)) return true;
-    return false;
+    // Arbitrary bold lines, Markdown headings, colons and separators can be
+    // subsections of the translation. Only stop at a known separate section.
+    return /^(?:(?:original|polished|refined|revised|improved)\s+english|english\s+(?:original|version|reflection|translation)|japanese\s+(?:original|version|reflection)|original\s+reflection|英語の原文|日本語の原文)$/iu.test(clean);
   }
 
   function sections(value, language) {
@@ -51,32 +41,12 @@
     return found;
   }
 
-  function sectionText(value, toText) {
-    if (typeof value === 'string') return value;
-    const plain = toText(value);
-    if (!plain || value?.format !== 'lk-rich-v1' || !Array.isArray(value.ops)) return plain || '';
-    const lines = []; let line = '', allBold = true, hasText = false;
-    for (const op of value.ops) {
-      const pieces = op.insert.split('\n');
-      pieces.forEach((piece, index) => {
-        line += piece;
-        if (piece.trim()) { hasText = true; if (!op.attributes?.bold) allBold = false; }
-        if (index < pieces.length - 1) {
-          lines.push(hasText && allBold && !op.attributes?.list && line.trim().length <= 100 ? `**${line}**` : line);
-          line = ''; allBold = true; hasText = false;
-        }
-      });
-    }
-    if (line) lines.push(line);
-    return lines.join('\n');
-  }
-
   function matchSections(fields, key, language, toText = () => '') {
     if (!fields || !/^(?:training|tournament):[A-Za-z0-9_-]+$/.test(key) || !['en', 'ja'].includes(language)) return [];
     const seen = new Set(), output = [];
     for (const fieldLanguage of language === 'en' ? ['en', 'ja'] : ['ja', 'en']) {
       const value = fields[`match.${key}.${fieldLanguage}`];
-      const text = sectionText(value, toText);
+      const text = typeof value === 'string' ? value : toText(value);
       for (const section of sections(text, language)) {
         if (seen.has(section)) continue;
         seen.add(section); output.push({ text: section, fieldLanguage });
@@ -96,5 +66,5 @@
   }
 
   const nextFocus = (text, language) => takeaways(text, language).find(value => isFocus(value, language)) || '';
-  return Object.freeze({ maxDates, maxCards, validDate, sections, matchSections, takeaways, nextFocus });
+  return Object.freeze({ validDate, sections, matchSections, takeaways, nextFocus });
 });
