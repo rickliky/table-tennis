@@ -66,8 +66,7 @@ function renderPrivateOpponentPreparation(preferredId) {
     if (match.player1Id !== playerId && match.player2Id !== playerId) continue;
     const first = match.player1Id === playerId, id = first ? match.player2Id : match.player1Id, date = match.matchDate;
     if (!/^[A-Za-z0-9_-]{1,64}$/.test(id || '') || id === playerId || !/^\d{4}-\d{2}-\d{2}$/.test(date || '') || date < '2000-01-01' || date > '2100-12-31' || !Number.isFinite(Date.parse(`${date}T00:00:00Z`)) || new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== date) continue;
-    const person = people.get(id) || { displayName:(first ? match.player2Name : match.player1Name) || id }, entry = opponents.get(id) || { id, person, dates:new Set() };
-    entry.dates.add(date); opponents.set(id, entry);
+    if (!opponents.has(id)) opponents.set(id, { id, person:people.get(id) || { displayName:(first ? match.player2Name : match.player1Name) || id } });
   }
   const choices = [...opponents.values()].sort((left,right) => nameFor(left.person).localeCompare(nameFor(right.person), language === 'en' ? 'en' : 'ja'));
   if (!choices.length) { host.hidden = true; host.replaceChildren(); return; }
@@ -76,7 +75,7 @@ function renderPrivateOpponentPreparation(preferredId) {
   const chosen = choices.some(choice => choice.id === preferredId) ? preferredId : choices[0].id;
   host.innerHTML = `<div><h3>${labels.title}</h3><p>${labels.description}</p><small>${labels.note}</small></div><label><span>${labels.select}</span><select id="private-prep-opponent">${choices.map(choice => `<option value="${escapeHtml(choice.id)}" ${choice.id === chosen ? 'selected' : ''}>${escapeHtml(nameFor(choice.person))}</option>`).join('')}</select></label><a id="private-prep-open" class="gold-button" rel="noreferrer">${labels.open}</a>`;
   const selector = host.querySelector('#private-prep-opponent'), link = host.querySelector('#private-prep-open');
-  const update = () => { const choice = opponents.get(selector.value), query = new URLSearchParams({ player:playerId, opponent:choice.id }); [...choice.dates].sort().reverse().slice(0, 12).forEach(date => query.append('date', date)); link.href = `opponent-prep.html?${query}`; };
+  const update = () => { const choice = opponents.get(selector.value), query = new URLSearchParams({ player:playerId, opponent:choice.id }); link.href = `opponent-prep.html?${query}`; };
   selector.addEventListener('change', update); update();
 }
 function renderOpponentTrends(completed) {
