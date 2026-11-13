@@ -206,6 +206,12 @@ Values are also bilingual: `'女性 / Female'` → `['Female','女性']`, etc.
 
 ## Session Context
 
+### Japanese Reflections in Opponent View (2026-11-13) — CLARIFICATION NEEDED
+- User requests the complete Japanese version regardless of interface language, displayed directly when viewing an opponent rather than requiring the separate Private Match Preparation page. Keep notebook access private, owner-authenticated and non-AI; do not inspect or modify real notebooks/data, and use UAT first.
+- A match-specific note is explicitly tied to an opponent, but a daily reflection covers the whole day and can mention multiple opponents. Clarification is needed whether to show both match notes and same-day daily notes (clearly labelled as whole-day), match notes only, or daily notes only. The question dialog was interrupted by server restarts; no answer has been received.
+- Security consideration: `player.html` currently loads Google Analytics and Chart.js from third parties, while the existing preparation page deliberately loads no third-party scripts. Do not put private note bodies into the current profile DOM without first preventing third-party script access; preserve owner verification, session revocation/clearing and no notebook writes.
+- No implementation or runtime/data change has been made for this request. Prior full-history behavior remains in UAT at `2496f91`; production remains unchanged and requires new approval for any promotion.
+
 ### Complete Opponent Preparation History (2026-11-09) — LIVE IN UAT
 - User reported incomplete past takeaways and missing reflection dates. The previous production release limited checks to 12 dates / 30 cards and displayed at most three 400-character excerpts. This new fix is UAT-first; the earlier production approval does not authorize this change or any notebook/data sync.
 - The owner-authenticated page now scans every valid saved date with at most two concurrent day reads, displays full detected language sections, and shows each currently recorded matching meeting even when the desired section or match field is missing. It keeps only selected-opponent match fields after each day response, never attributes daily/coach notes or an orphaned match to an opponent, and lets the owner expand both complete saved match fields or open the notebook date. Translation headings/boundaries may be ambiguous; the full fields provide context. The focus suggestion remains a labelled short excerpt.
